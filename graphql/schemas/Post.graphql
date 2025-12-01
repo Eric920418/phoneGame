@@ -1,0 +1,65 @@
+type Post {
+  id: Int!
+  title: String!
+  slug: String!
+  content: String!
+  excerpt: String
+  author: String!
+  authorEmail: String
+  coverImage: String
+  views: Int!
+  isPinned: Boolean!
+  isLocked: Boolean!
+  categoryId: Int!
+  category: Category!
+  createdAt: String!
+  updatedAt: String!
+  commentCount: Int
+}
+
+type PostsResponse {
+  posts: [Post!]!
+  total: Int!
+  page: Int!
+  pageSize: Int!
+  hasMore: Boolean!
+}
+
+extend type Query {
+  posts(page: Int, pageSize: Int, categoryId: Int, search: String): PostsResponse!
+  post(id: Int, slug: String): Post
+  pinnedPosts: [Post!]!
+}
+
+input CreatePostInput {
+  title: String!
+  slug: String!
+  content: String!
+  excerpt: String
+  author: String!
+  authorEmail: String
+  coverImage: String
+  categoryId: Int!
+  isPinned: Boolean
+  isLocked: Boolean
+}
+
+input UpdatePostInput {
+  title: String
+  slug: String
+  content: String
+  excerpt: String
+  author: String
+  authorEmail: String
+  coverImage: String
+  categoryId: Int
+  isPinned: Boolean
+  isLocked: Boolean
+}
+
+extend type Mutation {
+  createPost(input: CreatePostInput!): Post!
+  updatePost(id: Int!, input: UpdatePostInput!): Post!
+  deletePost(id: Int!): Boolean!
+  incrementPostViews(id: Int!): Post!
+}

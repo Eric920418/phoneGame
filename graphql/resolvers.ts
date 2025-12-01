@@ -1,0 +1,403 @@
+import { prisma } from "./prismaClient";
+import { JSONScalar } from "./utils/jsonScalar";
+
+// 假數據（當資料庫未配置時使用）
+const mockCategories = [
+  { id: 1, name: '綜合討論', slug: 'general', description: '遊戲綜合討論區', icon: '💬', color: '#c9a227', order: 0, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), postCount: 3 },
+  { id: 2, name: '攻略分享', slug: 'guides', description: '遊戲攻略與心得', icon: '📖', color: '#e91e63', order: 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), postCount: 2 },
+  { id: 3, name: 'Bug 回報', slug: 'bugs', description: '遊戲問題回報', icon: '🐛', color: '#f44336', order: 2, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(), postCount: 1 },
+];
+
+const mockPosts = [
+  {
+    id: 1,
+    title: '歡迎來到 Kingdoms 論壇！',
+    slug: 'welcome-to-kingdoms',
+    content: '<p>歡迎來到 Kingdoms 官方論壇！</p><p>在這裡你可以：</p><ul><li>討論遊戲內容</li><li>分享遊戲攻略</li><li>回報遊戲問題</li><li>結交志同道合的玩家</li></ul>',
+    excerpt: '歡迎使用 Kingdoms 官方論壇！',
+    author: 'Admin',
+    authorEmail: 'admin@kingdoms.com',
+    views: 100,
+    isPinned: true,
+    isLocked: false,
+    categoryId: 1,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    commentCount: 0,
+  },
+];
+
+const mockAnnouncements = [
+  {
+    id: 1,
+    title: '遊戲即將開放測試！',
+    slug: 'game-beta-test',
+    content: '<p>親愛的玩家們：</p><p>我們很高興地宣布，Kingdoms 即將開放封閉測試！敬請期待更多消息。</p>',
+    excerpt: 'Kingdoms 即將開放封閉測試！',
+    type: 'general',
+    isPinned: true,
+    isPublished: true,
+    publishedAt: new Date().toISOString(),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 2,
+    title: '更新公告 v0.1.0',
+    slug: 'update-v0-1-0',
+    content: '<p>本次更新內容：</p><ul><li>新增遊戲功能</li><li>修復已知問題</li><li>優化遊戲體驗</li></ul>',
+    excerpt: '查看 v0.1.0 版本更新內容',
+    type: 'update',
+    isPinned: false,
+    isPublished: true,
+    publishedAt: new Date(Date.now() - 86400000).toISOString(),
+    createdAt: new Date(Date.now() - 86400000).toISOString(),
+    updatedAt: new Date(Date.now() - 86400000).toISOString(),
+  },
+];
+
+// Category Resolvers
+const CategoryResolvers = {
+  Query: {
+    categories: async () => {
+      try {
+        const categories = await prisma.category.findMany({
+          orderBy: { order: 'asc' },
+        });
+        return categories.map((cat) => ({
+          ...cat,
+          postCount: 0,
+        }));
+      } catch (error) {
+        console.warn('資料庫未配置，使用假數據');
+        return mockCategories;
+      }
+    },
+    category: async (_: unknown, { id, slug }: { id?: number; slug?: string }) => {
+      if (id) {
+        return await prisma.category.findUnique({ where: { id } });
+      }
+      if (slug) {
+        return await prisma.category.findUnique({ where: { slug } });
+      }
+      throw new Error('必須提供 id 或 slug');
+    },
+  },
+  Mutation: {
+    createCategory: async (_: unknown, { input }: { input: { name: string; slug: string; description?: string; icon?: string; color?: string; order?: number } }) => {
+      return await prisma.category.create({
+        data: {
+          name: input.name,
+          slug: input.slug,
+          description: input.description,
+          icon: input.icon,
+          color: input.color || '#c9a227',
+          order: input.order || 0,
+        },
+      });
+    },
+    updateCategory: async (_: unknown, { id, input }: { id: number; input: { name?: string; slug?: string; description?: string; icon?: string; color?: string; order?: number } }) => {
+      return await prisma.category.update({
+        where: { id },
+        data: input,
+      });
+    },
+    deleteCategory: async (_: unknown, { id }: { id: number }) => {
+      await prisma.category.delete({ where: { id } });
+      return true;
+    },
+  },
+  Category: {
+    postCount: async (parent: { id: number; postCount?: number }) => {
+      if (parent.postCount !== undefined) {
+        return parent.postCount;
+      }
+      try {
+        return await prisma.post.count({ where: { categoryId: parent.id } });
+      } catch {
+        return 0;
+      }
+    },
+  },
+};
+
+// Post Resolvers
+const PostResolvers = {
+  Query: {
+    posts: async (_: unknown, { page = 1, pageSize = 20, categoryId, search }: { page?: number; pageSize?: number; categoryId?: number; search?: string }) => {
+      try {
+        const where: { categoryId?: number; OR?: Array<{ title: { contains: string; mode: 'insensitive' } } | { content: { contains: string; mode: 'insensitive' } }> } = {};
+
+        if (categoryId) {
+          where.categoryId = categoryId;
+        }
+
+        if (search) {
+          where.OR = [
+            { title: { contains: search, mode: 'insensitive' } },
+            { content: { contains: search, mode: 'insensitive' } },
+          ];
+        }
+
+        const total = await prisma.post.count({ where });
+        const posts = await prisma.post.findMany({
+          where,
+          orderBy: [
+            { isPinned: 'desc' },
+            { createdAt: 'desc' },
+          ],
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+          include: { category: true },
+        });
+
+        return {
+          posts,
+          total,
+          page,
+          pageSize,
+          hasMore: total > page * pageSize,
+        };
+      } catch (error) {
+        console.warn('資料庫未配置，使用假數據');
+        const filteredPosts = mockPosts
+          .filter(p => !categoryId || p.categoryId === categoryId)
+          .map(p => ({
+            ...p,
+            category: mockCategories.find(c => c.id === p.categoryId)!,
+          }));
+
+        return {
+          posts: filteredPosts,
+          total: filteredPosts.length,
+          page: 1,
+          pageSize: 20,
+          hasMore: false,
+        };
+      }
+    },
+    post: async (_: unknown, { id, slug }: { id?: number; slug?: string }) => {
+      if (id) {
+        return await prisma.post.findUnique({
+          where: { id },
+          include: { category: true },
+        });
+      }
+      if (slug) {
+        return await prisma.post.findUnique({
+          where: { slug },
+          include: { category: true },
+        });
+      }
+      throw new Error('必須提供 id 或 slug');
+    },
+    pinnedPosts: async () => {
+      try {
+        return await prisma.post.findMany({
+          where: { isPinned: true },
+          orderBy: { createdAt: 'desc' },
+          include: { category: true },
+        });
+      } catch {
+        return mockPosts
+          .filter(p => p.isPinned)
+          .map(p => ({
+            ...p,
+            category: mockCategories.find(c => c.id === p.categoryId)!,
+          }));
+      }
+    },
+  },
+  Mutation: {
+    createPost: async (_: unknown, { input }: { input: { title: string; slug: string; content: string; excerpt?: string; author: string; authorEmail?: string; coverImage?: string; categoryId: number; isPinned?: boolean; isLocked?: boolean } }) => {
+      return await prisma.post.create({
+        data: input,
+        include: { category: true },
+      });
+    },
+    updatePost: async (_: unknown, { id, input }: { id: number; input: { title?: string; slug?: string; content?: string; excerpt?: string; author?: string; authorEmail?: string; coverImage?: string; categoryId?: number; isPinned?: boolean; isLocked?: boolean } }) => {
+      return await prisma.post.update({
+        where: { id },
+        data: input,
+        include: { category: true },
+      });
+    },
+    deletePost: async (_: unknown, { id }: { id: number }) => {
+      await prisma.post.delete({ where: { id } });
+      return true;
+    },
+    incrementPostViews: async (_: unknown, { id }: { id: number }) => {
+      return await prisma.post.update({
+        where: { id },
+        data: { views: { increment: 1 } },
+        include: { category: true },
+      });
+    },
+  },
+  Post: {
+    commentCount: async (parent: { id: number; commentCount?: number }) => {
+      if (parent.commentCount !== undefined) {
+        return parent.commentCount;
+      }
+      try {
+        return await prisma.comment.count({ where: { postId: parent.id } });
+      } catch {
+        return 0;
+      }
+    },
+  },
+};
+
+// Comment Resolvers
+const CommentResolvers = {
+  Query: {
+    comments: async (_: unknown, { postId }: { postId: number }) => {
+      return await prisma.comment.findMany({
+        where: { postId, parentId: null },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          replies: {
+            orderBy: { createdAt: 'asc' },
+          },
+        },
+      });
+    },
+  },
+  Mutation: {
+    createComment: async (_: unknown, { input }: { input: { content: string; author: string; authorEmail?: string; postId: number; parentId?: number } }) => {
+      return await prisma.comment.create({
+        data: input,
+        include: { replies: true },
+      });
+    },
+    updateComment: async (_: unknown, { id, input }: { id: number; input: { content?: string } }) => {
+      return await prisma.comment.update({
+        where: { id },
+        data: input,
+        include: { replies: true },
+      });
+    },
+    deleteComment: async (_: unknown, { id }: { id: number }) => {
+      await prisma.comment.delete({ where: { id } });
+      return true;
+    },
+  },
+};
+
+// Announcement Resolvers
+const AnnouncementResolvers = {
+  Query: {
+    announcements: async (_: unknown, { page = 1, pageSize = 20, type }: { page?: number; pageSize?: number; type?: string }) => {
+      try {
+        const where: { type?: string; isPublished: boolean } = { isPublished: true };
+
+        if (type) {
+          where.type = type;
+        }
+
+        const total = await prisma.announcement.count({ where });
+        const announcements = await prisma.announcement.findMany({
+          where,
+          orderBy: [
+            { isPinned: 'desc' },
+            { publishedAt: 'desc' },
+          ],
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        });
+
+        return {
+          announcements,
+          total,
+          page,
+          pageSize,
+          hasMore: total > page * pageSize,
+        };
+      } catch (error) {
+        console.warn('資料庫未配置，使用假數據');
+        const filtered = mockAnnouncements.filter(a => !type || a.type === type);
+        return {
+          announcements: filtered,
+          total: filtered.length,
+          page: 1,
+          pageSize: 20,
+          hasMore: false,
+        };
+      }
+    },
+    announcement: async (_: unknown, { id, slug }: { id?: number; slug?: string }) => {
+      if (id) {
+        return await prisma.announcement.findUnique({ where: { id } });
+      }
+      if (slug) {
+        return await prisma.announcement.findUnique({ where: { slug } });
+      }
+      throw new Error('必須提供 id 或 slug');
+    },
+    pinnedAnnouncements: async () => {
+      try {
+        return await prisma.announcement.findMany({
+          where: { isPinned: true, isPublished: true },
+          orderBy: { publishedAt: 'desc' },
+        });
+      } catch {
+        return mockAnnouncements.filter(a => a.isPinned);
+      }
+    },
+    latestAnnouncements: async (_: unknown, { limit = 5 }: { limit?: number }) => {
+      try {
+        return await prisma.announcement.findMany({
+          where: { isPublished: true },
+          orderBy: { publishedAt: 'desc' },
+          take: limit,
+        });
+      } catch {
+        return mockAnnouncements.slice(0, limit);
+      }
+    },
+  },
+  Mutation: {
+    createAnnouncement: async (_: unknown, { input }: { input: { title: string; slug: string; content: string; excerpt?: string; coverImage?: string; type?: string; isPinned?: boolean; isPublished?: boolean } }) => {
+      return await prisma.announcement.create({
+        data: {
+          ...input,
+          type: input.type || 'general',
+        },
+      });
+    },
+    updateAnnouncement: async (_: unknown, { id, input }: { id: number; input: { title?: string; slug?: string; content?: string; excerpt?: string; coverImage?: string; type?: string; isPinned?: boolean; isPublished?: boolean } }) => {
+      return await prisma.announcement.update({
+        where: { id },
+        data: input,
+      });
+    },
+    deleteAnnouncement: async (_: unknown, { id }: { id: number }) => {
+      await prisma.announcement.delete({ where: { id } });
+      return true;
+    },
+  },
+};
+
+const Query = {
+  ...CategoryResolvers.Query,
+  ...PostResolvers.Query,
+  ...CommentResolvers.Query,
+  ...AnnouncementResolvers.Query,
+};
+
+const Mutation = {
+  ...CategoryResolvers.Mutation,
+  ...PostResolvers.Mutation,
+  ...CommentResolvers.Mutation,
+  ...AnnouncementResolvers.Mutation,
+};
+
+const resolvers = {
+  JSON: JSONScalar,
+  Query,
+  Mutation,
+  Category: CategoryResolvers.Category,
+  Post: PostResolvers.Post,
+};
+
+export default resolvers;

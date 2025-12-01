@@ -1,0 +1,57 @@
+type Announcement {
+  id: Int!
+  title: String!
+  slug: String!
+  content: String!
+  excerpt: String
+  coverImage: String
+  type: String!
+  isPinned: Boolean!
+  isPublished: Boolean!
+  publishedAt: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type AnnouncementsResponse {
+  announcements: [Announcement!]!
+  total: Int!
+  page: Int!
+  pageSize: Int!
+  hasMore: Boolean!
+}
+
+extend type Query {
+  announcements(page: Int, pageSize: Int, type: String): AnnouncementsResponse!
+  announcement(id: Int, slug: String): Announcement
+  pinnedAnnouncements: [Announcement!]!
+  latestAnnouncements(limit: Int): [Announcement!]!
+}
+
+input CreateAnnouncementInput {
+  title: String!
+  slug: String!
+  content: String!
+  excerpt: String
+  coverImage: String
+  type: String
+  isPinned: Boolean
+  isPublished: Boolean
+}
+
+input UpdateAnnouncementInput {
+  title: String
+  slug: String
+  content: String
+  excerpt: String
+  coverImage: String
+  type: String
+  isPinned: Boolean
+  isPublished: Boolean
+}
+
+extend type Mutation {
+  createAnnouncement(input: CreateAnnouncementInput!): Announcement!
+  updateAnnouncement(id: Int!, input: UpdateAnnouncementInput!): Announcement!
+  deleteAnnouncement(id: Int!): Boolean!
+}

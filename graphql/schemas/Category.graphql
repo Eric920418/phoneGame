@@ -1,0 +1,41 @@
+type Category {
+  id: Int!
+  name: String!
+  slug: String!
+  description: String
+  icon: String
+  color: String!
+  order: Int!
+  createdAt: String!
+  updatedAt: String!
+  postCount: Int
+}
+
+extend type Query {
+  categories: [Category!]!
+  category(id: Int, slug: String): Category
+}
+
+input CreateCategoryInput {
+  name: String!
+  slug: String!
+  description: String
+  icon: String
+  color: String
+  order: Int
+}
+
+input UpdateCategoryInput {
+  name: String
+  slug: String
+  description: String
+  icon: String
+  color: String
+  order: Int
+}
+
+extend type Mutation {
+  createCategory(input: CreateCategoryInput!): Category!
+  updateCategory(id: Int!, input: UpdateCategoryInput!): Category!
+  deleteCategory(id: Int!): Boolean!
+}

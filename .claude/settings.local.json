@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:www.long888.xyz)",
+      "Bash(cat:*)",
+      "Bash(brew services:*)",
+      "Bash(pg_isready:*)",
+      "Bash(curl:*)",
+      "Bash(psql:*)",
+      "Bash(createdb:*)",
+      "Bash(pnpm prisma migrate dev:*)",
+      "Bash(node -e:*)",
+      "Bash(pnpm prisma generate:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

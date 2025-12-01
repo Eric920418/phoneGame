@@ -1,0 +1,33 @@
+type Comment {
+  id: Int!
+  content: String!
+  author: String!
+  authorEmail: String
+  postId: Int!
+  parentId: Int
+  createdAt: String!
+  updatedAt: String!
+  replies: [Comment!]
+}
+
+extend type Query {
+  comments(postId: Int!): [Comment!]!
+}
+
+input CreateCommentInput {
+  content: String!
+  author: String!
+  authorEmail: String
+  postId: Int!
+  parentId: Int
+}
+
+input UpdateCommentInput {
+  content: String
+}
+
+extend type Mutation {
+  createComment(input: CreateCommentInput!): Comment!
+  updateComment(id: Int!, input: UpdateCommentInput!): Comment!
+  deleteComment(id: Int!): Boolean!
+}
