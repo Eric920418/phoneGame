@@ -221,8 +221,9 @@ function FramedSection({
           }}
         />
       </div>
-      {/* 內容區域 - 需要 padding 讓內容在框內 */}
-      <div className="relative z-10 p-6 sm:p-8 md:p-10 lg:p-12">
+      {/* 內容區域 - 手機版加大 padding 讓內容更明顯在框內 
+          上下需要更多空間配合金屬框的皇冠裝飾 */}
+      <div className="relative z-10 px-6 pt-16 pb-10 sm:px-10 sm:pt-20 sm:pb-14 md:px-14 md:pt-20 md:pb-16 lg:px-20 lg:pt-20 lg:pb-16">
         {children}
       </div>
     </section>
@@ -273,9 +274,16 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen">
       {/* ==================== Hero Section ==================== */}
-      <section className="relative h-[calc(100vh+4rem)] min-h-[564px] overflow-hidden -mt-16">
+      {/* 手機版：使用 contain 確保完整顯示，桌面版：使用 cover 填滿 */}
+      <section className="relative h-screen min-h-[500px] max-h-[800px] md:h-[calc(100vh+4rem)] md:max-h-none overflow-hidden -mt-16 bg-[var(--color-bg-dark)]">
+        {/* 手機版背景 - 使用 contain 確保完整顯示 */}
         <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 md:hidden bg-contain bg-center bg-no-repeat"
+          style={{ backgroundImage: "url('/破浪三國主視覺.png')" }}
+        />
+        {/* 桌面版背景 - 使用 cover 填滿 */}
+        <div
+          className="absolute inset-0 hidden md:block bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: "url('/破浪三國主視覺.png')" }}
         />
       </section>
@@ -310,10 +318,10 @@ export default async function HomePage() {
         }}
       >
         {/* 深色遮罩層，確保文字可讀 */}
-        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 bg-black/50" />
         
-        {/* 內容容器 */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-8 md:space-y-12">
+        {/* 內容容器 - 手機版減少左右 padding 讓金屬框有更多空間 */}
+        <div className="relative z-10 max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-12 space-y-6 sm:space-y-8 md:space-y-12">
 
         {/* ==================== 1. 活動公告 Section ==================== */}
         <FramedSection id="announcements">
