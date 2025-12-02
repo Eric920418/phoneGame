@@ -202,10 +202,12 @@ function formatDate(dateString: string) {
 // ==================== 金屬框區塊容器組件 ====================
 function FramedSection({ 
   id,
-  children 
+  children,
+  compact = false  // compact 模式用於內容較少的區塊
 }: { 
   id?: string;
   children: React.ReactNode;
+  compact?: boolean;
 }) {
   return (
     <section id={id} className="relative">
@@ -221,9 +223,14 @@ function FramedSection({
           }}
         />
       </div>
-      {/* 內容區域 - 手機版加大 padding 讓內容更明顯在框內 
-          上下需要更多空間配合金屬框的皇冠裝飾 */}
-      <div className="relative z-10 px-6 pt-16 pb-10 sm:px-10 sm:pt-20 sm:pb-14 md:px-14 md:pt-20 md:pb-16 lg:px-20 lg:pt-20 lg:pb-16">
+      {/* 內容區域 - 超大 padding 確保內容完全在金屬框內
+          上方需要特別多空間避開皇冠裝飾
+          compact 模式減少上方 padding */}
+      <div className={`relative z-10 px-6 pb-20 sm:px-8 sm:pb-24 md:px-10 md:pb-24 lg:px-16 lg:pb-24 ${
+        compact 
+          ? "pt-32 sm:pt-36 md:pt-36 lg:pt-36" 
+          : "pt-48 sm:pt-52 md:pt-52 lg:pt-52"
+      }`}>
         {children}
       </div>
     </section>
@@ -274,16 +281,22 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen">
       {/* ==================== Hero Section ==================== */}
-      {/* 手機版：使用 contain 確保完整顯示，桌面版：使用 cover 填滿 */}
-      <section className="relative h-screen min-h-[500px] max-h-[800px] md:h-[calc(100vh+4rem)] md:max-h-none overflow-hidden -mt-16 bg-[var(--color-bg-dark)]">
-        {/* 手機版背景 - 使用 contain 確保完整顯示 */}
+      {/* 手機版：自適應高度，桌面版：全屏 */}
+      <section className="relative -mt-16 bg-[var(--color-bg-dark)]">
+        {/* 手機版 - 使用 Image 組件自適應高度 */}
+        <div className="md:hidden pt-16">
+          <Image
+            src="/破浪三國主視覺.png"
+            alt="破浪三國主視覺"
+            width={1920}
+            height={1080}
+            className="w-full h-auto"
+            priority
+          />
+        </div>
+        {/* 桌面版背景 - 使用 cover 填滿全屏 */}
         <div
-          className="absolute inset-0 md:hidden bg-contain bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/破浪三國主視覺.png')" }}
-        />
-        {/* 桌面版背景 - 使用 cover 填滿 */}
-        <div
-          className="absolute inset-0 hidden md:block bg-cover bg-center bg-no-repeat"
+          className="hidden md:block h-[calc(100vh+4rem)] min-h-[600px] bg-cover bg-center bg-no-repeat"
           style={{ backgroundImage: "url('/破浪三國主視覺.png')" }}
         />
       </section>
@@ -389,7 +402,7 @@ export default async function HomePage() {
         </FramedSection>
 
         {/* ==================== 3. 下載專區 Section ==================== */}
-        <FramedSection id="download">
+        <FramedSection id="download" compact>
           <SectionTitle icon={Download} title="下載專區" color="#3498db" href="/guide/download" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {downloadItems.map((item, index) => {
@@ -441,7 +454,7 @@ export default async function HomePage() {
         </FramedSection>
 
         {/* ==================== 5. 新手攻略 Section ==================== */}
-        <FramedSection id="beginner">
+        <FramedSection id="beginner" compact>
           <SectionTitle icon={BookOpen} title="新手攻略" color="#2ecc71" href="/guide/beginner" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             {beginnerGuides.map((guide) => (
@@ -530,7 +543,7 @@ export default async function HomePage() {
         </FramedSection>
 
         {/* ==================== 7. 副本介紹 Section ==================== */}
-        <FramedSection id="dungeon">
+        <FramedSection id="dungeon" compact>
           <SectionTitle icon={Map} title="副本介紹" color="#1abc9c" href="/guide/dungeon" />
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {dungeons.map((dungeon, index) => (
