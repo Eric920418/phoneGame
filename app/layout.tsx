@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
+import ConditionalLayout from "@/components/ConditionalLayout";
 
 export const metadata: Metadata = {
   title: "Kingdoms - 官方網站",
@@ -19,11 +18,9 @@ export default function RootLayout({
     <html lang="zh-TW">
       <body className="min-h-screen flex flex-col">
         <Providers>
-          <Header />
-          <main className="flex-1">
+          <ConditionalLayout>
             {children}
-          </main>
-          <Footer />
+          </ConditionalLayout>
         </Providers>
       </body>
     </html>

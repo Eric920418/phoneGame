@@ -316,10 +316,10 @@ function FramedSection({
       {/* 內容區域 - 超大 padding 確保內容完全在金屬框內
           上方需要特別多空間避開皇冠裝飾
           compact 模式減少上方 padding */}
-      <div className={`relative z-10 px-6 pb-20 sm:px-8 sm:pb-24 md:px-10 md:pb-24 lg:px-16 lg:pb-24 ${
+      <div className={`relative z-10 px-6 pb-20 sm:px-8 sm:pb-24 md:px-10  lg:px-16 lg:pb-12 ${
         compact 
-          ? "pt-32 sm:pt-36 md:pt-36 lg:pt-36" 
-          : "pt-48 sm:pt-52 md:pt-52 lg:pt-52"
+          ? "pt-20 lg:pt-20" 
+          : "pt-24 lg:pt-64"
       }`}>
         {children}
       </div>
@@ -340,7 +340,7 @@ function SectionTitle({
   href?: string;
 }) {
   return (
-    <div className="flex items-center justify-between mb-4 sm:mb-6">
+    <div className="flex items-center justify-between mb-2 ">
       <h2 className="text-xl sm:text-2xl font-bold text-[var(--color-text)] flex items-center gap-2 sm:gap-3">
         <div 
           className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center shrink-0"
@@ -444,13 +444,13 @@ export default async function HomePage() {
         <div className="relative z-10 max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-12 space-y-6 sm:space-y-8 md:space-y-12">
 
         {/* ==================== 1. 活動公告 Section ==================== */}
-        <FramedSection id="announcements">
+        <FramedSection id="announcements" compact={true}>
           <SectionTitle icon={Megaphone} title="活動公告" color="#e74c3c" href="/guide/announcements" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {displayEventAnnouncements.map((event) => (
               <div
                 key={event.id}
-                className="card p-3 sm:p-4 hover:border-red-500/30 transition-all group cursor-pointer"
+                className="card p-2 sm:p-4 hover:border-red-500/30 transition-all group cursor-pointer"
               >
                 <div className="flex items-center gap-2 mb-2 flex-wrap">
                   {event.isHot && (
@@ -473,7 +473,7 @@ export default async function HomePage() {
         </FramedSection>
 
         {/* ==================== 2. 贊助活動 Section ==================== */}
-        <FramedSection id="sponsor">
+        <FramedSection id="sponsor" compact={true}>
           <SectionTitle icon={Heart} title="贊助活動" color="#e91e63" href="/guide/sponsor" />
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             {displaySponsorPlans.map((plan, index) => (
@@ -540,7 +540,7 @@ export default async function HomePage() {
         </FramedSection>
 
         {/* ==================== 4. 遊戲設定 Section ==================== */}
-        <FramedSection id="settings">
+        <FramedSection id="settings" compact={true}>
           <SectionTitle icon={Settings} title="遊戲設定" color="#9b59b6" href="/guide/settings" />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             {displayGameSettings.map((group, index) => (
@@ -581,7 +581,7 @@ export default async function HomePage() {
         </FramedSection>
 
         {/* ==================== 6. 掉落查詢 Section ==================== */}
-        <FramedSection id="drops">
+        <FramedSection id="drops" compact={true}>
           <SectionTitle icon={Search} title="掉落查詢" color="#f39c12" href="/guide/drops" />
           {/* 桌面版：表格顯示 */}
           <div className="hidden md:block card overflow-hidden">
@@ -682,7 +682,7 @@ export default async function HomePage() {
         </FramedSection>
 
         {/* ==================== 8. 寶箱內容 Section ==================== */}
-        <FramedSection id="treasure">
+        <FramedSection id="treasure" compact={true}>
           <SectionTitle icon={Gift} title="寶箱內容" color="#f1c40f" href="/guide/treasure" />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             {displayTreasureBoxes.map((box, index) => (
@@ -707,7 +707,7 @@ export default async function HomePage() {
         </FramedSection>
 
         {/* ==================== 9. BOSS介紹 Section ==================== */}
-        <FramedSection id="boss">
+        <FramedSection id="boss" compact={true}>
           <SectionTitle icon={Skull} title="BOSS介紹" color="#c0392b" href="/guide/boss" />
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
             {displayBossList.map((boss, index) => (
@@ -734,16 +734,16 @@ export default async function HomePage() {
         </FramedSection>
 
         {/* ==================== 10. 國戰時間 Section ==================== */}
-        <FramedSection id="nation-war">
+        <FramedSection id="nation-war" compact={true}>
           <SectionTitle icon={Swords} title="國戰時間" color="#8e44ad" href="/guide/nation-war" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {/* 時間表 */}
-            <div className="card p-4 sm:p-5">
-              <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base">
+            <div className="card p-4 h-[300px] flex flex-col">
+              <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
                 <Clock className="w-4 h-4 text-violet-400" />
                 每週時程表
               </h3>
-              <div className="space-y-2 sm:space-y-3">
+              <div className="space-y-2 sm:space-y-3 overflow-y-auto flex-1">
                 {displayWarSchedule.map((schedule, index) => (
                   <div
                     key={index}
@@ -768,12 +768,12 @@ export default async function HomePage() {
             </div>
 
             {/* 三國陣營 */}
-            <div className="card p-4 sm:p-5">
-              <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base">
+            <div className="card p-4 h-[300px] flex flex-col">
+              <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
                 <Flag className="w-4 h-4 text-violet-400" />
                 三國陣營
               </h3>
-              <div className="space-y-2 sm:space-y-3">
+              <div className="space-y-2 sm:space-y-3 overflow-y-auto flex-1">
                 {[
                   { name: "魏國", color: "#3b82f6", bonus: "攻+5%", desc: "曹操為首" },
                   { name: "蜀國", color: "#22c55e", bonus: "防+5%", desc: "劉備為首" },
@@ -795,16 +795,16 @@ export default async function HomePage() {
         </FramedSection>
 
         {/* ==================== 11. 武魂擂台 Section ==================== */}
-        <FramedSection id="arena">
+        <FramedSection id="arena" compact={true}>
           <SectionTitle icon={Trophy} title="武魂擂台" color="#c9a227" href="/guide/arena" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {/* 排行榜 */}
-            <div className="card p-4 sm:p-5">
-              <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base">
-                <Medal className="w-4 h-4 text-amber-400" />
+            <div className="card p-4 h-[350px] flex flex-col">
+              <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
+                <Medal className="w-3 h-3 text-amber-400" />
                 本賽季排行榜
               </h3>
-              <div className="space-y-2">
+              <div className="space-y-2 overflow-y-auto flex-1">
                 {displayArenaRanking.map((player) => (
                   <div key={player.rank} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]">
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -830,12 +830,12 @@ export default async function HomePage() {
             </div>
 
             {/* 段位說明 */}
-            <div className="card p-4 sm:p-5">
-              <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base">
+            <div className="card p-4 h-[350px] flex flex-col">
+              <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
                 <Star className="w-4 h-4 text-amber-400" />
                 段位說明
               </h3>
-              <div className="space-y-2 sm:space-y-3">
+              <div className="space-y-2 sm:space-y-3 overflow-y-auto flex-1">
                 {[
                   { name: "王者", icon: "👑", score: "2500+", color: "#ff6b00" },
                   { name: "宗師", icon: "🏆", score: "2000-2499", color: "#a855f7" },
@@ -857,7 +857,7 @@ export default async function HomePage() {
         </FramedSection>
 
         {/* ==================== 12. 玩家評價 Section ==================== */}
-        <FramedSection id="reviews">
+        <FramedSection id="reviews" compact={false} >
           <SectionTitle icon={Quote} title="玩家評價" color="#10b981" />
           
           {/* 評價統計 */}
@@ -945,7 +945,7 @@ export default async function HomePage() {
         </FramedSection>
 
         {/* ==================== 最新公告 & 討論區 ==================== */}
-        <FramedSection>
+        <FramedSection compact={true}>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
           {/* 最新公告 */}
           <div className="lg:col-span-2">
