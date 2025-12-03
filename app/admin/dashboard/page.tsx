@@ -1,15 +1,52 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Crown, Bell, MessageSquare, FolderOpen, LogOut, Settings, Users, BarChart } from "lucide-react";
+import { Crown, Bell, MessageSquare, FolderOpen, LogOut, Settings, Users, BarChart, LayoutGrid } from "lucide-react";
+import { graphqlFetch } from "@/lib/apolloClient";
+
+interface DashboardStats {
+  announcementCount: number;
+  postCount: number;
+  categoryCount: number;
+  totalViews: number;
+}
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (status === "loading") {
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const data = await graphqlFetch<{ dashboardStats: DashboardStats }>(`
+          query {
+            dashboardStats {
+              announcementCount
+              postCount
+              categoryCount
+              totalViews
+            }
+          }
+        `);
+        setStats(data.dashboardStats);
+      } catch (err) {
+        console.error("獲取統計數據失敗:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (session) {
+      fetchStats();
+    }
+  }, [session]);
+
+  if (status === "loading" || loading) {
     return (
       <div className="min-h-screen bg-[var(--color-bg-dark)] flex items-center justify-center">
         <div className="animate-pulse text-[var(--color-text-muted)]">載入中...</div>
@@ -44,13 +81,27 @@ export default function AdminDashboard() {
       href: "/admin/categories",
       color: "#22c55e",
     },
+    {
+      title: "首頁內容",
+      description: "管理首頁各區塊內容",
+      icon: LayoutGrid,
+      href: "/admin/content",
+      color: "#f59e0b",
+    },
   ];
 
-  const stats = [
-    { label: "總公告數", value: "12", icon: Bell },
-    { label: "總帖子數", value: "156", icon: MessageSquare },
-    { label: "總分類數", value: "5", icon: FolderOpen },
-    { label: "本月瀏覽", value: "2.4K", icon: BarChart },
+  const formatNumber = (num: number) => {
+    if (num >= 1000) {
+      return (num / 1000).toFixed(1) + "K";
+    }
+    return num.toString();
+  };
+
+  const statsData = [
+    { label: "總公告數", value: stats?.announcementCount || 0, icon: Bell },
+    { label: "總帖子數", value: stats?.postCount || 0, icon: MessageSquare },
+    { label: "總分類數", value: stats?.categoryCount || 0, icon: FolderOpen },
+    { label: "總瀏覽數", value: stats?.totalViews || 0, icon: BarChart },
   ];
 
   return (
@@ -98,14 +149,14 @@ export default function AdminDashboard() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {stats.map((stat, index) => (
+          {statsData.map((stat, index) => (
             <div key={index} className="card p-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-[var(--color-primary)]/10 flex items-center justify-center">
                   <stat.icon className="w-5 h-5 text-[var(--color-primary)]" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-[var(--color-text)]">{stat.value}</div>
+                  <div className="text-2xl font-bold text-[var(--color-text)]">{formatNumber(stat.value)}</div>
                   <div className="text-[var(--color-text-muted)] text-sm">{stat.label}</div>
                 </div>
               </div>
@@ -115,7 +166,7 @@ export default function AdminDashboard() {
 
         {/* Menu */}
         <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4">管理功能</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {menuItems.map((item, index) => (
             <Link
               key={index}

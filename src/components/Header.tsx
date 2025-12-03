@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, Crown, MessageSquare, Bell, Shield } from "lucide-react";
+import { Menu, X, Crown, MessageSquare, Bell, Shield, Star } from "lucide-react";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -11,6 +11,7 @@ export default function Header() {
     { href: "/", label: "首頁", icon: Crown },
     { href: "/announcements", label: "公告", icon: Bell },
     { href: "/forum", label: "論壇", icon: MessageSquare },
+    { href: "/#reviews", label: "玩家評價", icon: Star },
   ];
 
   return (

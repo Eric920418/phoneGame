@@ -19,9 +19,11 @@ Kingdoms 遊戲官方網站，提供公告發布和論壇討論功能。
 - **論壇系統**: 帖子列表、分類瀏覽、搜尋、發帖、評論回覆
 
 ### 管理後台
+- **儀表板**: 即時統計數據 (公告數、帖子數、分類數、瀏覽數)
 - **公告管理**: 新增/編輯/刪除公告，支援置頂和發布狀態
-- **論壇管理**: 管理帖子，置頂/鎖定功能
+- **論壇管理**: 新增/編輯/刪除帖子，置頂/鎖定功能
 - **分類管理**: 自訂論壇分類
+- **首頁內容管理**: 編輯首頁 12 個區塊的動態內容 (活動公告、贊助方案、下載、設定、攻略、掉落、副本、寶箱、BOSS、國戰、擂台、評價)
 
 ## 快速開始
 
@@ -80,10 +82,11 @@ Kingdoms/
 │   ├── forum/                # 論壇頁面
 │   ├── admin/                # 管理後台
 │   │   ├── login/            # 登入頁
-│   │   ├── dashboard/        # 儀表板
-│   │   ├── announcements/    # 公告管理
-│   │   ├── categories/       # 分類管理
-│   │   └── posts/            # 帖子管理
+│   │   ├── dashboard/        # 儀表板 (即時統計)
+│   │   ├── announcements/    # 公告管理 (CRUD)
+│   │   ├── posts/            # 帖子管理 (CRUD)
+│   │   ├── categories/       # 分類管理 (CRUD)
+│   │   └── content/          # 首頁內容管理 (JSON 編輯)
 │   └── api/                  # API 路由
 │       ├── auth/             # NextAuth
 │       ├── graphql/          # GraphQL 端點
@@ -116,6 +119,9 @@ Kingdoms/
 
 ### Announcement (官方公告)
 - id, title, slug, content, type, isPinned, isPublished, publishedAt
+
+### ContentBlock (首頁內容區塊)
+- id, key (唯一標識), payload (JSON 數據)
 
 ## 管理後台
 

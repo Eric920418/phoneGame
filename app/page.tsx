@@ -31,6 +31,8 @@ import {
   Zap,
   Medal,
   Flag,
+  ThumbsUp,
+  Quote,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -141,6 +143,70 @@ const arenaRanking = [
   { rank: 5, name: "戰無不勝", guild: "天下第一", score: 2540 },
 ];
 
+// 玩家評價數據
+const playerReviews = [
+  {
+    id: 1,
+    name: "龍戰天下",
+    avatar: "🐉",
+    rating: 5,
+    hours: 1280,
+    date: "2024-12-01",
+    content: "玩了快兩年了，這款三國遊戲真的很用心！國戰系統超刺激，每週末都跟公會兄弟一起衝，感覺熱血沸騰。畫面精緻，操作流暢，推薦給喜歡三國的玩家！",
+    helpful: 156,
+    isRecommended: true,
+  },
+  {
+    id: 2,
+    name: "蜀漢丞相",
+    avatar: "🎭",
+    rating: 5,
+    hours: 860,
+    date: "2024-11-28",
+    content: "副本設計很有創意，每個 BOSS 都有獨特的機制，需要團隊配合。武將系統豐富，收集控的天堂。客服回覆也很快，遇到問題都能及時解決。",
+    helpful: 89,
+    isRecommended: true,
+  },
+  {
+    id: 3,
+    name: "江東霸主",
+    avatar: "⚔️",
+    rating: 4,
+    hours: 520,
+    date: "2024-11-25",
+    content: "遊戲整體不錯，PVP 平衡做得還行。希望能多出一些新副本，現在的內容有點刷完了。活動獎勵蠻大方的，不課金也能玩得開心。",
+    helpful: 67,
+    isRecommended: true,
+  },
+  {
+    id: 4,
+    name: "魏武帝",
+    avatar: "👑",
+    rating: 5,
+    hours: 2100,
+    date: "2024-11-20",
+    content: "從開服玩到現在，見證了遊戲的成長。開發團隊很用心在聽取玩家意見，每次更新都有驚喜。社群氣氛很好，認識了很多朋友。五星好評！",
+    helpful: 234,
+    isRecommended: true,
+  },
+];
+
+// ==================== 內容區塊介面 ====================
+interface ContentBlocks {
+  eventAnnouncements?: typeof eventAnnouncements;
+  sponsorPlans?: typeof sponsorPlans;
+  downloadItems?: typeof downloadItems;
+  gameSettings?: typeof gameSettings;
+  beginnerGuides?: typeof beginnerGuides;
+  dropItems?: typeof dropItems;
+  dungeons?: typeof dungeons;
+  treasureBoxes?: typeof treasureBoxes;
+  bossList?: typeof bossList;
+  warSchedule?: typeof warSchedule;
+  arenaRanking?: typeof arenaRanking;
+  playerReviews?: typeof playerReviews;
+}
+
 // ==================== 輔助函數 ====================
 
 async function getHomeData() {
@@ -173,6 +239,30 @@ async function getHomeData() {
   } catch (error) {
     console.error("獲取首頁數據失敗:", error);
     return { latestAnnouncements: [], categories: [] };
+  }
+}
+
+async function getContentBlocks(): Promise<ContentBlocks> {
+  try {
+    const data = await graphqlFetch<{
+      contentBlocks: Array<{ key: string; payload: unknown }>;
+    }>(`
+      query {
+        contentBlocks {
+          key
+          payload
+        }
+      }
+    `);
+
+    const blocks: ContentBlocks = {};
+    data.contentBlocks.forEach((block) => {
+      (blocks as Record<string, unknown>)[block.key] = block.payload;
+    });
+    return blocks;
+  } catch (error) {
+    console.error("獲取內容區塊失敗:", error);
+    return {};
   }
 }
 
@@ -276,7 +366,24 @@ function SectionTitle({
 
 // ==================== 主頁面組件 ====================
 export default async function HomePage() {
-  const { latestAnnouncements, categories } = await getHomeData();
+  const [{ latestAnnouncements, categories }, contentBlocks] = await Promise.all([
+    getHomeData(),
+    getContentBlocks(),
+  ]);
+
+  // 使用数据库数据或默认数据
+  const displayEventAnnouncements = contentBlocks.eventAnnouncements || eventAnnouncements;
+  const displaySponsorPlans = contentBlocks.sponsorPlans || sponsorPlans;
+  const displayDownloadItems = contentBlocks.downloadItems || downloadItems;
+  const displayGameSettings = contentBlocks.gameSettings || gameSettings;
+  const displayBeginnerGuides = contentBlocks.beginnerGuides || beginnerGuides;
+  const displayDropItems = contentBlocks.dropItems || dropItems;
+  const displayDungeons = contentBlocks.dungeons || dungeons;
+  const displayTreasureBoxes = contentBlocks.treasureBoxes || treasureBoxes;
+  const displayBossList = contentBlocks.bossList || bossList;
+  const displayWarSchedule = contentBlocks.warSchedule || warSchedule;
+  const displayArenaRanking = contentBlocks.arenaRanking || arenaRanking;
+  const displayPlayerReviews = contentBlocks.playerReviews || playerReviews;
 
   return (
     <div className="min-h-screen">
@@ -340,7 +447,7 @@ export default async function HomePage() {
         <FramedSection id="announcements">
           <SectionTitle icon={Megaphone} title="活動公告" color="#e74c3c" href="/guide/announcements" />
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {eventAnnouncements.map((event) => (
+            {displayEventAnnouncements.map((event) => (
               <div
                 key={event.id}
                 className="card p-3 sm:p-4 hover:border-red-500/30 transition-all group cursor-pointer"
@@ -369,7 +476,7 @@ export default async function HomePage() {
         <FramedSection id="sponsor">
           <SectionTitle icon={Heart} title="贊助活動" color="#e91e63" href="/guide/sponsor" />
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            {sponsorPlans.map((plan, index) => (
+            {displaySponsorPlans.map((plan, index) => (
               <div
                 key={index}
                 className={`card p-3 sm:p-5 text-center relative transition-all hover:scale-[1.02] ${
@@ -405,8 +512,10 @@ export default async function HomePage() {
         <FramedSection id="download" compact>
           <SectionTitle icon={Download} title="下載專區" color="#3498db" href="/guide/download" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {downloadItems.map((item, index) => {
-              const IconComp = item.icon;
+            {displayDownloadItems.map((item, index) => {
+              // 图标映射：支持从数据库读取的字符串图标名
+              const iconMap: Record<string, React.ElementType> = { Monitor, Smartphone };
+              const IconComp = typeof item.icon === 'string' ? iconMap[item.icon] || Monitor : item.icon;
               return (
                 <div key={index} className="card p-4 sm:p-6 hover:border-blue-500/30 transition-all">
                   <div className="flex items-center gap-3 sm:gap-4">
@@ -434,7 +543,7 @@ export default async function HomePage() {
         <FramedSection id="settings">
           <SectionTitle icon={Settings} title="遊戲設定" color="#9b59b6" href="/guide/settings" />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-            {gameSettings.map((group, index) => (
+            {displayGameSettings.map((group, index) => (
               <div key={index} className="card p-4 sm:p-5">
                 <h3 className="font-semibold text-[var(--color-text)] mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
                   <Shield className="w-4 h-4 text-purple-400 shrink-0" />
@@ -457,7 +566,7 @@ export default async function HomePage() {
         <FramedSection id="beginner" compact>
           <SectionTitle icon={BookOpen} title="新手攻略" color="#2ecc71" href="/guide/beginner" />
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            {beginnerGuides.map((guide) => (
+            {displayBeginnerGuides.map((guide) => (
               <div key={guide.chapter} className="card p-3 sm:p-5 hover:border-green-500/30 transition-all group cursor-pointer">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-green-500/20 flex items-center justify-center mb-2 sm:mb-3">
                   <span className="text-green-400 font-bold text-sm sm:text-base">{guide.chapter}</span>
@@ -486,7 +595,7 @@ export default async function HomePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border)]">
-                {dropItems.map((item, index) => (
+                {displayDropItems.map((item, index) => (
                   <tr key={index} className="hover:bg-[var(--color-bg-card-hover)] transition-colors">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
@@ -512,7 +621,7 @@ export default async function HomePage() {
           </div>
           {/* 手機版：卡片顯示 */}
           <div className="md:hidden space-y-3">
-            {dropItems.map((item, index) => (
+            {displayDropItems.map((item, index) => (
               <div key={index} className="card p-4">
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
@@ -546,7 +655,7 @@ export default async function HomePage() {
         <FramedSection id="dungeon" compact>
           <SectionTitle icon={Map} title="副本介紹" color="#1abc9c" href="/guide/dungeon" />
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {dungeons.map((dungeon, index) => (
+            {displayDungeons.map((dungeon, index) => (
               <div key={index} className="card p-3 sm:p-5 hover:border-teal-500/30 transition-all group cursor-pointer">
                 <div className="flex items-center justify-between mb-2 sm:mb-3">
                   <span className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded" style={{ backgroundColor: `${dungeon.color}20`, color: dungeon.color }}>
@@ -576,7 +685,7 @@ export default async function HomePage() {
         <FramedSection id="treasure">
           <SectionTitle icon={Gift} title="寶箱內容" color="#f1c40f" href="/guide/treasure" />
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-            {treasureBoxes.map((box, index) => (
+            {displayTreasureBoxes.map((box, index) => (
               <div key={index} className="card p-4 sm:p-5" style={{ borderColor: `${box.color}30` }}>
                 <div className="flex items-center gap-3 mb-3 sm:mb-4">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${box.color}20` }}>
@@ -601,7 +710,7 @@ export default async function HomePage() {
         <FramedSection id="boss">
           <SectionTitle icon={Skull} title="BOSS介紹" color="#c0392b" href="/guide/boss" />
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {bossList.map((boss, index) => (
+            {displayBossList.map((boss, index) => (
               <div key={index} className="card p-3 sm:p-5 hover:border-rose-500/30 transition-all group cursor-pointer">
                 <div className="flex items-center justify-between mb-2 sm:mb-3">
                   <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-rose-500/20 flex items-center justify-center shrink-0">
@@ -635,7 +744,7 @@ export default async function HomePage() {
                 每週時程表
               </h3>
               <div className="space-y-2 sm:space-y-3">
-                {warSchedule.map((schedule, index) => (
+                {displayWarSchedule.map((schedule, index) => (
                   <div
                     key={index}
                     className={`flex items-center justify-between p-2 sm:p-3 rounded-lg ${
@@ -696,7 +805,7 @@ export default async function HomePage() {
                 本賽季排行榜
               </h3>
               <div className="space-y-2">
-                {arenaRanking.map((player) => (
+                {displayArenaRanking.map((player) => (
                   <div key={player.rank} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]">
                     <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                       <span className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold shrink-0 ${
@@ -744,6 +853,94 @@ export default async function HomePage() {
                 ))}
               </div>
             </div>
+          </div>
+        </FramedSection>
+
+        {/* ==================== 12. 玩家評價 Section ==================== */}
+        <FramedSection id="reviews">
+          <SectionTitle icon={Quote} title="玩家評價" color="#10b981" />
+          
+          {/* 評價統計 */}
+          <div className="flex flex-col sm:flex-row items-center gap-4 mb-6 p-4 rounded-xl bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20">
+            <div className="flex items-center gap-2">
+              <div className="text-4xl sm:text-5xl font-bold text-green-400">96%</div>
+              <div className="text-sm text-[var(--color-text-muted)]">
+                <div className="text-green-400 font-semibold">好評如潮</div>
+                <div>共 1,234 則評價</div>
+              </div>
+            </div>
+            <div className="hidden sm:block h-12 w-px bg-[var(--color-border)]" />
+            <div className="flex gap-1">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star key={star} className="w-6 h-6 text-yellow-400 fill-yellow-400" />
+              ))}
+            </div>
+          </div>
+
+          {/* 評價列表 */}
+          <div className="space-y-4">
+            {displayPlayerReviews.map((review) => (
+              <div key={review.id} className="card p-4 sm:p-5">
+                {/* 評價頭部 */}
+                <div className="flex items-start justify-between gap-4 mb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center text-xl sm:text-2xl">
+                      {review.avatar}
+                    </div>
+                    <div>
+                      <div className="font-semibold text-[var(--color-text)]">{review.name}</div>
+                      <div className="text-xs text-[var(--color-text-muted)]">
+                        遊戲時數：{review.hours} 小時
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-end gap-1">
+                    {review.isRecommended ? (
+                      <span className="flex items-center gap-1 text-xs sm:text-sm text-green-400">
+                        <ThumbsUp className="w-4 h-4" />
+                        推薦
+                      </span>
+                    ) : (
+                      <span className="text-xs sm:text-sm text-red-400">不推薦</span>
+                    )}
+                    <div className="flex gap-0.5">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <Star
+                          key={star}
+                          className={`w-3 h-3 sm:w-4 sm:h-4 ${
+                            star <= review.rating
+                              ? "text-yellow-400 fill-yellow-400"
+                              : "text-[var(--color-text-dark)]"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* 評價內容 */}
+                <p className="text-sm sm:text-base text-[var(--color-text-muted)] leading-relaxed mb-3">
+                  {review.content}
+                </p>
+
+                {/* 評價底部 */}
+                <div className="flex items-center justify-between text-xs text-[var(--color-text-dark)]">
+                  <span>{review.date}</span>
+                  <span className="flex items-center gap-1">
+                    <ThumbsUp className="w-3 h-3" />
+                    {review.helpful} 人覺得有幫助
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* 撰寫評價按鈕 */}
+          <div className="mt-6 text-center">
+            <button className="btn-primary">
+              <Quote className="w-4 h-4" />
+              撰寫我的評價
+            </button>
           </div>
         </FramedSection>
 

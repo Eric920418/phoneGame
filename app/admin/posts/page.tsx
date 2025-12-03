@@ -4,12 +4,13 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Edit, Trash2, Pin, Lock, Eye, ExternalLink } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, Pin, Lock, Eye, ExternalLink, AlertCircle } from "lucide-react";
 import { graphqlFetch } from "@/lib/apolloClient";
 
 interface Category {
   id: number;
   name: string;
+  slug: string;
   color: string;
 }
 
@@ -17,7 +18,10 @@ interface Post {
   id: number;
   title: string;
   slug: string;
+  content: string;
+  excerpt: string;
   author: string;
+  authorEmail: string;
   views: number;
   isPinned: boolean;
   isLocked: boolean;
@@ -29,13 +33,48 @@ export default function AdminPostsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Form state
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [formData, setFormData] = useState({
+    title: "",
+    content: "",
+    excerpt: "",
+    author: "",
+    authorEmail: "",
+    categoryId: 0,
+    isPinned: false,
+    isLocked: false,
+  });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/admin/login");
     }
   }, [status, router]);
+
+  const fetchCategories = async () => {
+    try {
+      const data = await graphqlFetch<{ categories: Category[] }>(`
+        query {
+          categories {
+            id
+            name
+            slug
+            color
+          }
+        }
+      `);
+      setCategories(data.categories);
+    } catch (err) {
+      console.error("獲取分類失敗:", err);
+    }
+  };
 
   const fetchPosts = async () => {
     try {
@@ -46,7 +85,10 @@ export default function AdminPostsPage() {
               id
               title
               slug
+              content
+              excerpt
               author
+              authorEmail
               views
               isPinned
               isLocked
@@ -54,6 +96,7 @@ export default function AdminPostsPage() {
               category {
                 id
                 name
+                slug
                 color
               }
             }
@@ -70,9 +113,88 @@ export default function AdminPostsPage() {
 
   useEffect(() => {
     if (session) {
+      fetchCategories();
       fetchPosts();
     }
   }, [session]);
+
+  const generateSlug = (title: string) => {
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-")
+      .replace(/^-|-$/g, "")
+      + "-" + Date.now();
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    setError(null);
+
+    try {
+      const slug = generateSlug(formData.title);
+
+      if (editingId) {
+        await graphqlFetch(`
+          mutation($id: Int!, $input: UpdatePostInput!) {
+            updatePost(id: $id, input: $input) {
+              id
+            }
+          }
+        `, {
+          id: editingId,
+          input: {
+            title: formData.title,
+            content: formData.content,
+            excerpt: formData.excerpt,
+            author: formData.author,
+            authorEmail: formData.authorEmail,
+            categoryId: formData.categoryId,
+            isPinned: formData.isPinned,
+            isLocked: formData.isLocked,
+          },
+        });
+      } else {
+        await graphqlFetch(`
+          mutation($input: CreatePostInput!) {
+            createPost(input: $input) {
+              id
+            }
+          }
+        `, {
+          input: {
+            title: formData.title,
+            slug,
+            content: formData.content,
+            excerpt: formData.excerpt,
+            author: formData.author || "Admin",
+            authorEmail: formData.authorEmail || "admin@kingdoms.com",
+            categoryId: formData.categoryId,
+            isPinned: formData.isPinned,
+            isLocked: formData.isLocked,
+          },
+        });
+      }
+
+      setShowForm(false);
+      setEditingId(null);
+      setFormData({
+        title: "",
+        content: "",
+        excerpt: "",
+        author: "",
+        authorEmail: "",
+        categoryId: 0,
+        isPinned: false,
+        isLocked: false,
+      });
+      fetchPosts();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "操作失敗");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const handleTogglePin = async (id: number, isPinned: boolean) => {
     try {
@@ -155,7 +277,167 @@ export default function AdminPostsPage() {
               <p className="text-[var(--color-text-muted)] text-sm">管理論壇帖子</p>
             </div>
           </div>
+          <button
+            onClick={() => {
+              setShowForm(true);
+              setEditingId(null);
+              setFormData({
+                title: "",
+                content: "",
+                excerpt: "",
+                author: "",
+                authorEmail: "",
+                categoryId: categories[0]?.id || 0,
+                isPinned: false,
+                isLocked: false,
+              });
+            }}
+            className="btn btn-primary"
+          >
+            <Plus className="w-4 h-4" />
+            新增帖子
+          </button>
         </div>
+
+        {/* Form Modal */}
+        {showForm && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="card p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+              <h2 className="text-xl font-bold text-[var(--color-text)] mb-4">
+                {editingId ? "編輯帖子" : "新增帖子"}
+              </h2>
+
+              {error && (
+                <div className="mb-4 p-4 rounded-lg bg-red-500/10 border border-red-500/20 flex items-center gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-400" />
+                  <p className="text-red-400 text-sm">{error}</p>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-[var(--color-text)] text-sm font-medium mb-2">
+                    標題
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    className="input"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[var(--color-text)] text-sm font-medium mb-2">
+                    分類
+                  </label>
+                  <select
+                    value={formData.categoryId}
+                    onChange={(e) => setFormData({ ...formData, categoryId: parseInt(e.target.value) })}
+                    className="input"
+                    required
+                  >
+                    <option value={0} disabled>選擇分類</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[var(--color-text)] text-sm font-medium mb-2">
+                      作者
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.author}
+                      onChange={(e) => setFormData({ ...formData, author: e.target.value })}
+                      className="input"
+                      placeholder="Admin"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[var(--color-text)] text-sm font-medium mb-2">
+                      作者 Email
+                    </label>
+                    <input
+                      type="email"
+                      value={formData.authorEmail}
+                      onChange={(e) => setFormData({ ...formData, authorEmail: e.target.value })}
+                      className="input"
+                      placeholder="admin@kingdoms.com"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-[var(--color-text)] text-sm font-medium mb-2">
+                    摘要
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.excerpt}
+                    onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
+                    className="input"
+                    placeholder="簡短描述"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[var(--color-text)] text-sm font-medium mb-2">
+                    內容
+                  </label>
+                  <textarea
+                    value={formData.content}
+                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                    className="input min-h-[200px] resize-y"
+                    required
+                  />
+                </div>
+
+                <div className="flex items-center gap-6">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isPinned}
+                      onChange={(e) => setFormData({ ...formData, isPinned: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-[var(--color-text)] text-sm">置頂</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isLocked}
+                      onChange={(e) => setFormData({ ...formData, isLocked: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-[var(--color-text)] text-sm">鎖定</span>
+                  </label>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowForm(false)}
+                    className="btn btn-secondary"
+                  >
+                    取消
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={submitting || formData.categoryId === 0}
+                    className="btn btn-primary"
+                  >
+                    {submitting ? "儲存中..." : "儲存"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
 
         {/* List */}
         <div className="space-y-3">
@@ -212,6 +494,26 @@ export default function AdminPostsPage() {
                   title={post.isLocked ? "解鎖" : "鎖定"}
                 >
                   <Lock className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => {
+                    setEditingId(post.id);
+                    setFormData({
+                      title: post.title,
+                      content: post.content || "",
+                      excerpt: post.excerpt || "",
+                      author: post.author,
+                      authorEmail: post.authorEmail || "",
+                      categoryId: post.category.id,
+                      isPinned: post.isPinned,
+                      isLocked: post.isLocked,
+                    });
+                    setShowForm(true);
+                  }}
+                  className="p-2 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-primary)] hover:bg-[var(--color-bg-card-hover)] transition-colors"
+                  title="編輯"
+                >
+                  <Edit className="w-4 h-4" />
                 </button>
                 <Link
                   href={`/forum/${post.slug}`}

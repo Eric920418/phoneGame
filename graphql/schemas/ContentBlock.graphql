@@ -1,0 +1,21 @@
+type ContentBlock {
+  id: Int!
+  key: String!
+  payload: JSON!
+  createdAt: String!
+  updatedAt: String!
+}
+
+extend type Query {
+  contentBlocks: [ContentBlock!]!
+  contentBlock(key: String!): ContentBlock
+}
+
+input ContentBlockInput {
+  payload: JSON!
+}
+
+extend type Mutation {
+  upsertContentBlock(key: String!, input: ContentBlockInput!): ContentBlock!
+  deleteContentBlock(key: String!): Boolean!
+}

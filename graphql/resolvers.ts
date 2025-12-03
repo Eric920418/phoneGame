@@ -378,11 +378,80 @@ const AnnouncementResolvers = {
   },
 };
 
+// Dashboard Stats Resolver
+const DashboardResolvers = {
+  Query: {
+    dashboardStats: async () => {
+      try {
+        const [announcementCount, postCount, categoryCount, totalViews] = await Promise.all([
+          prisma.announcement.count(),
+          prisma.post.count(),
+          prisma.category.count(),
+          prisma.post.aggregate({ _sum: { views: true } }),
+        ]);
+
+        return {
+          announcementCount,
+          postCount,
+          categoryCount,
+          totalViews: totalViews._sum.views || 0,
+        };
+      } catch (error) {
+        console.warn('資料庫未配置，使用假數據');
+        return {
+          announcementCount: mockAnnouncements.length,
+          postCount: mockPosts.length,
+          categoryCount: mockCategories.length,
+          totalViews: 100,
+        };
+      }
+    },
+  },
+};
+
+// ContentBlock Resolvers
+const ContentBlockResolvers = {
+  Query: {
+    contentBlocks: async () => {
+      try {
+        return await prisma.contentBlock.findMany({
+          orderBy: { key: 'asc' },
+        });
+      } catch (error) {
+        console.warn('資料庫未配置，使用空數據');
+        return [];
+      }
+    },
+    contentBlock: async (_: unknown, { key }: { key: string }) => {
+      try {
+        return await prisma.contentBlock.findUnique({ where: { key } });
+      } catch (error) {
+        return null;
+      }
+    },
+  },
+  Mutation: {
+    upsertContentBlock: async (_: unknown, { key, input }: { key: string; input: { payload: unknown } }) => {
+      return await prisma.contentBlock.upsert({
+        where: { key },
+        update: { payload: input.payload as object },
+        create: { key, payload: input.payload as object },
+      });
+    },
+    deleteContentBlock: async (_: unknown, { key }: { key: string }) => {
+      await prisma.contentBlock.delete({ where: { key } });
+      return true;
+    },
+  },
+};
+
 const Query = {
   ...CategoryResolvers.Query,
   ...PostResolvers.Query,
   ...CommentResolvers.Query,
   ...AnnouncementResolvers.Query,
+  ...DashboardResolvers.Query,
+  ...ContentBlockResolvers.Query,
 };
 
 const Mutation = {
@@ -390,6 +459,7 @@ const Mutation = {
   ...PostResolvers.Mutation,
   ...CommentResolvers.Mutation,
   ...AnnouncementResolvers.Mutation,
+  ...ContentBlockResolvers.Mutation,
 };
 
 const resolvers = {

@@ -1,0 +1,10 @@
+type DashboardStats {
+  announcementCount: Int!
+  postCount: Int!
+  categoryCount: Int!
+  totalViews: Int!
+}
+
+extend type Query {
+  dashboardStats: DashboardStats!
+}

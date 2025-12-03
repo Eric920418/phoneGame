@@ -11,6 +11,8 @@ interface Announcement {
   id: number;
   title: string;
   slug: string;
+  content: string;
+  excerpt: string;
   type: string;
   isPinned: boolean;
   isPublished: boolean;
@@ -52,6 +54,8 @@ export default function AdminAnnouncementsPage() {
               id
               title
               slug
+              content
+              excerpt
               type
               isPinned
               isPublished
@@ -346,8 +350,8 @@ export default function AdminAnnouncementsPage() {
                     setEditingId(announcement.id);
                     setFormData({
                       title: announcement.title,
-                      content: "",
-                      excerpt: "",
+                      content: announcement.content || "",
+                      excerpt: announcement.excerpt || "",
                       type: announcement.type,
                       isPinned: announcement.isPinned,
                       isPublished: announcement.isPublished,
