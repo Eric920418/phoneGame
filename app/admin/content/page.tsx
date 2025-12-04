@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
-  ArrowLeft, Save, AlertCircle, Check,
+  ArrowLeft, Save, AlertCircle, Check, Plus, Trash2,
   Megaphone, Heart, Download, Settings, BookOpen, Search,
   Map, Gift, Skull, Swords, Trophy, Quote
 } from "lucide-react";
@@ -27,94 +27,43 @@ const contentSections = [
   { key: "playerReviews", title: "玩家評價", icon: Quote, color: "#10b981" },
 ];
 
-// 默认数据模板
-const defaultData: Record<string, unknown> = {
+// 默认数据
+const defaultData: Record<string, unknown[]> = {
   eventAnnouncements: [
     { id: 1, title: "雙十二狂歡活動", date: "12/12-12/15", type: "限時", isHot: true },
-    { id: 2, title: "新武將「諸葛亮」限時登場", date: "12/10-12/20", type: "新內容", isHot: true },
-    { id: 3, title: "每週挑戰賽事", date: "12/08-12/14", type: "競技", isHot: false },
-    { id: 4, title: "公會招募活動", date: "12/01-12/31", type: "社群", isHot: false },
   ],
   sponsorPlans: [
-    { name: "青銅", price: 100, color: "#cd7f32", benefits: ["500 元寶", "專屬稱號"] },
-    { name: "白銀", price: 300, color: "#c0c0c0", benefits: ["2000 元寶", "稀有坐騎"] },
-    { name: "黃金", price: 500, color: "#ffd700", benefits: ["5000 元寶", "傳說坐騎", "專屬時裝"], popular: true },
-    { name: "鑽石", price: 1000, color: "#b9f2ff", benefits: ["15000 元寶", "神話坐騎", "永久加成"] },
+    { name: "青銅", price: 100, color: "#cd7f32", benefits: ["500 元寶", "專屬稱號"], popular: false },
   ],
   downloadItems: [
     { name: "Windows 客戶端", icon: "Monitor", size: "3.2 GB", version: "v2.5.3" },
-    { name: "Android 版本", icon: "Smartphone", size: "1.8 GB", version: "v2.5.3" },
   ],
   gameSettings: [
-    { category: "畫面", settings: [{ name: "解析度", value: "1920x1080" }, { name: "畫質", value: "高" }] },
-    { category: "音效", settings: [{ name: "主音量", value: "70%" }, { name: "背景音樂", value: "50%" }] },
-    { category: "操作", settings: [{ name: "智慧施法", value: "開啟" }, { name: "自動攻擊", value: "開啟" }] },
+    { category: "畫面", settings: [{ name: "解析度", value: "1920x1080" }] },
   ],
   beginnerGuides: [
     { chapter: 1, title: "建立角色", desc: "選擇陣營與職業" },
-    { chapter: 2, title: "戰鬥入門", desc: "基礎操作與技能" },
-    { chapter: 3, title: "探索世界", desc: "主線與支線任務" },
-    { chapter: 4, title: "加入公會", desc: "團隊合作與福利" },
   ],
   dropItems: [
     { name: "赤兔馬", location: "虎牢關", boss: "呂布", rate: "0.5%", rarity: "傳說", color: "#ff6b00" },
-    { name: "青龍偃月刀", location: "樊城", boss: "關羽影", rate: "2%", rarity: "史詩", color: "#a855f7" },
-    { name: "諸葛錦囊", location: "臥龍崗", boss: "任意怪物", rate: "5%", rarity: "稀有", color: "#3b82f6" },
-    { name: "五虎將令牌", location: "五虎將副本", boss: "各五虎將", rate: "1%", rarity: "傳說", color: "#ff6b00" },
   ],
   dungeons: [
     { name: "虎牢關", level: 60, difficulty: "傳說", color: "#ff6b00", players: "5人", boss: "呂布" },
-    { name: "赤壁之戰", level: 50, difficulty: "史詩", color: "#a855f7", players: "10人", boss: "曹操軍團" },
-    { name: "五丈原", level: 55, difficulty: "史詩", color: "#a855f7", players: "5人", boss: "司馬懿幻影" },
-    { name: "長坂坡", level: 40, difficulty: "困難", color: "#3b82f6", players: "3人", boss: "曹軍先鋒" },
   ],
   treasureBoxes: [
-    { name: "傳說寶箱", color: "#ff6b00", items: ["赤兔馬 1%", "傳說武器 5%", "元寶 x1000 20%"] },
-    { name: "史詩寶箱", color: "#a855f7", items: ["史詩武器 3%", "稀有材料 15%", "元寶 x500 20%"] },
-    { name: "國戰寶箱", color: "#ef4444", items: ["虎符 5%", "專屬時裝 3%", "榮譽點數 30%"] },
+    { name: "傳說寶箱", color: "#ff6b00", items: ["赤兔馬 1%", "傳說武器 5%"] },
   ],
   bossList: [
     { name: "呂布", title: "無雙戰神", location: "虎牢關", level: 60, type: "副本", color: "#ff6b00" },
-    { name: "曹操", title: "亂世梟雄", location: "許昌皇城", level: 55, type: "世界", color: "#a855f7" },
-    { name: "關羽", title: "武聖", location: "樊城", level: 50, type: "副本", color: "#ef4444" },
-    { name: "諸葛亮", title: "臥龍先生", location: "五丈原", level: 55, type: "副本", color: "#3b82f6" },
   ],
   warSchedule: [
     { day: "週六", time: "19:00-22:00", type: "國戰", highlight: true },
-    { day: "週日", time: "19:00-22:00", type: "國戰", highlight: true },
-    { day: "週五", time: "20:00-22:00", type: "公會戰", highlight: false },
-    { day: "週二/四", time: "20:00-21:30", type: "資源戰", highlight: false },
   ],
   arenaRanking: [
     { rank: 1, name: "無敵戰神", guild: "天下第一", score: 2850 },
-    { rank: 2, name: "劍舞蒼穹", guild: "霸王軍團", score: 2720 },
-    { rank: 3, name: "風雲再起", guild: "龍騰虎躍", score: 2680 },
-    { rank: 4, name: "一劍封喉", guild: "劍指天涯", score: 2590 },
-    { rank: 5, name: "戰無不勝", guild: "天下第一", score: 2540 },
   ],
   playerReviews: [
-    {
-      id: 1,
-      name: "龍戰天下",
-      avatar: "🐉",
-      rating: 5,
-      hours: 1280,
-      date: "2024-12-01",
-      content: "玩了快兩年了，這款三國遊戲真的很用心！國戰系統超刺激，每週末都跟公會兄弟一起衝，感覺熱血沸騰。畫面精緻，操作流暢，推薦給喜歡三國的玩家！",
-      helpful: 156,
-      isRecommended: true,
-    },
-    {
-      id: 2,
-      name: "蜀漢丞相",
-      avatar: "🎭",
-      rating: 5,
-      hours: 860,
-      date: "2024-11-28",
-      content: "副本設計很有創意，每個 BOSS 都有獨特的機制，需要團隊配合。武將系統豐富，收集控的天堂。客服回覆也很快，遇到問題都能及時解決。",
-      helpful: 89,
-      isRecommended: true,
-    },
+    { id: 1, name: "龍戰天下", avatar: "🐉", rating: 5, hours: 1280, date: "2024-12-01", content: "很好玩！", helpful: 156, isRecommended: true },
   ],
 };
 
@@ -127,12 +76,12 @@ interface ContentBlock {
 export default function AdminContentPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [blocks, setBlocks] = useState<Record<string, unknown>>({});
+  const [blocks, setBlocks] = useState<Record<string, unknown[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<string | null>(null);
-  const [editingJson, setEditingJson] = useState<string>("");
+  const [editingData, setEditingData] = useState<unknown[]>([]);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -153,9 +102,9 @@ export default function AdminContentPage() {
         }
       `);
 
-      const blocksMap: Record<string, unknown> = {};
+      const blocksMap: Record<string, unknown[]> = {};
       data.contentBlocks.forEach((block) => {
-        blocksMap[block.key] = block.payload;
+        blocksMap[block.key] = block.payload as unknown[];
       });
       setBlocks(blocksMap);
     } catch (err) {
@@ -173,8 +122,8 @@ export default function AdminContentPage() {
 
   const handleSectionClick = (key: string) => {
     setActiveSection(key);
-    const data = blocks[key] || defaultData[key];
-    setEditingJson(JSON.stringify(data, null, 2));
+    const data = blocks[key] || defaultData[key] || [];
+    setEditingData(JSON.parse(JSON.stringify(data)));
     setError(null);
     setSuccess(null);
   };
@@ -187,9 +136,6 @@ export default function AdminContentPage() {
     setSuccess(null);
 
     try {
-      // 验证 JSON
-      const parsedData = JSON.parse(editingJson);
-
       await graphqlFetch(`
         mutation($key: String!, $input: ContentBlockInput!) {
           upsertContentBlock(key: $key, input: $input) {
@@ -198,30 +144,62 @@ export default function AdminContentPage() {
         }
       `, {
         key: activeSection,
-        input: { payload: parsedData },
+        input: { payload: editingData },
       });
 
-      setBlocks({ ...blocks, [activeSection]: parsedData });
+      setBlocks({ ...blocks, [activeSection]: editingData });
       setSuccess("儲存成功！");
-
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
-      if (err instanceof SyntaxError) {
-        setError("JSON 格式錯誤，請檢查格式");
-      } else {
-        setError(err instanceof Error ? err.message : "儲存失敗");
-      }
+      setError(err instanceof Error ? err.message : "儲存失敗");
     } finally {
       setSaving(false);
     }
   };
 
-  const handleReset = () => {
+  const addItem = () => {
     if (!activeSection) return;
-    const data = defaultData[activeSection];
-    setEditingJson(JSON.stringify(data, null, 2));
-    setError(null);
-    setSuccess(null);
+    const template = defaultData[activeSection]?.[0] || {};
+    const newItem = JSON.parse(JSON.stringify(template));
+    if ('id' in newItem) newItem.id = Date.now();
+    if ('rank' in newItem) newItem.rank = editingData.length + 1;
+    if ('chapter' in newItem) newItem.chapter = editingData.length + 1;
+    setEditingData([...editingData, newItem]);
+  };
+
+  const removeItem = (index: number) => {
+    setEditingData(editingData.filter((_, i) => i !== index));
+  };
+
+  const updateItem = (index: number, field: string, value: unknown) => {
+    const newData = [...editingData];
+    (newData[index] as Record<string, unknown>)[field] = value;
+    setEditingData(newData);
+  };
+
+  const updateNestedItem = (index: number, field: string, subIndex: number, subField: string, value: unknown) => {
+    const newData = [...editingData];
+    const item = newData[index] as Record<string, unknown>;
+    const arr = item[field] as Record<string, unknown>[];
+    arr[subIndex][subField] = value;
+    setEditingData(newData);
+  };
+
+  const addNestedItem = (index: number, field: string, template: Record<string, unknown>) => {
+    const newData = [...editingData];
+    const item = newData[index] as Record<string, unknown>;
+    const arr = (item[field] as unknown[]) || [];
+    arr.push({ ...template });
+    item[field] = arr;
+    setEditingData(newData);
+  };
+
+  const removeNestedItem = (index: number, field: string, subIndex: number) => {
+    const newData = [...editingData];
+    const item = newData[index] as Record<string, unknown>;
+    const arr = item[field] as unknown[];
+    arr.splice(subIndex, 1);
+    setEditingData(newData);
   };
 
   if (status === "loading" || loading) {
@@ -233,6 +211,678 @@ export default function AdminContentPage() {
   }
 
   const currentSection = contentSections.find(s => s.key === activeSection);
+
+  // 渲染表单字段
+  const renderForm = () => {
+    if (!activeSection || !editingData) return null;
+
+    switch (activeSection) {
+      case "eventAnnouncements":
+        return editingData.map((item: unknown, index: number) => {
+          const data = item as { title: string; date: string; type: string; isHot: boolean };
+          return (
+            <div key={index} className="card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--color-primary)] font-medium">活動 #{index + 1}</span>
+                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <input
+                type="text"
+                value={data.title}
+                onChange={(e) => updateItem(index, "title", e.target.value)}
+                placeholder="活動標題"
+                className="input w-full"
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  value={data.date}
+                  onChange={(e) => updateItem(index, "date", e.target.value)}
+                  placeholder="日期 (如: 12/12-12/15)"
+                  className="input"
+                />
+                <input
+                  type="text"
+                  value={data.type}
+                  onChange={(e) => updateItem(index, "type", e.target.value)}
+                  placeholder="類型 (如: 限時)"
+                  className="input"
+                />
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={data.isHot}
+                  onChange={(e) => updateItem(index, "isHot", e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-[var(--color-text)] text-sm">熱門活動 🔥</span>
+              </label>
+            </div>
+          );
+        });
+
+      case "sponsorPlans":
+        return editingData.map((item: unknown, index: number) => {
+          const data = item as { name: string; price: number; color: string; benefits: string[]; popular?: boolean };
+          return (
+            <div key={index} className="card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--color-primary)] font-medium">方案 #{index + 1}</span>
+                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  value={data.name}
+                  onChange={(e) => updateItem(index, "name", e.target.value)}
+                  placeholder="方案名稱"
+                  className="input"
+                />
+                <input
+                  type="number"
+                  value={data.price}
+                  onChange={(e) => updateItem(index, "price", parseInt(e.target.value) || 0)}
+                  placeholder="價格"
+                  className="input"
+                />
+                <div className="flex items-center gap-2">
+                  <span className="text-[var(--color-text-muted)] text-sm">顏色</span>
+                  <input
+                    type="color"
+                    value={data.color}
+                    onChange={(e) => updateItem(index, "color", e.target.value)}
+                    className="w-10 h-10 rounded cursor-pointer"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[var(--color-text)] text-sm mb-2 block">福利內容 (每行一個)</label>
+                <textarea
+                  value={(data.benefits || []).join("\n")}
+                  onChange={(e) => updateItem(index, "benefits", e.target.value.split("\n").filter(Boolean))}
+                  placeholder="500 元寶&#10;專屬稱號&#10;稀有坐騎"
+                  className="input w-full min-h-[100px]"
+                />
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={data.popular || false}
+                  onChange={(e) => updateItem(index, "popular", e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-[var(--color-text)] text-sm">推薦方案 ⭐</span>
+              </label>
+            </div>
+          );
+        });
+
+      case "downloadItems":
+        return editingData.map((item: unknown, index: number) => {
+          const data = item as { name: string; icon: string; size: string; version: string };
+          return (
+            <div key={index} className="card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--color-primary)] font-medium">下載項目 #{index + 1}</span>
+                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <input
+                type="text"
+                value={data.name}
+                onChange={(e) => updateItem(index, "name", e.target.value)}
+                placeholder="名稱 (如: Windows 客戶端)"
+                className="input w-full"
+              />
+              <div className="grid grid-cols-3 gap-3">
+                <select
+                  value={data.icon}
+                  onChange={(e) => updateItem(index, "icon", e.target.value)}
+                  className="input"
+                >
+                  <option value="Monitor">💻 電腦版</option>
+                  <option value="Smartphone">📱 手機版</option>
+                </select>
+                <input
+                  type="text"
+                  value={data.size}
+                  onChange={(e) => updateItem(index, "size", e.target.value)}
+                  placeholder="檔案大小 (如: 3.2 GB)"
+                  className="input"
+                />
+                <input
+                  type="text"
+                  value={data.version}
+                  onChange={(e) => updateItem(index, "version", e.target.value)}
+                  placeholder="版本 (如: v2.5.3)"
+                  className="input"
+                />
+              </div>
+            </div>
+          );
+        });
+
+      case "beginnerGuides":
+        return editingData.map((item: unknown, index: number) => {
+          const data = item as { chapter: number; title: string; desc: string };
+          return (
+            <div key={index} className="card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--color-primary)] font-medium">攻略 #{index + 1}</span>
+                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-4 gap-3">
+                <input
+                  type="number"
+                  value={data.chapter}
+                  onChange={(e) => updateItem(index, "chapter", parseInt(e.target.value) || 1)}
+                  placeholder="章節"
+                  className="input"
+                  min={1}
+                />
+                <input
+                  type="text"
+                  value={data.title}
+                  onChange={(e) => updateItem(index, "title", e.target.value)}
+                  placeholder="標題 (如: 建立角色)"
+                  className="input col-span-3"
+                />
+              </div>
+              <input
+                type="text"
+                value={data.desc}
+                onChange={(e) => updateItem(index, "desc", e.target.value)}
+                placeholder="描述 (如: 選擇陣營與職業)"
+                className="input w-full"
+              />
+            </div>
+          );
+        });
+
+      case "dropItems":
+        return editingData.map((item: unknown, index: number) => {
+          const data = item as { name: string; location: string; boss: string; rate: string; rarity: string; color: string };
+          return (
+            <div key={index} className="card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--color-primary)] font-medium">掉落物 #{index + 1}</span>
+                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  value={data.name}
+                  onChange={(e) => updateItem(index, "name", e.target.value)}
+                  placeholder="物品名稱"
+                  className="input"
+                />
+                <input
+                  type="text"
+                  value={data.location}
+                  onChange={(e) => updateItem(index, "location", e.target.value)}
+                  placeholder="掉落地點"
+                  className="input"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  value={data.boss}
+                  onChange={(e) => updateItem(index, "boss", e.target.value)}
+                  placeholder="來源 BOSS"
+                  className="input"
+                />
+                <input
+                  type="text"
+                  value={data.rate}
+                  onChange={(e) => updateItem(index, "rate", e.target.value)}
+                  placeholder="掉落機率 (如: 0.5%)"
+                  className="input"
+                />
+                <select
+                  value={data.rarity}
+                  onChange={(e) => {
+                    const rarity = e.target.value;
+                    const colors: Record<string, string> = { "傳說": "#ff6b00", "史詩": "#a855f7", "稀有": "#3b82f6", "普通": "#6b7280" };
+                    updateItem(index, "rarity", rarity);
+                    updateItem(index, "color", colors[rarity] || "#6b7280");
+                  }}
+                  className="input"
+                >
+                  <option value="傳說">🟠 傳說</option>
+                  <option value="史詩">🟣 史詩</option>
+                  <option value="稀有">🔵 稀有</option>
+                  <option value="普通">⚪ 普通</option>
+                </select>
+              </div>
+            </div>
+          );
+        });
+
+      case "dungeons":
+        return editingData.map((item: unknown, index: number) => {
+          const data = item as { name: string; level: number; difficulty: string; color: string; players: string; boss: string };
+          return (
+            <div key={index} className="card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--color-primary)] font-medium">副本 #{index + 1}</span>
+                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  value={data.name}
+                  onChange={(e) => updateItem(index, "name", e.target.value)}
+                  placeholder="副本名稱"
+                  className="input"
+                />
+                <input
+                  type="number"
+                  value={data.level}
+                  onChange={(e) => updateItem(index, "level", parseInt(e.target.value) || 1)}
+                  placeholder="等級要求"
+                  className="input"
+                  min={1}
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <select
+                  value={data.difficulty}
+                  onChange={(e) => {
+                    const diff = e.target.value;
+                    const colors: Record<string, string> = { "傳說": "#ff6b00", "史詩": "#a855f7", "困難": "#3b82f6", "普通": "#22c55e" };
+                    updateItem(index, "difficulty", diff);
+                    updateItem(index, "color", colors[diff] || "#6b7280");
+                  }}
+                  className="input"
+                >
+                  <option value="傳說">🟠 傳說</option>
+                  <option value="史詩">🟣 史詩</option>
+                  <option value="困難">🔵 困難</option>
+                  <option value="普通">🟢 普通</option>
+                </select>
+                <input
+                  type="text"
+                  value={data.players}
+                  onChange={(e) => updateItem(index, "players", e.target.value)}
+                  placeholder="人數 (如: 5人)"
+                  className="input"
+                />
+                <input
+                  type="text"
+                  value={data.boss}
+                  onChange={(e) => updateItem(index, "boss", e.target.value)}
+                  placeholder="最終 BOSS"
+                  className="input"
+                />
+              </div>
+            </div>
+          );
+        });
+
+      case "treasureBoxes":
+        return editingData.map((item: unknown, index: number) => {
+          const data = item as { name: string; color: string; items: string[] };
+          return (
+            <div key={index} className="card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--color-primary)] font-medium">寶箱 #{index + 1}</span>
+                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex gap-3 items-center">
+                <input
+                  type="text"
+                  value={data.name}
+                  onChange={(e) => updateItem(index, "name", e.target.value)}
+                  placeholder="寶箱名稱"
+                  className="input flex-1"
+                />
+                <div className="flex items-center gap-2">
+                  <span className="text-[var(--color-text-muted)] text-sm">顏色</span>
+                  <input
+                    type="color"
+                    value={data.color}
+                    onChange={(e) => updateItem(index, "color", e.target.value)}
+                    className="w-10 h-10 rounded cursor-pointer"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[var(--color-text)] text-sm mb-2 block">寶箱內容 (每行一個，格式: 物品名 機率)</label>
+                <textarea
+                  value={(data.items || []).join("\n")}
+                  onChange={(e) => updateItem(index, "items", e.target.value.split("\n").filter(Boolean))}
+                  placeholder="赤兔馬 1%&#10;傳說武器 5%&#10;元寶 x1000 20%"
+                  className="input w-full min-h-[100px]"
+                />
+              </div>
+            </div>
+          );
+        });
+
+      case "bossList":
+        return editingData.map((item: unknown, index: number) => {
+          const data = item as { name: string; title: string; location: string; level: number; type: string; color: string };
+          return (
+            <div key={index} className="card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--color-primary)] font-medium">BOSS #{index + 1}</span>
+                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <input
+                  type="text"
+                  value={data.name}
+                  onChange={(e) => updateItem(index, "name", e.target.value)}
+                  placeholder="BOSS 名稱"
+                  className="input"
+                />
+                <input
+                  type="text"
+                  value={data.title}
+                  onChange={(e) => updateItem(index, "title", e.target.value)}
+                  placeholder="稱號 (如: 無雙戰神)"
+                  className="input"
+                />
+              </div>
+              <div className="grid grid-cols-4 gap-3">
+                <input
+                  type="text"
+                  value={data.location}
+                  onChange={(e) => updateItem(index, "location", e.target.value)}
+                  placeholder="出沒地點"
+                  className="input"
+                />
+                <input
+                  type="number"
+                  value={data.level}
+                  onChange={(e) => updateItem(index, "level", parseInt(e.target.value) || 1)}
+                  placeholder="等級"
+                  className="input"
+                  min={1}
+                />
+                <select
+                  value={data.type}
+                  onChange={(e) => updateItem(index, "type", e.target.value)}
+                  className="input"
+                >
+                  <option value="副本">副本 BOSS</option>
+                  <option value="世界">世界 BOSS</option>
+                </select>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={data.color}
+                    onChange={(e) => updateItem(index, "color", e.target.value)}
+                    className="w-10 h-10 rounded cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+          );
+        });
+
+      case "warSchedule":
+        return editingData.map((item: unknown, index: number) => {
+          const data = item as { day: string; time: string; type: string; highlight: boolean };
+          return (
+            <div key={index} className="card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--color-primary)] font-medium">時段 #{index + 1}</span>
+                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  value={data.day}
+                  onChange={(e) => updateItem(index, "day", e.target.value)}
+                  placeholder="日期 (如: 週六)"
+                  className="input"
+                />
+                <input
+                  type="text"
+                  value={data.time}
+                  onChange={(e) => updateItem(index, "time", e.target.value)}
+                  placeholder="時間 (如: 19:00-22:00)"
+                  className="input"
+                />
+                <input
+                  type="text"
+                  value={data.type}
+                  onChange={(e) => updateItem(index, "type", e.target.value)}
+                  placeholder="活動類型 (如: 國戰)"
+                  className="input"
+                />
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={data.highlight}
+                  onChange={(e) => updateItem(index, "highlight", e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-[var(--color-text)] text-sm">重點活動 (特別標示)</span>
+              </label>
+            </div>
+          );
+        });
+
+      case "arenaRanking":
+        return editingData.map((item: unknown, index: number) => {
+          const data = item as { rank: number; name: string; guild: string; score: number };
+          return (
+            <div key={index} className="card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--color-primary)] font-medium">排名 #{index + 1}</span>
+                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-4 gap-3">
+                <input
+                  type="number"
+                  value={data.rank}
+                  onChange={(e) => updateItem(index, "rank", parseInt(e.target.value) || 1)}
+                  placeholder="名次"
+                  className="input"
+                  min={1}
+                />
+                <input
+                  type="text"
+                  value={data.name}
+                  onChange={(e) => updateItem(index, "name", e.target.value)}
+                  placeholder="玩家名稱"
+                  className="input"
+                />
+                <input
+                  type="text"
+                  value={data.guild}
+                  onChange={(e) => updateItem(index, "guild", e.target.value)}
+                  placeholder="所屬公會"
+                  className="input"
+                />
+                <input
+                  type="number"
+                  value={data.score}
+                  onChange={(e) => updateItem(index, "score", parseInt(e.target.value) || 0)}
+                  placeholder="積分"
+                  className="input"
+                />
+              </div>
+            </div>
+          );
+        });
+
+      case "playerReviews":
+        return editingData.map((item: unknown, index: number) => {
+          const data = item as { name: string; avatar: string; rating: number; hours: number; date: string; content: string; helpful: number; isRecommended: boolean };
+          return (
+            <div key={index} className="card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--color-primary)] font-medium">評價 #{index + 1}</span>
+                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  value={data.name}
+                  onChange={(e) => updateItem(index, "name", e.target.value)}
+                  placeholder="玩家名稱"
+                  className="input"
+                />
+                <input
+                  type="text"
+                  value={data.avatar}
+                  onChange={(e) => updateItem(index, "avatar", e.target.value)}
+                  placeholder="頭像 Emoji (如: 🐉)"
+                  className="input"
+                />
+                <input
+                  type="text"
+                  value={data.date}
+                  onChange={(e) => updateItem(index, "date", e.target.value)}
+                  placeholder="日期 (如: 2024-12-01)"
+                  className="input"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-[var(--color-text-muted)] text-xs mb-1 block">評分 ⭐ (1-5)</label>
+                  <select
+                    value={data.rating}
+                    onChange={(e) => updateItem(index, "rating", parseInt(e.target.value))}
+                    className="input w-full"
+                  >
+                    <option value={5}>⭐⭐⭐⭐⭐ (5分)</option>
+                    <option value={4}>⭐⭐⭐⭐ (4分)</option>
+                    <option value={3}>⭐⭐⭐ (3分)</option>
+                    <option value={2}>⭐⭐ (2分)</option>
+                    <option value={1}>⭐ (1分)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[var(--color-text-muted)] text-xs mb-1 block">遊戲時數</label>
+                  <input
+                    type="number"
+                    value={data.hours}
+                    onChange={(e) => updateItem(index, "hours", parseInt(e.target.value) || 0)}
+                    className="input w-full"
+                    min={0}
+                  />
+                </div>
+                <div>
+                  <label className="text-[var(--color-text-muted)] text-xs mb-1 block">有幫助人數</label>
+                  <input
+                    type="number"
+                    value={data.helpful}
+                    onChange={(e) => updateItem(index, "helpful", parseInt(e.target.value) || 0)}
+                    className="input w-full"
+                    min={0}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="text-[var(--color-text-muted)] text-xs mb-1 block">評價內容</label>
+                <textarea
+                  value={data.content}
+                  onChange={(e) => updateItem(index, "content", e.target.value)}
+                  placeholder="玩家的評價內容..."
+                  className="input w-full min-h-[80px]"
+                />
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={data.isRecommended}
+                  onChange={(e) => updateItem(index, "isRecommended", e.target.checked)}
+                  className="w-4 h-4"
+                />
+                <span className="text-[var(--color-text)] text-sm">推薦此遊戲 👍</span>
+              </label>
+            </div>
+          );
+        });
+
+      case "gameSettings":
+        return editingData.map((item: unknown, index: number) => {
+          const data = item as { category: string; settings: { name: string; value: string }[] };
+          return (
+            <div key={index} className="card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--color-primary)] font-medium">設定組 #{index + 1}</span>
+                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <input
+                type="text"
+                value={data.category}
+                onChange={(e) => updateItem(index, "category", e.target.value)}
+                placeholder="分類名稱 (如: 畫面、音效、操作)"
+                className="input w-full"
+              />
+              <div className="space-y-2">
+                <label className="text-[var(--color-text)] text-sm">設定項目</label>
+                {(data.settings || []).map((setting, sIndex) => (
+                  <div key={sIndex} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={setting.name}
+                      onChange={(e) => updateNestedItem(index, "settings", sIndex, "name", e.target.value)}
+                      placeholder="設定名稱"
+                      className="input flex-1"
+                    />
+                    <input
+                      type="text"
+                      value={setting.value}
+                      onChange={(e) => updateNestedItem(index, "settings", sIndex, "value", e.target.value)}
+                      placeholder="建議值"
+                      className="input flex-1"
+                    />
+                    <button
+                      onClick={() => removeNestedItem(index, "settings", sIndex)}
+                      className="text-red-400 hover:text-red-300 p-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => addNestedItem(index, "settings", { name: "", value: "" })}
+                  className="text-[var(--color-primary)] text-sm hover:underline flex items-center gap-1"
+                >
+                  <Plus className="w-4 h-4" />
+                  新增設定項目
+                </button>
+              </div>
+            </div>
+          );
+        });
+
+      default:
+        return <p className="text-[var(--color-text-muted)]">此區塊暫不支援視覺化編輯</p>;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[var(--color-bg-dark)]">
@@ -247,14 +897,14 @@ export default function AdminContentPage() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-[var(--color-text)]">首頁內容管理</h1>
-            <p className="text-[var(--color-text-muted)] text-sm">管理首頁各區塊的動態內容</p>
+            <p className="text-[var(--color-text-muted)] text-sm">輕鬆編輯首頁各區塊的內容</p>
           </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 左側：區塊列表 */}
           <div className="lg:col-span-1">
-            <h2 className="text-lg font-semibold text-[var(--color-text)] mb-4">內容區塊</h2>
+            <h2 className="text-lg font-semibold text-[var(--color-text)] mb-4">選擇要編輯的區塊</h2>
             <div className="space-y-2">
               {contentSections.map((section) => {
                 const IconComp = section.icon;
@@ -279,12 +929,9 @@ export default function AdminContentPage() {
                     <div className="flex-1 text-left min-w-0">
                       <h3 className="font-medium text-[var(--color-text)] truncate">{section.title}</h3>
                       <p className="text-xs text-[var(--color-text-muted)]">
-                        {hasData ? "已自訂" : "使用預設"}
+                        {hasData ? "✅ 已自訂" : "📝 使用預設"}
                       </p>
                     </div>
-                    {hasData && (
-                      <Check className="w-4 h-4 text-green-400 shrink-0" />
-                    )}
                   </button>
                 );
               })}
@@ -294,8 +941,8 @@ export default function AdminContentPage() {
           {/* 右側：編輯區 */}
           <div className="lg:col-span-2">
             {activeSection ? (
-              <div className="card p-6">
-                <div className="flex items-center justify-between mb-4">
+              <div>
+                <div className="flex items-center justify-between mb-4 sticky top-0 bg-[var(--color-bg-dark)] py-2 z-10">
                   <div className="flex items-center gap-3">
                     {currentSection && (
                       <>
@@ -309,22 +956,14 @@ export default function AdminContentPage() {
                       </>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={handleReset}
-                      className="btn btn-secondary text-sm"
-                    >
-                      重置為預設
-                    </button>
-                    <button
-                      onClick={handleSave}
-                      disabled={saving}
-                      className="btn btn-primary text-sm"
-                    >
-                      <Save className="w-4 h-4" />
-                      {saving ? "儲存中..." : "儲存"}
-                    </button>
-                  </div>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="btn btn-primary"
+                  >
+                    <Save className="w-4 h-4" />
+                    {saving ? "儲存中..." : "儲存變更"}
+                  </button>
                 </div>
 
                 {error && (
@@ -341,18 +980,17 @@ export default function AdminContentPage() {
                   </div>
                 )}
 
-                <div className="mb-4">
-                  <p className="text-[var(--color-text-muted)] text-sm mb-2">
-                    編輯 JSON 格式的內容數據。修改後點擊「儲存」按鈕保存。
-                  </p>
+                <div className="space-y-4">
+                  {renderForm()}
                 </div>
 
-                <textarea
-                  value={editingJson}
-                  onChange={(e) => setEditingJson(e.target.value)}
-                  className="input w-full font-mono text-sm min-h-[500px] resize-y"
-                  spellCheck={false}
-                />
+                <button
+                  onClick={addItem}
+                  className="mt-4 w-full card p-4 flex items-center justify-center gap-2 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors border-dashed"
+                >
+                  <Plus className="w-5 h-5" />
+                  新增項目
+                </button>
               </div>
             ) : (
               <div className="card p-12 text-center">
@@ -361,7 +999,7 @@ export default function AdminContentPage() {
                 </div>
                 <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">選擇要編輯的區塊</h3>
                 <p className="text-[var(--color-text-muted)]">
-                  點擊左側的內容區塊開始編輯首頁內容
+                  👈 點擊左側的內容區塊開始編輯
                 </p>
               </div>
             )}
