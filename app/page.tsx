@@ -318,9 +318,9 @@ function FramedSection({
           上方需要特別多空間避開皇冠裝飾
           compact 模式減少上方 padding */}
       <div className={`relative z-10 px-6 pb-20 sm:px-8 sm:pb-24 md:px-10  lg:px-16 lg:pb-12 ${
-        compact 
-          ? "pt-20 lg:pt-20" 
-          : "pt-24 lg:pt-64"
+        compact
+          ? "pt-20 lg:pt-24"
+          : "pt-32 lg:pt-72"
       }`}>
         {children}
       </div>
@@ -420,8 +420,12 @@ export default async function HomePage() {
               { value: "99.9%", label: "服務穩定" },
             ].map((stat, i) => (
               <div key={i} className="text-center">
-                <div className="text-3xl font-bold text-[var(--color-primary)]">{stat.value}</div>
-                <div className="text-[var(--color-text-muted)] text-sm">{stat.label}</div>
+                <div className="text-3xl font-bold text-[var(--color-primary)]">
+                  {stat.value}
+                </div>
+                <div className="text-[var(--color-text-muted)] text-sm">
+                  {stat.label}
+                </div>
               </div>
             ))}
           </div>
@@ -429,530 +433,827 @@ export default async function HomePage() {
       </section>
 
       {/* ==================== 主要內容區 - 布料底圖背景 ==================== */}
-      <div 
+      <div
         className="relative"
         style={{
           backgroundImage: "url('/布料底图.png')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundAttachment: 'fixed',
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          backgroundAttachment: "fixed",
         }}
       >
         {/* 深色遮罩層，確保文字可讀 */}
         <div className="absolute inset-0 bg-black/50" />
-        
+
         {/* 內容容器 - 手機版減少左右 padding 讓金屬框有更多空間 */}
         <div className="relative z-10 max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-12 space-y-6 sm:space-y-8 md:space-y-12">
-
-        {/* ==================== 1. 活動公告 Section ==================== */}
-        <FramedSection id="announcements" compact={true}>
-          <SectionTitle icon={Megaphone} title="活動公告" color="#e74c3c" href="/guide/announcements" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {displayEventAnnouncements.map((event) => (
-              <div
-                key={event.id}
-                className="card p-2 sm:p-4 hover:border-red-500/30 transition-all group cursor-pointer"
-              >
-                <div className="flex items-center gap-2 mb-2 flex-wrap">
-                  {event.isHot && (
-                    <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[10px] sm:text-xs font-semibold">
-                      🔥 熱門
-                    </span>
-                  )}
-                  <span className="text-[10px] sm:text-xs text-[var(--color-text-dark)]">{event.type}</span>
-                </div>
-                <h3 className="font-semibold text-sm sm:text-base text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors mb-2 line-clamp-2">
-                  {event.title}
-                </h3>
-                <div className="flex items-center gap-1 text-[10px] sm:text-xs text-[var(--color-text-muted)]">
-                  <Calendar className="w-3 h-3 shrink-0" />
-                  {event.date}
-                </div>
-              </div>
-            ))}
-          </div>
-        </FramedSection>
-
-        {/* ==================== 2. 贊助活動 Section ==================== */}
-        <FramedSection id="sponsor" compact={true}>
-          <SectionTitle icon={Heart} title="贊助活動" color="#e91e63" href="/guide/sponsor" />
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            {displaySponsorPlans.map((plan, index) => (
-              <div
-                key={index}
-                className={`card p-3 sm:p-5 text-center relative transition-all hover:scale-[1.02] ${
-                  plan.popular ? "border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/20" : ""
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-[var(--color-primary)] text-[var(--color-bg-dark)] text-[10px] sm:text-xs font-bold whitespace-nowrap">
-                    推薦
-                  </div>
-                )}
+          {/* ==================== 1. 活動公告 Section ==================== */}
+          <FramedSection id="announcements" compact={true}>
+            <SectionTitle
+              icon={Megaphone}
+              title="活動公告"
+              color="#e74c3c"
+              href="/guide/announcements"
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {displayEventAnnouncements.map((event) => (
                 <div
-                  className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 rounded-full flex items-center justify-center"
-                  style={{ backgroundColor: `${plan.color}20` }}
+                  key={event.id}
+                  className="card p-2 sm:p-4 hover:border-red-500/30 transition-all group cursor-pointer"
                 >
-                  <Crown className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: plan.color }} />
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    {event.isHot && (
+                      <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[10px] sm:text-xs font-semibold">
+                        🔥 熱門
+                      </span>
+                    )}
+                    <span className="text-[10px] sm:text-xs text-[var(--color-text-dark)]">
+                      {event.type}
+                    </span>
+                  </div>
+                  <h3 className="font-semibold text-sm sm:text-base text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors mb-2 line-clamp-2">
+                    {event.title}
+                  </h3>
+                  <div className="flex items-center gap-1 text-[10px] sm:text-xs text-[var(--color-text-muted)]">
+                    <Calendar className="w-3 h-3 shrink-0" />
+                    {event.date}
+                  </div>
                 </div>
-                <h3 className="font-bold text-[var(--color-text)] mb-1 text-sm sm:text-base">{plan.name}</h3>
-                <div className="text-lg sm:text-xl font-bold mb-2 sm:mb-3" style={{ color: plan.color }}>
-                  ${plan.price}
-                </div>
-                <ul className="text-[10px] sm:text-xs text-[var(--color-text-muted)] space-y-0.5 sm:space-y-1">
-                  {plan.benefits.slice(0, 3).map((b, i) => (
-                    <li key={i} className="truncate">• {b}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </FramedSection>
+              ))}
+            </div>
+          </FramedSection>
 
-        {/* ==================== 3. 下載專區 Section ==================== */}
-        <FramedSection id="download" compact>
-          <SectionTitle icon={Download} title="下載專區" color="#3498db" href="/guide/download" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {displayDownloadItems.map((item, index) => {
-              // 图标映射：支持从数据库读取的字符串图标名
-              const iconMap: Record<string, React.ElementType> = { Monitor, Smartphone };
-              const IconComp = typeof item.icon === 'string' ? iconMap[item.icon] || Monitor : item.icon;
-              return (
-                <div key={index} className="card p-4 sm:p-6 hover:border-blue-500/30 transition-all">
-                  <div className="flex items-center gap-3 sm:gap-4">
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0">
-                      <IconComp className="w-6 h-6 sm:w-7 sm:h-7 text-blue-400" />
+          {/* ==================== 最新公告 & 討論區 ==================== */}
+          <FramedSection compact={true}>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
+              {/* 最新公告 */}
+              <div className="lg:col-span-2">
+                <SectionTitle
+                  icon={Bell}
+                  title="最新公告"
+                  color="var(--color-primary)"
+                  href="/announcements"
+                />
+                <div className="space-y-4">
+                  {latestAnnouncements.length > 0 ? (
+                    latestAnnouncements.map((announcement) => (
+                      <Link
+                        key={announcement.id}
+                        href={`/announcements/${announcement.slug}`}
+                        className="card p-4 flex items-start gap-4 group"
+                      >
+                        <div className="flex-shrink-0 mt-1">
+                          <Flame className="w-5 h-5 text-[var(--color-primary)]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span
+                              className={`tag ${getTypeStyle(
+                                announcement.type
+                              )}`}
+                            >
+                              {getTypeLabel(announcement.type)}
+                            </span>
+                            <span className="text-[var(--color-text-dark)] text-xs flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              {formatDate(announcement.publishedAt)}
+                            </span>
+                          </div>
+                          <h3 className="text-[var(--color-text)] font-medium group-hover:text-[var(--color-primary)] transition-colors truncate">
+                            {announcement.title}
+                          </h3>
+                          {announcement.excerpt && (
+                            <p className="text-[var(--color-text-muted)] text-sm mt-1 line-clamp-2">
+                              {announcement.excerpt}
+                            </p>
+                          )}
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-[var(--color-text-dark)] group-hover:text-[var(--color-primary)] transition-colors flex-shrink-0" />
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="card p-8 text-center">
+                      <Bell className="w-12 h-12 text-[var(--color-text-dark)] mx-auto mb-4" />
+                      <p className="text-[var(--color-text-muted)]">暫無公告</p>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-[var(--color-text)] truncate">{item.name}</h3>
-                      <div className="text-sm text-[var(--color-text-muted)]">
-                        {item.version} • {item.size}
-                      </div>
+                  )}
+                </div>
+              </div>
+
+              {/* 討論區 */}
+              <div>
+                <SectionTitle
+                  icon={MessageSquare}
+                  title="討論區"
+                  color="var(--color-primary)"
+                  href="/forum"
+                />
+                <div className="space-y-3">
+                  {categories.length > 0 ? (
+                    categories.map((category) => (
+                      <Link
+                        key={category.id}
+                        href={`/forum?category=${category.slug}`}
+                        className="card p-4 flex items-center gap-3 group"
+                      >
+                        <div
+                          className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
+                          style={{ backgroundColor: `${category.color}20` }}
+                        >
+                          {category.icon || "💬"}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-[var(--color-text)] font-medium group-hover:text-[var(--color-primary)] transition-colors">
+                            {category.name}
+                          </h3>
+                          <p className="text-[var(--color-text-muted)] text-sm truncate">
+                            {category.description}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 text-[var(--color-text-dark)] text-sm">
+                          <Users className="w-4 h-4" />
+                          {category.postCount}
+                        </div>
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="card p-8 text-center">
+                      <MessageSquare className="w-12 h-12 text-[var(--color-text-dark)] mx-auto mb-4" />
+                      <p className="text-[var(--color-text-muted)]">暫無分類</p>
                     </div>
-                    <button className="btn-primary flex items-center gap-2 shrink-0">
-                      <FileDown className="w-4 h-4" />
-                      <span className="hidden sm:inline">下載</span>
-                    </button>
-                  </div>
+                  )}
                 </div>
-              );
-            })}
-          </div>
-        </FramedSection>
+              </div>
+            </div>
+          </FramedSection>
 
-        {/* ==================== 4. 遊戲設定 Section ==================== */}
-        <FramedSection id="settings" compact={true}>
-          <SectionTitle icon={Settings} title="遊戲設定" color="#9b59b6" href="/guide/settings" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-            {displayGameSettings.map((group, index) => (
-              <div key={index} className="card p-4 sm:p-5">
-                <h3 className="font-semibold text-[var(--color-text)] mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-                  <Shield className="w-4 h-4 text-purple-400 shrink-0" />
-                  {group.category}設定
-                </h3>
-                <div className="space-y-2 sm:space-y-3">
-                  {group.settings.map((setting, i) => (
-                    <div key={i} className="flex items-center justify-between py-1.5 sm:py-2 border-b border-[var(--color-border)]/50 last:border-0">
-                      <span className="text-xs sm:text-sm text-[var(--color-text-muted)]">{setting.name}</span>
-                      <span className="text-xs sm:text-sm font-medium text-purple-400">{setting.value}</span>
+          {/* ==================== 2. 贊助活動 Section ==================== */}
+          <FramedSection id="sponsor" compact={true}>
+            <SectionTitle
+              icon={Heart}
+              title="贊助活動"
+              color="#e91e63"
+              href="/guide/sponsor"
+            />
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              {displaySponsorPlans.map((plan, index) => (
+                <div
+                  key={index}
+                  className={`card p-3 sm:p-5 text-center relative transition-all hover:scale-[1.02] ${
+                    plan.popular
+                      ? "border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/20"
+                      : ""
+                  }`}
+                >
+                  {plan.popular && (
+                    <div className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-2 sm:px-3 py-0.5 sm:py-1 rounded-full bg-[var(--color-primary)] text-[var(--color-bg-dark)] text-[10px] sm:text-xs font-bold whitespace-nowrap">
+                      推薦
                     </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </FramedSection>
-
-        {/* ==================== 5. 新手攻略 Section ==================== */}
-        <FramedSection id="beginner" compact>
-          <SectionTitle icon={BookOpen} title="新手攻略" color="#2ecc71" href="/guide/beginner" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            {displayBeginnerGuides.map((guide) => (
-              <div key={guide.chapter} className="card p-3 sm:p-5 hover:border-green-500/30 transition-all group cursor-pointer">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-green-500/20 flex items-center justify-center mb-2 sm:mb-3">
-                  <span className="text-green-400 font-bold text-sm sm:text-base">{guide.chapter}</span>
-                </div>
-                <h3 className="font-semibold text-sm sm:text-base text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors mb-1">
-                  {guide.title}
-                </h3>
-                <p className="text-[10px] sm:text-xs text-[var(--color-text-muted)]">{guide.desc}</p>
-              </div>
-            ))}
-          </div>
-        </FramedSection>
-
-        {/* ==================== 6. 掉落查詢 Section ==================== */}
-        <FramedSection id="drops" compact={true}>
-          <SectionTitle icon={Search} title="掉落查詢" color="#f39c12" href="/guide/drops" />
-          {/* 桌面版：表格顯示 */}
-          <div className="hidden md:block card overflow-hidden">
-            <table className="w-full">
-              <thead className="bg-[var(--color-bg-darker)]">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--color-text)]">物品</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--color-text)]">地點</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--color-text)]">來源</th>
-                  <th className="px-4 py-3 text-right text-sm font-medium text-[var(--color-text)]">機率</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[var(--color-border)]">
-                {displayDropItems.map((item, index) => (
-                  <tr key={index} className="hover:bg-[var(--color-bg-card-hover)] transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <Star className="w-4 h-4 shrink-0" style={{ color: item.color }} />
-                        <span className="font-medium" style={{ color: item.color }}>{item.name}</span>
-                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: `${item.color}20`, color: item.color }}>
-                          {item.rarity}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {item.location}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">{item.boss}</td>
-                    <td className="px-4 py-3 text-right text-sm font-medium text-[var(--color-primary)]">{item.rate}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          {/* 手機版：卡片顯示 */}
-          <div className="md:hidden space-y-3">
-            {displayDropItems.map((item, index) => (
-              <div key={index} className="card p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <Star className="w-4 h-4 shrink-0" style={{ color: item.color }} />
-                    <span className="font-medium" style={{ color: item.color }}>{item.name}</span>
+                  )}
+                  <div
+                    className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-2 sm:mb-3 rounded-full flex items-center justify-center"
+                    style={{ backgroundColor: `${plan.color}20` }}
+                  >
+                    <Crown
+                      className="w-5 h-5 sm:w-6 sm:h-6"
+                      style={{ color: plan.color }}
+                    />
                   </div>
-                  <span className="text-xs px-1.5 py-0.5 rounded" style={{ backgroundColor: `${item.color}20`, color: item.color }}>
-                    {item.rarity}
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div className="text-[var(--color-text-muted)]">
-                    <span className="text-xs text-[var(--color-text-dark)]">地點：</span>
-                    {item.location}
+                  <h3 className="font-bold text-[var(--color-text)] mb-1 text-sm sm:text-base">
+                    {plan.name}
+                  </h3>
+                  <div
+                    className="text-lg sm:text-xl font-bold mb-2 sm:mb-3"
+                    style={{ color: plan.color }}
+                  >
+                    ${plan.price}
                   </div>
-                  <div className="text-[var(--color-text-muted)]">
-                    <span className="text-xs text-[var(--color-text-dark)]">來源：</span>
-                    {item.boss}
-                  </div>
+                  <ul className="text-[10px] sm:text-xs text-[var(--color-text-muted)] space-y-0.5 sm:space-y-1">
+                    {plan.benefits.slice(0, 3).map((b, i) => (
+                      <li key={i} className="truncate">
+                        • {b}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div className="mt-2 text-right">
-                  <span className="text-xs text-[var(--color-text-dark)]">掉落機率：</span>
-                  <span className="font-medium text-[var(--color-primary)]">{item.rate}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </FramedSection>
+              ))}
+            </div>
+          </FramedSection>
 
-        {/* ==================== 7. 副本介紹 Section ==================== */}
-        <FramedSection id="dungeon" compact>
-          <SectionTitle icon={Map} title="副本介紹" color="#1abc9c" href="/guide/dungeon" />
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {displayDungeons.map((dungeon, index) => (
-              <div key={index} className="card p-3 sm:p-5 hover:border-teal-500/30 transition-all group cursor-pointer">
-                <div className="flex items-center justify-between mb-2 sm:mb-3">
-                  <span className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded" style={{ backgroundColor: `${dungeon.color}20`, color: dungeon.color }}>
-                    {dungeon.difficulty}
-                  </span>
-                  <span className="text-[10px] sm:text-xs text-[var(--color-text-dark)]">Lv.{dungeon.level}</span>
-                </div>
-                <h3 className="text-base sm:text-lg font-bold text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors mb-1 sm:mb-2">
-                  {dungeon.name}
-                </h3>
-                <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-[var(--color-text-muted)] flex-wrap">
-                  <span className="flex items-center gap-1">
-                    <Users className="w-3 h-3 shrink-0" />
-                    {dungeon.players}
-                  </span>
-                  <span className="flex items-center gap-1 truncate">
-                    <Skull className="w-3 h-3 shrink-0" />
-                    <span className="truncate">{dungeon.boss}</span>
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </FramedSection>
-
-        {/* ==================== 8. 寶箱內容 Section ==================== */}
-        <FramedSection id="treasure" compact={true}>
-          <SectionTitle icon={Gift} title="寶箱內容" color="#f1c40f" href="/guide/treasure" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-            {displayTreasureBoxes.map((box, index) => (
-              <div key={index} className="card p-4 sm:p-5" style={{ borderColor: `${box.color}30` }}>
-                <div className="flex items-center gap-3 mb-3 sm:mb-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${box.color}20` }}>
-                    <Package className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: box.color }} />
-                  </div>
-                  <h3 className="text-base sm:text-lg font-bold" style={{ color: box.color }}>{box.name}</h3>
-                </div>
-                <ul className="space-y-1.5 sm:space-y-2">
-                  {box.items.map((item, i) => (
-                    <li key={i} className="flex items-center gap-2 text-xs sm:text-sm text-[var(--color-text-muted)] py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg bg-[var(--color-bg-darker)]">
-                      <Star className="w-3 h-3 shrink-0" style={{ color: box.color }} />
-                      <span className="truncate">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </FramedSection>
-
-        {/* ==================== 9. BOSS介紹 Section ==================== */}
-        <FramedSection id="boss" compact={true}>
-          <SectionTitle icon={Skull} title="BOSS介紹" color="#c0392b" href="/guide/boss" />
-          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            {displayBossList.map((boss, index) => (
-              <div key={index} className="card p-3 sm:p-5 hover:border-rose-500/30 transition-all group cursor-pointer">
-                <div className="flex items-center justify-between mb-2 sm:mb-3">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-rose-500/20 flex items-center justify-center shrink-0">
-                    <Skull className="w-5 h-5 sm:w-6 sm:h-6 text-rose-400" />
-                  </div>
-                  <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded" style={{ backgroundColor: `${boss.color}20`, color: boss.color }}>
-                    {boss.type}
-                  </span>
-                </div>
-                <h3 className="text-base sm:text-lg font-bold text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors">
-                  {boss.name}
-                </h3>
-                <p className="text-xs sm:text-sm text-[var(--color-text-muted)] italic mb-1 sm:mb-2 truncate">「{boss.title}」</p>
-                <div className="flex items-center gap-1 text-[10px] sm:text-xs text-[var(--color-text-dark)]">
-                  <MapPin className="w-3 h-3 shrink-0" />
-                  <span className="truncate">{boss.location}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </FramedSection>
-
-        {/* ==================== 10. 國戰時間 Section ==================== */}
-        <FramedSection id="nation-war" compact={true}>
-          <SectionTitle icon={Swords} title="國戰時間" color="#8e44ad" href="/guide/nation-war" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            {/* 時間表 */}
-            <div className="card p-4 h-[300px] flex flex-col">
-              <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
-                <Clock className="w-4 h-4 text-violet-400" />
-                每週時程表
-              </h3>
-              <div className="space-y-2 sm:space-y-3 overflow-y-auto flex-1">
-                {displayWarSchedule.map((schedule, index) => (
+          {/* ==================== 3. 下載專區 Section ==================== */}
+          <FramedSection id="download" compact>
+            <SectionTitle
+              icon={Download}
+              title="下載專區"
+              color="#3498db"
+              href="/guide/download"
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {displayDownloadItems.map((item, index) => {
+                // 图标映射：支持从数据库读取的字符串图标名
+                const iconMap: Record<string, React.ElementType> = {
+                  Monitor,
+                  Smartphone,
+                };
+                const IconComp =
+                  typeof item.icon === "string"
+                    ? iconMap[item.icon] || Monitor
+                    : item.icon;
+                return (
                   <div
                     key={index}
-                    className={`flex items-center justify-between p-2 sm:p-3 rounded-lg ${
-                      schedule.highlight ? "bg-violet-500/10 border border-violet-500/30" : "bg-[var(--color-bg-darker)]"
-                    }`}
+                    className="card p-4 sm:p-6 hover:border-blue-500/30 transition-all"
                   >
-                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                      <span className={`font-medium text-sm shrink-0 ${schedule.highlight ? "text-violet-400" : "text-[var(--color-text)]"}`}>
-                        {schedule.day}
-                      </span>
-                      <span className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded shrink-0 ${
-                        schedule.highlight ? "bg-violet-500/20 text-violet-400" : "bg-[var(--color-bg-card)] text-[var(--color-text-muted)]"
-                      }`}>
-                        {schedule.type}
-                      </span>
+                    <div className="flex items-center gap-3 sm:gap-4">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0">
+                        <IconComp className="w-6 h-6 sm:w-7 sm:h-7 text-blue-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-[var(--color-text)] truncate">
+                          {item.name}
+                        </h3>
+                        <div className="text-sm text-[var(--color-text-muted)]">
+                          {item.version} • {item.size}
+                        </div>
+                      </div>
+                      <button className="btn-primary flex items-center gap-2 shrink-0">
+                        <FileDown className="w-4 h-4" />
+                        <span className="hidden sm:inline">下載</span>
+                      </button>
                     </div>
-                    <span className="text-xs sm:text-sm text-[var(--color-text-muted)] shrink-0">{schedule.time}</span>
                   </div>
-                ))}
-              </div>
+                );
+              })}
             </div>
+          </FramedSection>
 
-            {/* 三國陣營 */}
-            <div className="card p-4 h-[300px] flex flex-col">
-              <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
-                <Flag className="w-4 h-4 text-violet-400" />
-                三國陣營
-              </h3>
-              <div className="space-y-2 sm:space-y-3 overflow-y-auto flex-1">
-                {[
-                  { name: "魏國", color: "#3b82f6", bonus: "攻+5%", desc: "曹操為首" },
-                  { name: "蜀國", color: "#22c55e", bonus: "防+5%", desc: "劉備為首" },
-                  { name: "吳國", color: "#ef4444", bonus: "速+5%", desc: "孫權為首" },
-                ].map((faction, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]" style={{ borderLeft: `3px solid ${faction.color}` }}>
-                    <div className="min-w-0">
-                      <span className="font-bold text-sm" style={{ color: faction.color }}>{faction.name}</span>
-                      <p className="text-xs text-[var(--color-text-muted)] truncate">{faction.desc}</p>
-                    </div>
-                    <span className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 rounded shrink-0 ml-2" style={{ backgroundColor: `${faction.color}20`, color: faction.color }}>
-                      {faction.bonus}
+          {/* ==================== 4. 遊戲設定 Section ==================== */}
+          <FramedSection id="settings" compact={true}>
+            <SectionTitle
+              icon={Settings}
+              title="遊戲設定"
+              color="#9b59b6"
+              href="/guide/settings"
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+              {displayGameSettings.map((group, index) => (
+                <div key={index} className="card p-4 sm:p-5">
+                  <h3 className="font-semibold text-[var(--color-text)] mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
+                    <Shield className="w-4 h-4 text-purple-400 shrink-0" />
+                    {group.category}設定
+                  </h3>
+                  <div className="space-y-2 sm:space-y-3">
+                    {group.settings.map((setting, i) => (
+                      <div
+                        key={i}
+                        className="flex items-center justify-between py-1.5 sm:py-2 border-b border-[var(--color-border)]/50 last:border-0"
+                      >
+                        <span className="text-xs sm:text-sm text-[var(--color-text-muted)]">
+                          {setting.name}
+                        </span>
+                        <span className="text-xs sm:text-sm font-medium text-purple-400">
+                          {setting.value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </FramedSection>
+
+          {/* ==================== 5. 新手攻略 Section ==================== */}
+          <FramedSection id="beginner" compact>
+            <SectionTitle
+              icon={BookOpen}
+              title="新手攻略"
+              color="#2ecc71"
+              href="/guide/beginner"
+            />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+              {displayBeginnerGuides.map((guide) => (
+                <div
+                  key={guide.chapter}
+                  className="card p-3 sm:p-5 hover:border-green-500/30 transition-all group cursor-pointer"
+                >
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-green-500/20 flex items-center justify-center mb-2 sm:mb-3">
+                    <span className="text-green-400 font-bold text-sm sm:text-base">
+                      {guide.chapter}
                     </span>
                   </div>
-                ))}
-              </div>
+                  <h3 className="font-semibold text-sm sm:text-base text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors mb-1">
+                    {guide.title}
+                  </h3>
+                  <p className="text-[10px] sm:text-xs text-[var(--color-text-muted)]">
+                    {guide.desc}
+                  </p>
+                </div>
+              ))}
             </div>
-          </div>
-        </FramedSection>
+          </FramedSection>
 
-        {/* ==================== 11. 武魂擂台 Section ==================== */}
-        <FramedSection id="arena" compact={true}>
-          <SectionTitle icon={Trophy} title="武魂擂台" color="#c9a227" href="/guide/arena" />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-            {/* 排行榜 */}
-            <div className="card p-4 h-[350px] flex flex-col">
-              <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
-                <Medal className="w-3 h-3 text-amber-400" />
-                本賽季排行榜
-              </h3>
-              <div className="space-y-2 overflow-y-auto flex-1">
-                {displayArenaRanking.map((player) => (
-                  <div key={player.rank} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]">
-                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                      <span className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold shrink-0 ${
-                        player.rank === 1 ? "bg-yellow-500/20 text-yellow-400" :
-                        player.rank === 2 ? "bg-gray-400/20 text-gray-300" :
-                        player.rank === 3 ? "bg-orange-500/20 text-orange-400" :
-                        "bg-[var(--color-bg-card)] text-[var(--color-text-muted)]"
-                      }`}>
-                        {player.rank}
+          {/* ==================== 6. 掉落查詢 Section ==================== */}
+          <FramedSection id="drops" compact={true}>
+            <SectionTitle
+              icon={Search}
+              title="掉落查詢"
+              color="#f39c12"
+              href="/guide/drops"
+            />
+            {/* 桌面版：表格顯示 */}
+            <div className="hidden md:block card overflow-hidden">
+              <table className="w-full">
+                <thead className="bg-[var(--color-bg-darker)]">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-[var(--color-text)]">
+                      物品
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-[var(--color-text)]">
+                      地點
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-[var(--color-text)]">
+                      來源
+                    </th>
+                    <th className="px-4 py-3 text-right text-sm font-medium text-[var(--color-text)]">
+                      機率
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[var(--color-border)]">
+                  {displayDropItems.map((item, index) => (
+                    <tr
+                      key={index}
+                      className="hover:bg-[var(--color-bg-card-hover)] transition-colors"
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Star
+                            className="w-4 h-4 shrink-0"
+                            style={{ color: item.color }}
+                          />
+                          <span
+                            className="font-medium"
+                            style={{ color: item.color }}
+                          >
+                            {item.name}
+                          </span>
+                          <span
+                            className="text-xs px-1.5 py-0.5 rounded"
+                            style={{
+                              backgroundColor: `${item.color}20`,
+                              color: item.color,
+                            }}
+                          >
+                            {item.rarity}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {item.location}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">
+                        {item.boss}
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm font-medium text-[var(--color-primary)]">
+                        {item.rate}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {/* 手機版：卡片顯示 */}
+            <div className="md:hidden space-y-3">
+              {displayDropItems.map((item, index) => (
+                <div key={index} className="card p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Star
+                        className="w-4 h-4 shrink-0"
+                        style={{ color: item.color }}
+                      />
+                      <span
+                        className="font-medium"
+                        style={{ color: item.color }}
+                      >
+                        {item.name}
                       </span>
-                      <div className="min-w-0">
-                        <span className={`font-medium text-sm truncate block ${player.rank <= 3 ? "text-[var(--color-primary)]" : "text-[var(--color-text)]"}`}>
-                          {player.name}
+                    </div>
+                    <span
+                      className="text-xs px-1.5 py-0.5 rounded"
+                      style={{
+                        backgroundColor: `${item.color}20`,
+                        color: item.color,
+                      }}
+                    >
+                      {item.rarity}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="text-[var(--color-text-muted)]">
+                      <span className="text-xs text-[var(--color-text-dark)]">
+                        地點：
+                      </span>
+                      {item.location}
+                    </div>
+                    <div className="text-[var(--color-text-muted)]">
+                      <span className="text-xs text-[var(--color-text-dark)]">
+                        來源：
+                      </span>
+                      {item.boss}
+                    </div>
+                  </div>
+                  <div className="mt-2 text-right">
+                    <span className="text-xs text-[var(--color-text-dark)]">
+                      掉落機率：
+                    </span>
+                    <span className="font-medium text-[var(--color-primary)]">
+                      {item.rate}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </FramedSection>
+
+          {/* ==================== 7. 副本介紹 Section ==================== */}
+          <FramedSection id="dungeon" compact>
+            <SectionTitle
+              icon={Map}
+              title="副本介紹"
+              color="#1abc9c"
+              href="/guide/dungeon"
+            />
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {displayDungeons.map((dungeon, index) => (
+                <div
+                  key={index}
+                  className="card p-3 sm:p-5 hover:border-teal-500/30 transition-all group cursor-pointer"
+                >
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <span
+                      className="text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded"
+                      style={{
+                        backgroundColor: `${dungeon.color}20`,
+                        color: dungeon.color,
+                      }}
+                    >
+                      {dungeon.difficulty}
+                    </span>
+                    <span className="text-[10px] sm:text-xs text-[var(--color-text-dark)]">
+                      Lv.{dungeon.level}
+                    </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors mb-1 sm:mb-2">
+                    {dungeon.name}
+                  </h3>
+                  <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-xs text-[var(--color-text-muted)] flex-wrap">
+                    <span className="flex items-center gap-1">
+                      <Users className="w-3 h-3 shrink-0" />
+                      {dungeon.players}
+                    </span>
+                    <span className="flex items-center gap-1 truncate">
+                      <Skull className="w-3 h-3 shrink-0" />
+                      <span className="truncate">{dungeon.boss}</span>
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </FramedSection>
+
+          {/* ==================== 8. 寶箱內容 Section ==================== */}
+          <FramedSection id="treasure" compact={true}>
+            <SectionTitle
+              icon={Gift}
+              title="寶箱內容"
+              color="#f1c40f"
+              href="/guide/treasure"
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+              {displayTreasureBoxes.map((box, index) => (
+                <div
+                  key={index}
+                  className="card p-4 sm:p-5"
+                  style={{ borderColor: `${box.color}30` }}
+                >
+                  <div className="flex items-center gap-3 mb-3 sm:mb-4">
+                    <div
+                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: `${box.color}20` }}
+                    >
+                      <Package
+                        className="w-5 h-5 sm:w-6 sm:h-6"
+                        style={{ color: box.color }}
+                      />
+                    </div>
+                    <h3
+                      className="text-base sm:text-lg font-bold"
+                      style={{ color: box.color }}
+                    >
+                      {box.name}
+                    </h3>
+                  </div>
+                  <ul className="space-y-1.5 sm:space-y-2">
+                    {box.items.map((item, i) => (
+                      <li
+                        key={i}
+                        className="flex items-center gap-2 text-xs sm:text-sm text-[var(--color-text-muted)] py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg bg-[var(--color-bg-darker)]"
+                      >
+                        <Star
+                          className="w-3 h-3 shrink-0"
+                          style={{ color: box.color }}
+                        />
+                        <span className="truncate">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </FramedSection>
+
+          {/* ==================== 9. BOSS介紹 Section ==================== */}
+          <FramedSection id="boss" compact={true}>
+            <SectionTitle
+              icon={Skull}
+              title="BOSS介紹"
+              color="#c0392b"
+              href="/guide/boss"
+            />
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+              {displayBossList.map((boss, index) => (
+                <div
+                  key={index}
+                  className="card p-3 sm:p-5 hover:border-rose-500/30 transition-all group cursor-pointer"
+                >
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-rose-500/20 flex items-center justify-center shrink-0">
+                      <Skull className="w-5 h-5 sm:w-6 sm:h-6 text-rose-400" />
+                    </div>
+                    <span
+                      className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded"
+                      style={{
+                        backgroundColor: `${boss.color}20`,
+                        color: boss.color,
+                      }}
+                    >
+                      {boss.type}
+                    </span>
+                  </div>
+                  <h3 className="text-base sm:text-lg font-bold text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors">
+                    {boss.name}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[var(--color-text-muted)] italic mb-1 sm:mb-2 truncate">
+                    「{boss.title}」
+                  </p>
+                  <div className="flex items-center gap-1 text-[10px] sm:text-xs text-[var(--color-text-dark)]">
+                    <MapPin className="w-3 h-3 shrink-0" />
+                    <span className="truncate">{boss.location}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </FramedSection>
+
+          {/* ==================== 10. 國戰時間 Section ==================== */}
+          <FramedSection id="nation-war" compact={true}>
+            <SectionTitle
+              icon={Swords}
+              title="國戰時間"
+              color="#8e44ad"
+              href="/guide/nation-war"
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              {/* 時間表 */}
+              <div className="card p-4 h-[300px] flex flex-col">
+                <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
+                  <Clock className="w-4 h-4 text-violet-400" />
+                  每週時程表
+                </h3>
+                <div className="space-y-2 sm:space-y-3 overflow-y-auto flex-1">
+                  {displayWarSchedule.map((schedule, index) => (
+                    <div
+                      key={index}
+                      className={`flex items-center justify-between p-2 sm:p-3 rounded-lg ${
+                        schedule.highlight
+                          ? "bg-violet-500/10 border border-violet-500/30"
+                          : "bg-[var(--color-bg-darker)]"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <span
+                          className={`font-medium text-sm shrink-0 ${
+                            schedule.highlight
+                              ? "text-violet-400"
+                              : "text-[var(--color-text)]"
+                          }`}
+                        >
+                          {schedule.day}
                         </span>
-                        <p className="text-[10px] sm:text-xs text-[var(--color-text-dark)] truncate">{player.guild}</p>
+                        <span
+                          className={`text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 rounded shrink-0 ${
+                            schedule.highlight
+                              ? "bg-violet-500/20 text-violet-400"
+                              : "bg-[var(--color-bg-card)] text-[var(--color-text-muted)]"
+                          }`}
+                        >
+                          {schedule.type}
+                        </span>
                       </div>
+                      <span className="text-xs sm:text-sm text-[var(--color-text-muted)] shrink-0">
+                        {schedule.time}
+                      </span>
                     </div>
-                    <span className="font-bold text-amber-400 text-sm sm:text-base shrink-0 ml-2">{player.score}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+
+              {/* 三國陣營 */}
+              <div className="card p-4 h-[300px] flex flex-col">
+                <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
+                  <Flag className="w-4 h-4 text-violet-400" />
+                  三國陣營
+                </h3>
+                <div className="space-y-2 sm:space-y-3 overflow-y-auto flex-1">
+                  {[
+                    {
+                      name: "魏國",
+                      color: "#3b82f6",
+                      bonus: "攻+5%",
+                      desc: "曹操為首",
+                    },
+                    {
+                      name: "蜀國",
+                      color: "#22c55e",
+                      bonus: "防+5%",
+                      desc: "劉備為首",
+                    },
+                    {
+                      name: "吳國",
+                      color: "#ef4444",
+                      bonus: "速+5%",
+                      desc: "孫權為首",
+                    },
+                  ].map((faction, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]"
+                      style={{ borderLeft: `3px solid ${faction.color}` }}
+                    >
+                      <div className="min-w-0">
+                        <span
+                          className="font-bold text-sm"
+                          style={{ color: faction.color }}
+                        >
+                          {faction.name}
+                        </span>
+                        <p className="text-xs text-[var(--color-text-muted)] truncate">
+                          {faction.desc}
+                        </p>
+                      </div>
+                      <span
+                        className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 rounded shrink-0 ml-2"
+                        style={{
+                          backgroundColor: `${faction.color}20`,
+                          color: faction.color,
+                        }}
+                      >
+                        {faction.bonus}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
+          </FramedSection>
 
-            {/* 段位說明 */}
-            <div className="card p-4 h-[350px] flex flex-col">
-              <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
-                <Star className="w-4 h-4 text-amber-400" />
-                段位說明
-              </h3>
-              <div className="space-y-2 sm:space-y-3 overflow-y-auto flex-1">
-                {[
-                  { name: "王者", icon: "👑", score: "2500+", color: "#ff6b00" },
-                  { name: "宗師", icon: "🏆", score: "2000-2499", color: "#a855f7" },
-                  { name: "大師", icon: "⭐", score: "1500-1999", color: "#3b82f6" },
-                  { name: "精英", icon: "🎖️", score: "1000-1499", color: "#22c55e" },
-                  { name: "新秀", icon: "🌟", score: "0-999", color: "#6b7280" },
-                ].map((tier, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]">
-                    <div className="flex items-center gap-2 sm:gap-3">
-                      <span className="text-lg sm:text-xl">{tier.icon}</span>
-                      <span className="font-medium text-sm" style={{ color: tier.color }}>{tier.name}</span>
+          {/* ==================== 11. 武魂擂台 Section ==================== */}
+          <FramedSection id="arena" compact={true}>
+            <SectionTitle
+              icon={Trophy}
+              title="武魂擂台"
+              color="#c9a227"
+              href="/guide/arena"
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              {/* 排行榜 */}
+              <div className="card p-4 h-[350px] flex flex-col">
+                <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
+                  <Medal className="w-3 h-3 text-amber-400" />
+                  本賽季排行榜
+                </h3>
+                <div className="space-y-2 overflow-y-auto flex-1">
+                  {displayArenaRanking.map((player) => (
+                    <div
+                      key={player.rank}
+                      className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]"
+                    >
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <span
+                          className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold shrink-0 ${
+                            player.rank === 1
+                              ? "bg-yellow-500/20 text-yellow-400"
+                              : player.rank === 2
+                              ? "bg-gray-400/20 text-gray-300"
+                              : player.rank === 3
+                              ? "bg-orange-500/20 text-orange-400"
+                              : "bg-[var(--color-bg-card)] text-[var(--color-text-muted)]"
+                          }`}
+                        >
+                          {player.rank}
+                        </span>
+                        <div className="min-w-0">
+                          <span
+                            className={`font-medium text-sm truncate block ${
+                              player.rank <= 3
+                                ? "text-[var(--color-primary)]"
+                                : "text-[var(--color-text)]"
+                            }`}
+                          >
+                            {player.name}
+                          </span>
+                          <p className="text-[10px] sm:text-xs text-[var(--color-text-dark)] truncate">
+                            {player.guild}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="font-bold text-amber-400 text-sm sm:text-base shrink-0 ml-2">
+                        {player.score}
+                      </span>
                     </div>
-                    <span className="text-xs sm:text-sm text-[var(--color-text-muted)]">{tier.score}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+
+              {/* 段位說明 */}
+              <div className="card p-4 h-[350px] flex flex-col">
+                <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
+                  <Star className="w-4 h-4 text-amber-400" />
+                  段位說明
+                </h3>
+                <div className="space-y-2 sm:space-y-3 overflow-y-auto flex-1">
+                  {[
+                    {
+                      name: "王者",
+                      icon: "👑",
+                      score: "2500+",
+                      color: "#ff6b00",
+                    },
+                    {
+                      name: "宗師",
+                      icon: "🏆",
+                      score: "2000-2499",
+                      color: "#a855f7",
+                    },
+                    {
+                      name: "大師",
+                      icon: "⭐",
+                      score: "1500-1999",
+                      color: "#3b82f6",
+                    },
+                    {
+                      name: "精英",
+                      icon: "🎖️",
+                      score: "1000-1499",
+                      color: "#22c55e",
+                    },
+                    {
+                      name: "新秀",
+                      icon: "🌟",
+                      score: "0-999",
+                      color: "#6b7280",
+                    },
+                  ].map((tier, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]"
+                    >
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <span className="text-lg sm:text-xl">{tier.icon}</span>
+                        <span
+                          className="font-medium text-sm"
+                          style={{ color: tier.color }}
+                        >
+                          {tier.name}
+                        </span>
+                      </div>
+                      <span className="text-xs sm:text-sm text-[var(--color-text-muted)]">
+                        {tier.score}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        </FramedSection>
+          </FramedSection>
 
-        {/* ==================== 12. 玩家評價 Section ==================== */}
-        <FramedSection id="reviews" compact={false} >
+          {/* ==================== 12. 玩家評價 Section ==================== */}
           <SectionTitle icon={Quote} title="玩家評價" color="#10b981" />
           <ReviewSection />
-        </FramedSection>
-
-        {/* ==================== 最新公告 & 討論區 ==================== */}
-        <FramedSection compact={true}>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-          {/* 最新公告 */}
-          <div className="lg:col-span-2">
-            <SectionTitle icon={Bell} title="最新公告" color="var(--color-primary)" href="/announcements" />
-            <div className="space-y-4">
-              {latestAnnouncements.length > 0 ? (
-                latestAnnouncements.map((announcement) => (
-                  <Link
-                    key={announcement.id}
-                    href={`/announcements/${announcement.slug}`}
-                    className="card p-4 flex items-start gap-4 group"
-                  >
-                    <div className="flex-shrink-0 mt-1">
-                      <Flame className="w-5 h-5 text-[var(--color-primary)]" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`tag ${getTypeStyle(announcement.type)}`}>
-                          {getTypeLabel(announcement.type)}
-                        </span>
-                        <span className="text-[var(--color-text-dark)] text-xs flex items-center gap-1">
-                          <Calendar className="w-3 h-3" />
-                          {formatDate(announcement.publishedAt)}
-                        </span>
-                      </div>
-                      <h3 className="text-[var(--color-text)] font-medium group-hover:text-[var(--color-primary)] transition-colors truncate">
-                        {announcement.title}
-                      </h3>
-                      {announcement.excerpt && (
-                        <p className="text-[var(--color-text-muted)] text-sm mt-1 line-clamp-2">
-                          {announcement.excerpt}
-                        </p>
-                      )}
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-[var(--color-text-dark)] group-hover:text-[var(--color-primary)] transition-colors flex-shrink-0" />
-                  </Link>
-                ))
-              ) : (
-                <div className="card p-8 text-center">
-                  <Bell className="w-12 h-12 text-[var(--color-text-dark)] mx-auto mb-4" />
-                  <p className="text-[var(--color-text-muted)]">暫無公告</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* 討論區 */}
-          <div>
-            <SectionTitle icon={MessageSquare} title="討論區" color="var(--color-primary)" href="/forum" />
-            <div className="space-y-3">
-              {categories.length > 0 ? (
-                categories.map((category) => (
-                  <Link
-                    key={category.id}
-                    href={`/forum?category=${category.slug}`}
-                    className="card p-4 flex items-center gap-3 group"
-                  >
-                    <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
-                      style={{ backgroundColor: `${category.color}20` }}
-                    >
-                      {category.icon || "💬"}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="text-[var(--color-text)] font-medium group-hover:text-[var(--color-primary)] transition-colors">
-                        {category.name}
-                      </h3>
-                      <p className="text-[var(--color-text-muted)] text-sm truncate">
-                        {category.description}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1 text-[var(--color-text-dark)] text-sm">
-                      <Users className="w-4 h-4" />
-                      {category.postCount}
-                    </div>
-                  </Link>
-                ))
-              ) : (
-                <div className="card p-8 text-center">
-                  <MessageSquare className="w-12 h-12 text-[var(--color-text-dark)] mx-auto mb-4" />
-                  <p className="text-[var(--color-text-muted)]">暫無分類</p>
-                </div>
-              )}
-            </div>
-          </div>
-          </div>
-        </FramedSection>
-
         </div>
       </div>
 
@@ -968,7 +1269,10 @@ export default async function HomePage() {
               <ul className="space-y-2">
                 {["新手攻略", "副本介紹", "BOSS介紹"].map((item, i) => (
                   <li key={i}>
-                    <a href={`#${["beginner", "dungeon", "boss"][i]}`} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm transition-colors">
+                    <a
+                      href={`#${["beginner", "dungeon", "boss"][i]}`}
+                      className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm transition-colors"
+                    >
                       {item}
                     </a>
                   </li>
@@ -983,7 +1287,10 @@ export default async function HomePage() {
               <ul className="space-y-2">
                 {["掉落查詢", "寶箱內容", "遊戲設定"].map((item, i) => (
                   <li key={i}>
-                    <a href={`#${["drops", "treasure", "settings"][i]}`} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm transition-colors">
+                    <a
+                      href={`#${["drops", "treasure", "settings"][i]}`}
+                      className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm transition-colors"
+                    >
                       {item}
                     </a>
                   </li>
@@ -998,7 +1305,10 @@ export default async function HomePage() {
               <ul className="space-y-2">
                 {["國戰時間", "武魂擂台", "活動公告"].map((item, i) => (
                   <li key={i}>
-                    <a href={`#${["nation-war", "arena", "announcements"][i]}`} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm transition-colors">
+                    <a
+                      href={`#${["nation-war", "arena", "announcements"][i]}`}
+                      className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm transition-colors"
+                    >
                       {item}
                     </a>
                   </li>
@@ -1013,7 +1323,10 @@ export default async function HomePage() {
               <ul className="space-y-2">
                 {["下載專區", "贊助活動", "討論區"].map((item, i) => (
                   <li key={i}>
-                    <a href={`#${["download", "sponsor", ""][i]}`} className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm transition-colors">
+                    <a
+                      href={`#${["download", "sponsor", ""][i]}`}
+                      className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] text-sm transition-colors"
+                    >
                       {item}
                     </a>
                   </li>

@@ -401,26 +401,10 @@ export default function ReviewSection() {
         </div>
       </div>
 
-      {/* 排序選項 */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm text-[var(--color-text-muted)]">排序：</span>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="input py-1 px-2 text-sm"
-          >
-            <option value="newest">最新</option>
-            <option value="oldest">最早</option>
-            <option value="highest">最高分</option>
-            <option value="lowest">最低分</option>
-            <option value="helpful">最有幫助</option>
-          </select>
-        </div>
-      </div>
+      
 
-      {/* 評價列表 */}
-      <div className="space-y-4">
+      {/* 評價列表 - 限制最大高度防止超出金屬框 */}
+      <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
         {data?.reviews.length === 0 ? (
           <div className="text-center py-8 text-[var(--color-text-muted)]">
             還沒有評價，成為第一個評價的玩家吧！
