@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Menu, X, Crown, MessageSquare, Bell, Shield, Star } from "lucide-react";
+import UserMenu from "./UserMenu";
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -17,8 +18,9 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 bg-[var(--color-bg-darker)]/95 backdrop-blur-sm border-b border-[var(--color-border)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-center h-16">
-         
+        <div className="flex items-center justify-between h-16">
+          {/* 左側佔位 - 保持導航居中 */}
+          <div className="w-24 md:hidden" />
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
@@ -34,19 +36,30 @@ export default function Header() {
             ))}
           </nav>
 
+          {/* 右側：用戶菜單 */}
+          <div className="flex items-center gap-3">
+            <div className="hidden md:block">
+              <UserMenu />
+            </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="md:hidden p-2 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-card)] transition-all"
-          >
-            {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+            {/* Mobile Menu Button */}
+            <button
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+              className="md:hidden p-2 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-card)] transition-all"
+            >
+              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile Navigation */}
         {isMenuOpen && (
           <div className="md:hidden py-4 border-t border-[var(--color-border)] animate-fadeIn">
+            {/* 移動端用戶菜單 */}
+            <div className="px-4 pb-4 border-b border-[var(--color-border)] mb-2">
+              <UserMenu />
+            </div>
+
             <nav className="flex flex-col gap-2">
               {navItems.map((item) => (
                 <Link

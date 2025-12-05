@@ -1,5 +1,17 @@
 import { prisma } from "./prismaClient";
 import { JSONScalar } from "./utils/jsonScalar";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+
+// 從上下文獲取當前用戶
+interface Context {
+  userId?: number;
+}
+
+const getUserFromContext = async (context: Context) => {
+  if (!context.userId) return null;
+  return await prisma.user.findUnique({ where: { id: context.userId } });
+};
 
 // 假數據（當資料庫未配置時使用）
 const mockCategories = [
@@ -445,6 +457,465 @@ const ContentBlockResolvers = {
   },
 };
 
+// User Resolvers
+const UserResolvers = {
+  Query: {
+    me: async (_: unknown, __: unknown, context: Context) => {
+      return await getUserFromContext(context);
+    },
+    user: async (_: unknown, { id }: { id: number }) => {
+      return await prisma.user.findUnique({ where: { id } });
+    },
+    users: async (_: unknown, { page = 1, pageSize = 20 }: { page?: number; pageSize?: number }) => {
+      const total = await prisma.user.count();
+      const users = await prisma.user.findMany({
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+      });
+      return {
+        users,
+        total,
+        page,
+        pageSize,
+        hasMore: total > page * pageSize,
+      };
+    },
+  },
+  Mutation: {
+    register: async (_: unknown, { input }: { input: { email: string; password: string; name: string; avatar?: string } }) => {
+      // 檢查郵箱是否已存在
+      const existingUser = await prisma.user.findUnique({ where: { email: input.email } });
+      if (existingUser) {
+        throw new Error('該郵箱已被註冊');
+      }
+
+      // 密碼加密
+      const passwordHash = await bcrypt.hash(input.password, 10);
+
+      // 創建用戶
+      const user = await prisma.user.create({
+        data: {
+          email: input.email,
+          passwordHash,
+          name: input.name,
+          avatar: input.avatar || '👤',
+        },
+      });
+
+      // 生成 token
+      const token = jwt.sign(
+        { userId: user.id },
+        process.env.NEXTAUTH_SECRET || 'fallback-secret',
+        { expiresIn: '7d' }
+      );
+
+      return { user, token };
+    },
+    login: async (_: unknown, { input }: { input: { email: string; password: string } }) => {
+      // 查找用戶
+      const user = await prisma.user.findUnique({ where: { email: input.email } });
+      if (!user) {
+        throw new Error('郵箱或密碼錯誤');
+      }
+
+      // 檢查是否被封禁
+      if (user.isBanned) {
+        throw new Error('該帳號已被封禁');
+      }
+
+      // 驗證密碼
+      const isValid = await bcrypt.compare(input.password, user.passwordHash);
+      if (!isValid) {
+        throw new Error('郵箱或密碼錯誤');
+      }
+
+      // 生成 token
+      const token = jwt.sign(
+        { userId: user.id },
+        process.env.NEXTAUTH_SECRET || 'fallback-secret',
+        { expiresIn: '7d' }
+      );
+
+      return { user, token };
+    },
+    updateProfile: async (_: unknown, { input }: { input: { name?: string; avatar?: string; gameHours?: number } }, context: Context) => {
+      const user = await getUserFromContext(context);
+      if (!user) {
+        throw new Error('請先登入');
+      }
+
+      return await prisma.user.update({
+        where: { id: user.id },
+        data: input,
+      });
+    },
+    updateGameHours: async (_: unknown, { hours }: { hours: number }, context: Context) => {
+      const user = await getUserFromContext(context);
+      if (!user) {
+        throw new Error('請先登入');
+      }
+
+      return await prisma.user.update({
+        where: { id: user.id },
+        data: { gameHours: hours },
+      });
+    },
+  },
+  User: {
+    reviewCount: async (parent: { id: number }) => {
+      return await prisma.review.count({ where: { userId: parent.id, isApproved: true } });
+    },
+    reviews: async (parent: { id: number }) => {
+      return await prisma.review.findMany({
+        where: { userId: parent.id },
+        orderBy: { createdAt: 'desc' },
+        include: { user: true },
+      });
+    },
+  },
+};
+
+// Review Resolvers
+const ReviewResolvers = {
+  Query: {
+    reviews: async (_: unknown, { page = 1, pageSize = 10, sortBy = 'newest' }: { page?: number; pageSize?: number; sortBy?: string }, context: Context) => {
+      const where = { isApproved: true, isHidden: false };
+
+      const total = await prisma.review.count({ where });
+
+      let orderBy: object;
+      switch (sortBy) {
+        case 'oldest':
+          orderBy = { createdAt: 'asc' };
+          break;
+        case 'highest':
+          orderBy = { rating: 'desc' };
+          break;
+        case 'lowest':
+          orderBy = { rating: 'asc' };
+          break;
+        case 'helpful':
+          orderBy = { likes: { _count: 'desc' } };
+          break;
+        default:
+          orderBy = { createdAt: 'desc' };
+      }
+
+      const reviews = await prisma.review.findMany({
+        where,
+        orderBy,
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          user: true,
+          likes: true,
+          replies: { include: { user: true }, orderBy: { createdAt: 'asc' } },
+        },
+      });
+
+      // 計算統計數據
+      const allReviews = await prisma.review.findMany({ where });
+      const totalReviews = allReviews.length;
+      const averageRating = totalReviews > 0
+        ? allReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
+        : 0;
+      const recommendedCount = allReviews.filter(r => r.isRecommended).length;
+      const recommendedPercent = totalReviews > 0
+        ? (recommendedCount / totalReviews) * 100
+        : 0;
+
+      // 評分分佈 [1星數量, 2星數量, 3星數量, 4星數量, 5星數量]
+      const ratingDistribution = [1, 2, 3, 4, 5].map(
+        rating => allReviews.filter(r => r.rating === rating).length
+      );
+
+      // 標記當前用戶是否已點贊
+      const reviewsWithLikeStatus = reviews.map(review => ({
+        ...review,
+        isLikedByMe: context.userId ? review.likes.some(like => like.userId === context.userId) : false,
+        likeCount: review.likes.length,
+        replyCount: review.replies.length,
+      }));
+
+      return {
+        reviews: reviewsWithLikeStatus,
+        total,
+        page,
+        pageSize,
+        hasMore: total > page * pageSize,
+        stats: {
+          totalReviews,
+          averageRating: Math.round(averageRating * 10) / 10,
+          recommendedPercent: Math.round(recommendedPercent),
+          ratingDistribution,
+        },
+      };
+    },
+    review: async (_: unknown, { id }: { id: number }, context: Context) => {
+      const review = await prisma.review.findUnique({
+        where: { id },
+        include: {
+          user: true,
+          likes: true,
+          replies: { include: { user: true }, orderBy: { createdAt: 'asc' } },
+        },
+      });
+
+      if (!review) return null;
+
+      return {
+        ...review,
+        isLikedByMe: context.userId ? review.likes.some(like => like.userId === context.userId) : false,
+        likeCount: review.likes.length,
+        replyCount: review.replies.length,
+      };
+    },
+    myReviews: async (_: unknown, __: unknown, context: Context) => {
+      const user = await getUserFromContext(context);
+      if (!user) {
+        throw new Error('請先登入');
+      }
+
+      return await prisma.review.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' },
+        include: {
+          user: true,
+          likes: true,
+          replies: { include: { user: true } },
+        },
+      });
+    },
+    reviewReports: async (_: unknown, { status }: { status?: string }, context: Context) => {
+      const user = await getUserFromContext(context);
+      if (!user || !user.isAdmin) {
+        throw new Error('需要管理員權限');
+      }
+
+      const where = status ? { status } : {};
+      return await prisma.reviewReport.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        include: { review: { include: { user: true } }, user: true },
+      });
+    },
+  },
+  Mutation: {
+    createReview: async (_: unknown, { input }: { input: { content: string; rating: number; isRecommended: boolean } }, context: Context) => {
+      const user = await getUserFromContext(context);
+      if (!user) {
+        throw new Error('請先登入');
+      }
+
+      // 檢查是否已發過評價
+      const existingReview = await prisma.review.findFirst({
+        where: { userId: user.id },
+      });
+      if (existingReview) {
+        throw new Error('您已經發表過評價，可以編輯現有評價');
+      }
+
+      return await prisma.review.create({
+        data: {
+          content: input.content,
+          rating: Math.min(5, Math.max(1, input.rating)),
+          isRecommended: input.isRecommended,
+          userId: user.id,
+          isApproved: false, // 需要審核
+        },
+        include: { user: true, likes: true, replies: true },
+      });
+    },
+    updateReview: async (_: unknown, { id, input }: { id: number; input: { content?: string; rating?: number; isRecommended?: boolean } }, context: Context) => {
+      const user = await getUserFromContext(context);
+      if (!user) {
+        throw new Error('請先登入');
+      }
+
+      const review = await prisma.review.findUnique({ where: { id } });
+      if (!review) {
+        throw new Error('評價不存在');
+      }
+      if (review.userId !== user.id && !user.isAdmin) {
+        throw new Error('無權編輯此評價');
+      }
+
+      const updateData: { content?: string; rating?: number; isRecommended?: boolean } = {};
+      if (input.content !== undefined) updateData.content = input.content;
+      if (input.rating !== undefined) updateData.rating = Math.min(5, Math.max(1, input.rating));
+      if (input.isRecommended !== undefined) updateData.isRecommended = input.isRecommended;
+
+      return await prisma.review.update({
+        where: { id },
+        data: updateData,
+        include: { user: true, likes: true, replies: true },
+      });
+    },
+    deleteReview: async (_: unknown, { id }: { id: number }, context: Context) => {
+      const user = await getUserFromContext(context);
+      if (!user) {
+        throw new Error('請先登入');
+      }
+
+      const review = await prisma.review.findUnique({ where: { id } });
+      if (!review) {
+        throw new Error('評價不存在');
+      }
+      if (review.userId !== user.id && !user.isAdmin) {
+        throw new Error('無權刪除此評價');
+      }
+
+      await prisma.review.delete({ where: { id } });
+      return true;
+    },
+    createReviewReply: async (_: unknown, { input }: { input: { content: string; reviewId: number } }, context: Context) => {
+      const user = await getUserFromContext(context);
+      if (!user) {
+        throw new Error('請先登入');
+      }
+
+      return await prisma.reviewReply.create({
+        data: {
+          content: input.content,
+          reviewId: input.reviewId,
+          userId: user.id,
+        },
+        include: { user: true },
+      });
+    },
+    deleteReviewReply: async (_: unknown, { id }: { id: number }, context: Context) => {
+      const user = await getUserFromContext(context);
+      if (!user) {
+        throw new Error('請先登入');
+      }
+
+      const reply = await prisma.reviewReply.findUnique({ where: { id } });
+      if (!reply) {
+        throw new Error('回覆不存在');
+      }
+      if (reply.userId !== user.id && !user.isAdmin) {
+        throw new Error('無權刪除此回覆');
+      }
+
+      await prisma.reviewReply.delete({ where: { id } });
+      return true;
+    },
+    likeReview: async (_: unknown, { reviewId }: { reviewId: number }, context: Context) => {
+      const user = await getUserFromContext(context);
+      if (!user) {
+        throw new Error('請先登入');
+      }
+
+      // 檢查是否已點贊
+      const existingLike = await prisma.reviewLike.findUnique({
+        where: { reviewId_userId: { reviewId, userId: user.id } },
+      });
+      if (existingLike) {
+        throw new Error('您已經點過贊了');
+      }
+
+      await prisma.reviewLike.create({
+        data: { reviewId, userId: user.id },
+      });
+
+      return await prisma.review.findUnique({
+        where: { id: reviewId },
+        include: { user: true, likes: true, replies: { include: { user: true } } },
+      });
+    },
+    unlikeReview: async (_: unknown, { reviewId }: { reviewId: number }, context: Context) => {
+      const user = await getUserFromContext(context);
+      if (!user) {
+        throw new Error('請先登入');
+      }
+
+      await prisma.reviewLike.deleteMany({
+        where: { reviewId, userId: user.id },
+      });
+
+      return await prisma.review.findUnique({
+        where: { id: reviewId },
+        include: { user: true, likes: true, replies: { include: { user: true } } },
+      });
+    },
+    reportReview: async (_: unknown, { input }: { input: { reviewId: number; reason: string } }, context: Context) => {
+      const user = await getUserFromContext(context);
+      if (!user) {
+        throw new Error('請先登入');
+      }
+
+      return await prisma.reviewReport.create({
+        data: {
+          reviewId: input.reviewId,
+          userId: user.id,
+          reason: input.reason,
+        },
+        include: { review: { include: { user: true } }, user: true },
+      });
+    },
+    approveReview: async (_: unknown, { id }: { id: number }, context: Context) => {
+      const user = await getUserFromContext(context);
+      if (!user || !user.isAdmin) {
+        throw new Error('需要管理員權限');
+      }
+
+      return await prisma.review.update({
+        where: { id },
+        data: { isApproved: true },
+        include: { user: true, likes: true, replies: true },
+      });
+    },
+    hideReview: async (_: unknown, { id }: { id: number }, context: Context) => {
+      const user = await getUserFromContext(context);
+      if (!user || !user.isAdmin) {
+        throw new Error('需要管理員權限');
+      }
+
+      return await prisma.review.update({
+        where: { id },
+        data: { isHidden: true },
+        include: { user: true, likes: true, replies: true },
+      });
+    },
+    resolveReport: async (_: unknown, { id, action }: { id: number; action: string }, context: Context) => {
+      const user = await getUserFromContext(context);
+      if (!user || !user.isAdmin) {
+        throw new Error('需要管理員權限');
+      }
+
+      const report = await prisma.reviewReport.findUnique({ where: { id } });
+      if (!report) {
+        throw new Error('舉報不存在');
+      }
+
+      // 如果選擇隱藏評價
+      if (action === 'hide') {
+        await prisma.review.update({
+          where: { id: report.reviewId },
+          data: { isHidden: true },
+        });
+      }
+
+      return await prisma.reviewReport.update({
+        where: { id },
+        data: { status: action === 'hide' ? 'resolved' : 'dismissed' },
+        include: { review: { include: { user: true } }, user: true },
+      });
+    },
+  },
+  Review: {
+    likeCount: async (parent: { id: number; likeCount?: number }) => {
+      if (parent.likeCount !== undefined) return parent.likeCount;
+      return await prisma.reviewLike.count({ where: { reviewId: parent.id } });
+    },
+    replyCount: async (parent: { id: number; replyCount?: number }) => {
+      if (parent.replyCount !== undefined) return parent.replyCount;
+      return await prisma.reviewReply.count({ where: { reviewId: parent.id } });
+    },
+  },
+};
+
 const Query = {
   ...CategoryResolvers.Query,
   ...PostResolvers.Query,
@@ -452,6 +923,8 @@ const Query = {
   ...AnnouncementResolvers.Query,
   ...DashboardResolvers.Query,
   ...ContentBlockResolvers.Query,
+  ...UserResolvers.Query,
+  ...ReviewResolvers.Query,
 };
 
 const Mutation = {
@@ -460,6 +933,8 @@ const Mutation = {
   ...CommentResolvers.Mutation,
   ...AnnouncementResolvers.Mutation,
   ...ContentBlockResolvers.Mutation,
+  ...UserResolvers.Mutation,
+  ...ReviewResolvers.Mutation,
 };
 
 const resolvers = {
@@ -468,6 +943,8 @@ const resolvers = {
   Mutation,
   Category: CategoryResolvers.Category,
   Post: PostResolvers.Post,
+  User: UserResolvers.User,
+  Review: ReviewResolvers.Review,
 };
 
 export default resolvers;

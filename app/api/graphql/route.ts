@@ -44,20 +44,41 @@ function isIPAllowed(clientIP: string): boolean {
   return false;
 }
 
-async function verifyToken(request: Request) {
+interface TokenPayload {
+  userId?: number;
+  accessToken?: string;
+}
+
+async function verifyToken(request: Request): Promise<{ isValid: boolean; userId?: number }> {
   const authHeader = request.headers.get("Authorization");
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.substring(7);
     try {
-      const decoded = jwt.verify(token, process.env.NEXTAUTH_SECRET || "");
-      return !!decoded;
+      const decoded = jwt.verify(token, process.env.NEXTAUTH_SECRET || "") as TokenPayload;
+      return { isValid: true, userId: decoded.userId };
     } catch (error) {
       console.error("Token verification failed:", error);
-      return false;
+      return { isValid: false };
     }
   }
-  return false;
+  return { isValid: false };
 }
+
+// 這些操作不需要管理員認證，只需要用戶登入或公開操作
+const PUBLIC_MUTATIONS = [
+  'register',
+  'login',
+  'createReview',
+  'updateReview',
+  'deleteReview',
+  'createReviewReply',
+  'deleteReviewReply',
+  'likeReview',
+  'unlikeReview',
+  'reportReview',
+  'updateProfile',
+  'updateGameHours',
+];
 
 const withAuth = (resolvers: Record<string, unknown>) => {
   const wrappedResolvers = { ...resolvers };
@@ -65,7 +86,18 @@ const withAuth = (resolvers: Record<string, unknown>) => {
   if ((resolvers as { Mutation?: Record<string, unknown> }).Mutation) {
     (wrappedResolvers as { Mutation: Record<string, unknown> }).Mutation = Object.keys((resolvers as { Mutation: Record<string, unknown> }).Mutation).reduce(
       (acc: Record<string, unknown>, key: string) => {
-        acc[key] = async (parent: unknown, args: unknown, context: { isIPAllowed: boolean; isAuthenticated: boolean; clientIP: string }, info: unknown) => {
+        acc[key] = async (parent: unknown, args: unknown, context: { isIPAllowed: boolean; isAuthenticated: boolean; clientIP: string; userId?: number }, info: unknown) => {
+          // 用戶相關操作不需要 IP 白名單和管理員認證
+          if (PUBLIC_MUTATIONS.includes(key)) {
+            // register 和 login 不需要任何認證
+            if (key === 'register' || key === 'login') {
+              return ((resolvers as { Mutation: Record<string, (parent: unknown, args: unknown, context: unknown, info: unknown) => unknown> }).Mutation)[key](parent, args, context, info);
+            }
+            // 其他用戶操作需要用戶 token（在 resolver 層面檢查）
+            return ((resolvers as { Mutation: Record<string, (parent: unknown, args: unknown, context: unknown, info: unknown) => unknown> }).Mutation)[key](parent, args, context, info);
+          }
+
+          // 管理員操作需要 IP 白名單和認證
           if (!context.isIPAllowed) {
             throw new Error(
               `拒絕存取：您的 IP 地址 (${context.clientIP}) 沒有執行修改操作的權限。`
@@ -107,11 +139,14 @@ const yoga = createYoga({
     let isAuthenticated = false;
     let isIPWhitelisted = false;
     let clientIP = "unknown";
+    let userId: number | undefined = undefined;
 
     try {
       clientIP = getClientIP(request);
       isIPWhitelisted = isIPAllowed(clientIP);
-      isAuthenticated = await verifyToken(request);
+      const tokenResult = await verifyToken(request);
+      isAuthenticated = tokenResult.isValid;
+      userId = tokenResult.userId;
     } catch (error) {
       console.error("驗證錯誤:", error);
     }
@@ -119,7 +154,8 @@ const yoga = createYoga({
     return {
       isAuthenticated,
       isIPAllowed: isIPWhitelisted,
-      clientIP
+      clientIP,
+      userId,
     };
   },
 });

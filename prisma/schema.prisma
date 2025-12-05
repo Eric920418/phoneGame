@@ -107,3 +107,96 @@ model Announcement {
   @@index([publishedAt])
   @@map("announcements")
 }
+
+// 用戶系統
+model User {
+  id            Int            @id @default(autoincrement())
+  email         String         @unique
+  passwordHash  String
+  name          String
+  avatar        String?        @default("👤")
+  gameHours     Int            @default(0)
+  isVerified    Boolean        @default(false)
+  isAdmin       Boolean        @default(false)
+  isBanned      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  reviews       Review[]
+  reviewReplies ReviewReply[]
+  reviewLikes   ReviewLike[]
+  reviewReports ReviewReport[]
+
+  @@index([email])
+  @@map("users")
+}
+
+// 用戶評價
+model Review {
+  id            Int            @id @default(autoincrement())
+  content       String
+  rating        Int            @default(5) // 1-5 星
+  isRecommended Boolean        @default(true)
+  isApproved    Boolean        @default(false) // 需要審核
+  isHidden      Boolean        @default(false)
+  userId        Int
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies       ReviewReply[]
+  likes         ReviewLike[]
+  reports       ReviewReport[]
+
+  @@index([userId])
+  @@index([isApproved])
+  @@index([createdAt])
+  @@map("reviews")
+}
+
+// 評價回覆
+model ReviewReply {
+  id        Int      @id @default(autoincrement())
+  content   String
+  reviewId  Int
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+  @@index([userId])
+  @@map("review_replies")
+}
+
+// 評價點贊
+model ReviewLike {
+  id        Int      @id @default(autoincrement())
+  reviewId  Int
+  userId    Int
+  createdAt DateTime @default(now())
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([reviewId, userId]) // 每人只能點贊一次
+  @@index([reviewId])
+  @@index([userId])
+  @@map("review_likes")
+}
+
+// 評價舉報
+model ReviewReport {
+  id        Int      @id @default(autoincrement())
+  reason    String
+  status    String   @default("pending") // pending, resolved, dismissed
+  reviewId  Int
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  review    Review   @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([reviewId])
+  @@index([userId])
+  @@index([status])
+  @@map("review_reports")
+}

@@ -1,0 +1,110 @@
+type Review {
+  id: Int!
+  content: String!
+  rating: Int!
+  isRecommended: Boolean!
+  isApproved: Boolean!
+  isHidden: Boolean!
+  userId: Int!
+  user: User!
+  createdAt: String!
+  updatedAt: String!
+  replies: [ReviewReply!]!
+  replyCount: Int!
+  likes: [ReviewLike!]!
+  likeCount: Int!
+  isLikedByMe: Boolean!
+}
+
+type ReviewReply {
+  id: Int!
+  content: String!
+  reviewId: Int!
+  userId: Int!
+  user: User!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type ReviewLike {
+  id: Int!
+  reviewId: Int!
+  userId: Int!
+  user: User!
+  createdAt: String!
+}
+
+type ReviewReport {
+  id: Int!
+  reason: String!
+  status: String!
+  reviewId: Int!
+  userId: Int!
+  review: Review!
+  user: User!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type ReviewListResult {
+  reviews: [Review!]!
+  total: Int!
+  page: Int!
+  pageSize: Int!
+  hasMore: Boolean!
+  stats: ReviewStats!
+}
+
+type ReviewStats {
+  totalReviews: Int!
+  averageRating: Float!
+  recommendedPercent: Float!
+  ratingDistribution: [Int!]!
+}
+
+input CreateReviewInput {
+  content: String!
+  rating: Int!
+  isRecommended: Boolean!
+}
+
+input UpdateReviewInput {
+  content: String
+  rating: Int
+  isRecommended: Boolean
+}
+
+input CreateReviewReplyInput {
+  content: String!
+  reviewId: Int!
+}
+
+input ReportReviewInput {
+  reviewId: Int!
+  reason: String!
+}
+
+extend type Query {
+  reviews(page: Int, pageSize: Int, sortBy: String): ReviewListResult!
+  review(id: Int!): Review
+  myReviews: [Review!]!
+  reviewReports(status: String): [ReviewReport!]!
+}
+
+extend type Mutation {
+  createReview(input: CreateReviewInput!): Review!
+  updateReview(id: Int!, input: UpdateReviewInput!): Review!
+  deleteReview(id: Int!): Boolean!
+
+  createReviewReply(input: CreateReviewReplyInput!): ReviewReply!
+  deleteReviewReply(id: Int!): Boolean!
+
+  likeReview(reviewId: Int!): Review!
+  unlikeReview(reviewId: Int!): Review!
+
+  reportReview(input: ReportReviewInput!): ReviewReport!
+
+  approveReview(id: Int!): Review!
+  hideReview(id: Int!): Review!
+  resolveReport(id: Int!, action: String!): ReviewReport!
+}

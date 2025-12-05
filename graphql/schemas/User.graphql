@@ -1,0 +1,58 @@
+type User {
+  id: Int!
+  email: String!
+  name: String!
+  avatar: String
+  gameHours: Int!
+  isVerified: Boolean!
+  isAdmin: Boolean!
+  isBanned: Boolean!
+  createdAt: String!
+  updatedAt: String!
+  reviews: [Review!]!
+  reviewCount: Int!
+}
+
+type AuthPayload {
+  user: User!
+  token: String!
+}
+
+input RegisterInput {
+  email: String!
+  password: String!
+  name: String!
+  avatar: String
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+input UpdateProfileInput {
+  name: String
+  avatar: String
+  gameHours: Int
+}
+
+extend type Query {
+  me: User
+  user(id: Int!): User
+  users(page: Int, pageSize: Int): UserListResult!
+}
+
+extend type Mutation {
+  register(input: RegisterInput!): AuthPayload!
+  login(input: LoginInput!): AuthPayload!
+  updateProfile(input: UpdateProfileInput!): User!
+  updateGameHours(hours: Int!): User!
+}
+
+type UserListResult {
+  users: [User!]!
+  total: Int!
+  page: Int!
+  pageSize: Int!
+  hasMore: Boolean!
+}

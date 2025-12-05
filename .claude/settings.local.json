@@ -10,7 +10,8 @@
       "Bash(createdb:*)",
       "Bash(pnpm prisma migrate dev:*)",
       "Bash(node -e:*)",
-      "Bash(pnpm prisma generate:*)"
+      "Bash(pnpm prisma generate:*)",
+      "Bash(pnpm build:*)"
     ],
     "deny": [],
     "ask": []

@@ -35,6 +35,7 @@ import {
   Quote,
 } from "lucide-react";
 import Image from "next/image";
+import ReviewSection from "@/components/ReviewSection";
 
 // ==================== 介面定義 ====================
 interface Announcement {
@@ -859,89 +860,7 @@ export default async function HomePage() {
         {/* ==================== 12. 玩家評價 Section ==================== */}
         <FramedSection id="reviews" compact={false} >
           <SectionTitle icon={Quote} title="玩家評價" color="#10b981" />
-          
-          {/* 評價統計 */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 mb-6 p-4 rounded-xl bg-gradient-to-r from-green-500/10 to-emerald-500/10 border border-green-500/20">
-            <div className="flex items-center gap-2">
-              <div className="text-4xl sm:text-5xl font-bold text-green-400">96%</div>
-              <div className="text-sm text-[var(--color-text-muted)]">
-                <div className="text-green-400 font-semibold">好評如潮</div>
-                <div>共 1,234 則評價</div>
-              </div>
-            </div>
-            <div className="hidden sm:block h-12 w-px bg-[var(--color-border)]" />
-            <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map((star) => (
-                <Star key={star} className="w-6 h-6 text-yellow-400 fill-yellow-400" />
-              ))}
-            </div>
-          </div>
-
-          {/* 評價列表 */}
-          <div className="space-y-4">
-            {displayPlayerReviews.map((review) => (
-              <div key={review.id} className="card p-4 sm:p-5">
-                {/* 評價頭部 */}
-                <div className="flex items-start justify-between gap-4 mb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center text-xl sm:text-2xl">
-                      {review.avatar}
-                    </div>
-                    <div>
-                      <div className="font-semibold text-[var(--color-text)]">{review.name}</div>
-                      <div className="text-xs text-[var(--color-text-muted)]">
-                        遊戲時數：{review.hours} 小時
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-1">
-                    {review.isRecommended ? (
-                      <span className="flex items-center gap-1 text-xs sm:text-sm text-green-400">
-                        <ThumbsUp className="w-4 h-4" />
-                        推薦
-                      </span>
-                    ) : (
-                      <span className="text-xs sm:text-sm text-red-400">不推薦</span>
-                    )}
-                    <div className="flex gap-0.5">
-                      {[1, 2, 3, 4, 5].map((star) => (
-                        <Star
-                          key={star}
-                          className={`w-3 h-3 sm:w-4 sm:h-4 ${
-                            star <= review.rating
-                              ? "text-yellow-400 fill-yellow-400"
-                              : "text-[var(--color-text-dark)]"
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                {/* 評價內容 */}
-                <p className="text-sm sm:text-base text-[var(--color-text-muted)] leading-relaxed mb-3">
-                  {review.content}
-                </p>
-
-                {/* 評價底部 */}
-                <div className="flex items-center justify-between text-xs text-[var(--color-text-dark)]">
-                  <span>{review.date}</span>
-                  <span className="flex items-center gap-1">
-                    <ThumbsUp className="w-3 h-3" />
-                    {review.helpful} 人覺得有幫助
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* 撰寫評價按鈕 */}
-          <div className="mt-6 text-center">
-            <button className="btn-primary">
-              <Quote className="w-4 h-4" />
-              撰寫我的評價
-            </button>
-          </div>
+          <ReviewSection />
         </FramedSection>
 
         {/* ==================== 最新公告 & 討論區 ==================== */}
