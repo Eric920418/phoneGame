@@ -49,18 +49,20 @@ export default function AuthPage() {
         return;
       }
 
-      const success = await register(
+      const result = await register(
         formData.email,
         formData.password,
         formData.name,
         formData.avatar
       );
-      if (success) {
+      if (result) {
         router.push("/");
       }
     } else {
-      const success = await login(formData.email, formData.password);
-      if (success) {
+      const loggedInUser = await login(formData.email, formData.password);
+      if (loggedInUser?.isAdmin) {
+        router.push("/admin/dashboard");
+      } else if (loggedInUser) {
         router.push("/");
       }
     }

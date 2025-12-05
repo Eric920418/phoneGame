@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, Edit, Trash2, Pin, Lock, Eye, ExternalLink, AlertCircle } from "lucide-react";
@@ -30,7 +30,7 @@ interface Post {
 }
 
 export default function AdminPostsPage() {
-  const { data: session, status } = useSession();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -53,10 +53,10 @@ export default function AdminPostsPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/admin/login");
+    if (!isLoading && (!user || !user.isAdmin)) {
+      router.push("/auth");
     }
-  }, [status, router]);
+  }, [isLoading, user, router]);
 
   const fetchCategories = async () => {
     try {
@@ -252,7 +252,7 @@ export default function AdminPostsPage() {
     return date.toLocaleDateString("zh-TW");
   }
 
-  if (status === "loading" || loading) {
+  if (isLoading || loading) {
     return (
       <div className="min-h-screen bg-[var(--color-bg-dark)] flex items-center justify-center">
         <div className="animate-pulse text-[var(--color-text-muted)]">載入中...</div>

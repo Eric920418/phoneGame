@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Plus, Edit, Trash2, GripVertical, AlertCircle } from "lucide-react";
@@ -19,7 +19,7 @@ interface Category {
 }
 
 export default function AdminCategoriesPage() {
-  const { data: session, status } = useSession();
+  const { user, isLoading } = useAuth();
   const router = useRouter();
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,10 +37,10 @@ export default function AdminCategoriesPage() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/admin/login");
+    if (!isLoading && (!user || !user.isAdmin)) {
+      router.push("/auth");
     }
-  }, [status, router]);
+  }, [isLoading, user, router]);
 
   const fetchCategories = async () => {
     try {
@@ -142,7 +142,7 @@ export default function AdminCategoriesPage() {
     }
   };
 
-  if (status === "loading" || loading) {
+  if (isLoading || loading) {
     return (
       <div className="min-h-screen bg-[var(--color-bg-dark)] flex items-center justify-center">
         <div className="animate-pulse text-[var(--color-text-muted)]">載入中...</div>

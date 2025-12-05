@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession, signOut } from "next-auth/react";
+import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Crown, Bell, MessageSquare, FolderOpen, LogOut, Settings, Users, BarChart, LayoutGrid } from "lucide-react";
@@ -15,7 +15,7 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
-  const { data: session, status } = useSession();
+  const { user, isLoading, logout } = useAuth();
   const router = useRouter();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -41,12 +41,12 @@ export default function AdminDashboard() {
       }
     };
 
-    if (session) {
+    if (user) {
       fetchStats();
     }
-  }, [session]);
+  }, [user]);
 
-  if (status === "loading" || loading) {
+  if (isLoading || loading) {
     return (
       <div className="min-h-screen bg-[var(--color-bg-dark)] flex items-center justify-center">
         <div className="animate-pulse text-[var(--color-text-muted)]">載入中...</div>
@@ -54,8 +54,8 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!session) {
-    router.push("/admin/login");
+  if (!user || !user.isAdmin) {
+    router.push("/auth");
     return null;
   }
 
@@ -122,10 +122,10 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-[var(--color-text-muted)]">
                 <Users className="w-4 h-4" />
-                <span className="text-sm">{session.user?.name}</span>
+                <span className="text-sm">{user.name}</span>
               </div>
               <button
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={() => { logout(); router.push("/"); }}
                 className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[var(--color-text-muted)] hover:text-red-400 hover:bg-red-400/10 transition-colors"
               >
                 <LogOut className="w-4 h-4" />
@@ -140,7 +140,7 @@ export default function AdminDashboard() {
         {/* Welcome */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-[var(--color-text)]">
-            歡迎回來，{session.user?.name}
+            歡迎回來，{user.name}
           </h2>
           <p className="text-[var(--color-text-muted)] mt-1">
             管理你的遊戲網站內容

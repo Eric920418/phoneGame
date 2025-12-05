@@ -54,7 +54,7 @@ async function verifyToken(request: Request): Promise<{ isValid: boolean; userId
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.substring(7);
     try {
-      const decoded = jwt.verify(token, process.env.NEXTAUTH_SECRET || "") as TokenPayload;
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || "") as TokenPayload;
       return { isValid: true, userId: decoded.userId };
     } catch (error) {
       console.error("Token verification failed:", error);

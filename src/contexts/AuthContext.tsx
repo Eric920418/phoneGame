@@ -17,8 +17,8 @@ interface AuthContextType {
   token: string | null;
   isLoading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, name: string, avatar?: string) => Promise<boolean>;
+  login: (email: string, password: string) => Promise<User | null>;
+  register: (email: string, password: string, name: string, avatar?: string) => Promise<User | null>;
   logout: () => void;
   updateUser: (user: User) => void;
   clearError: () => void;
@@ -121,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<User | null> => {
     setError(null);
     setIsLoading(true);
 
@@ -140,19 +140,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (result.errors) {
         setError(result.errors[0].message);
         setIsLoading(false);
-        return false;
+        return null;
       }
 
       const { user: userData, token: authToken } = result.data.login;
       setUser(userData);
       setToken(authToken);
       localStorage.setItem("auth_token", authToken);
+      document.cookie = `auth_token=${authToken}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
       setIsLoading(false);
-      return true;
+      return userData;
     } catch (err) {
       setError("登入失敗，請稍後再試");
       setIsLoading(false);
-      return false;
+      return null;
     }
   };
 
@@ -161,7 +162,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     password: string,
     name: string,
     avatar?: string
-  ): Promise<boolean> => {
+  ): Promise<User | null> => {
     setError(null);
     setIsLoading(true);
 
@@ -180,19 +181,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (result.errors) {
         setError(result.errors[0].message);
         setIsLoading(false);
-        return false;
+        return null;
       }
 
       const { user: userData, token: authToken } = result.data.register;
       setUser(userData);
       setToken(authToken);
       localStorage.setItem("auth_token", authToken);
+      document.cookie = `auth_token=${authToken}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`;
       setIsLoading(false);
-      return true;
+      return userData;
     } catch (err) {
       setError("註冊失敗，請稍後再試");
       setIsLoading(false);
-      return false;
+      return null;
     }
   };
 
@@ -200,6 +202,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setToken(null);
     localStorage.removeItem("auth_token");
+    document.cookie = "auth_token=; path=/; max-age=0";
   };
 
   const updateUser = (userData: User) => {

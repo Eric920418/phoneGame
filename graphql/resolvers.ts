@@ -505,8 +505,8 @@ const UserResolvers = {
 
       // 生成 token
       const token = jwt.sign(
-        { userId: user.id },
-        process.env.NEXTAUTH_SECRET || 'fallback-secret',
+        { userId: user.id, isAdmin: user.isAdmin },
+        process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret',
         { expiresIn: '7d' }
       );
 
@@ -532,8 +532,8 @@ const UserResolvers = {
 
       // 生成 token
       const token = jwt.sign(
-        { userId: user.id },
-        process.env.NEXTAUTH_SECRET || 'fallback-secret',
+        { userId: user.id, isAdmin: user.isAdmin },
+        process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || 'fallback-secret',
         { expiresIn: '7d' }
       );
 
