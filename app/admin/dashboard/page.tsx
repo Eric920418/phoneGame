@@ -188,8 +188,6 @@ export default function AdminDashboard() {
             </Link>
           ))}
         </div>
-
-    
       </main>
     </div>
   );

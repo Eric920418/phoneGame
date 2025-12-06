@@ -305,7 +305,7 @@ function FramedSection({
       {/* 金屬框背景 - 使用 CSS 邊框圖片 */}
       <div className="absolute inset-0 pointer-events-none">
         <Image
-          src="/金属框.png"
+          src="/金属框.webp"
           alt=""
           fill
           className="object-fill"
@@ -394,7 +394,7 @@ export default async function HomePage() {
         {/* 手機版 - 使用 Image 組件自適應高度 */}
         <div className="md:hidden pt-16">
           <Image
-            src="/破浪三國主視覺.png"
+            src="/破浪三國主視覺.webp"
             alt="破浪三國主視覺"
             width={1920}
             height={1080}
@@ -405,7 +405,7 @@ export default async function HomePage() {
         {/* 桌面版背景 - 使用 cover 填滿全屏 */}
         <div
           className="hidden md:block h-[calc(100vh+4rem)] min-h-[600px] bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: "url('/破浪三國主視覺.png')" }}
+          style={{ backgroundImage: "url('/破浪三國主視覺.webp')" }}
         />
       </section>
 
@@ -436,7 +436,7 @@ export default async function HomePage() {
       <div
         className="relative"
         style={{
-          backgroundImage: "url('/布料底图.png')",
+          backgroundImage: "url('/布料底图.webp')",
           backgroundSize: "cover",
           backgroundPosition: "center",
           backgroundAttachment: "fixed",
@@ -1252,8 +1252,10 @@ export default async function HomePage() {
           </FramedSection>
 
           {/* ==================== 12. 玩家評價 Section ==================== */}
-          <SectionTitle icon={Quote} title="玩家評價" color="#10b981" />
-          <ReviewSection />
+          <section id="reviews">
+            <SectionTitle icon={Quote} title="玩家評價" color="#10b981" />
+            <ReviewSection />
+          </section>
         </div>
       </div>
 

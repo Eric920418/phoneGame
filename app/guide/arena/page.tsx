@@ -1,17 +1,39 @@
-import { Trophy, Swords, Crown, Medal, Clock, Star, TrendingUp, Users } from "lucide-react";
+import { Trophy, Swords, Crown, Medal, Clock, Star, TrendingUp } from "lucide-react";
 
 /**
  * 武魂擂台頁面
  * 展示競技場賽事與排名資訊
  */
 
-// 賽季資訊
-const currentSeason = {
-  name: "第十二賽季",
-  startDate: "2024-12-01",
-  endDate: "2024-12-31",
-  daysRemaining: 30,
-};
+// 動態計算賽季資訊
+function getCurrentSeason() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0-11
+
+  // 賽季編號：從 2024 年 1 月開始計算
+  const seasonNumber = (year - 2024) * 12 + (month + 1);
+
+  // 當月第一天和最後一天
+  const startDate = new Date(year, month, 1);
+  const endDate = new Date(year, month + 1, 0);
+
+  // 計算剩餘天數
+  const daysRemaining = Math.max(0, Math.ceil((endDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+
+  const formatDate = (date: Date) => {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  };
+
+  return {
+    name: `第${seasonNumber}賽季`,
+    startDate: formatDate(startDate),
+    endDate: formatDate(endDate),
+    daysRemaining,
+  };
+}
+
+const currentSeason = getCurrentSeason();
 
 // 排行榜模擬數據
 const rankings = [

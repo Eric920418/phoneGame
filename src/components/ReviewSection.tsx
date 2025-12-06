@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo, memo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Star,
@@ -151,6 +151,208 @@ const REPORT_REVIEW_MUTATION = `
   }
 `;
 
+// 日期格式化函數（使用緩存）
+const dateCache = new Map<string, string>();
+const formatDate = (dateString: string) => {
+  if (dateCache.has(dateString)) {
+    return dateCache.get(dateString)!;
+  }
+  const formatted = new Date(dateString).toLocaleDateString("zh-TW");
+  dateCache.set(dateString, formatted);
+  return formatted;
+};
+
+// 評價項目組件（使用 memo 避免不必要的重新渲染）
+const ReviewItem = memo(function ReviewItem({
+  review,
+  user,
+  expandedReplies,
+  replyingTo,
+  replyContent,
+  onLike,
+  onReply,
+  onReplyContentChange,
+  onReplySubmit,
+  onReplyCancel,
+  onToggleReplies,
+  onReport,
+}: {
+  review: Review;
+  user: User | null;
+  expandedReplies: Set<number>;
+  replyingTo: number | null;
+  replyContent: string;
+  onLike: (reviewId: number, isLiked: boolean) => void;
+  onReply: (reviewId: number) => void;
+  onReplyContentChange: (content: string) => void;
+  onReplySubmit: (reviewId: number) => void;
+  onReplyCancel: () => void;
+  onToggleReplies: (reviewId: number) => void;
+  onReport: (reviewId: number) => void;
+}) {
+  return (
+    <div className="card p-4 sm:p-5">
+      {/* 評價頭部 */}
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center text-xl sm:text-2xl">
+            {review.user.avatar || "👤"}
+          </div>
+          <div>
+            <div className="font-semibold text-[var(--color-text)]">
+              {review.user.name}
+            </div>
+            <div className="text-xs text-[var(--color-text-muted)]">
+              遊戲時數：{review.user.gameHours} 小時
+            </div>
+          </div>
+        </div>
+        <div className="flex flex-col items-end gap-1">
+          {review.isRecommended ? (
+            <span className="flex items-center gap-1 text-xs sm:text-sm text-green-400">
+              <ThumbsUp className="w-4 h-4" />
+              推薦
+            </span>
+          ) : (
+            <span className="text-xs sm:text-sm text-red-400">不推薦</span>
+          )}
+          <div className="flex gap-0.5">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star
+                key={star}
+                className={`w-3 h-3 sm:w-4 sm:h-4 ${
+                  star <= review.rating
+                    ? "text-yellow-400 fill-yellow-400"
+                    : "text-[var(--color-text-dark)]"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 評價內容 */}
+      <p className="text-sm sm:text-base text-[var(--color-text-muted)] leading-relaxed mb-3">
+        {review.content}
+      </p>
+
+      {/* 評價底部 */}
+      <div className="flex items-center justify-between text-xs text-[var(--color-text-dark)]">
+        <span>{formatDate(review.createdAt)}</span>
+        <div className="flex items-center gap-3">
+          {/* 點贊按鈕 */}
+          <button
+            onClick={() => user && onLike(review.id, review.isLikedByMe)}
+            className={`flex items-center gap-1 transition-colors ${
+              review.isLikedByMe
+                ? "text-green-400"
+                : "hover:text-[var(--color-text-muted)]"
+            } ${!user ? "opacity-50 cursor-not-allowed" : ""}`}
+            disabled={!user}
+            title={user ? "" : "請先登入"}
+          >
+            <ThumbsUp className="w-3 h-3" />
+            {review.likeCount}
+          </button>
+
+          {/* 回覆按鈕 */}
+          <button
+            onClick={() => user && onReply(review.id)}
+            className={`flex items-center gap-1 hover:text-[var(--color-text-muted)] transition-colors ${
+              !user ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+            disabled={!user}
+            title={user ? "" : "請先登入"}
+          >
+            <MessageCircle className="w-3 h-3" />
+            {review.replyCount}
+          </button>
+
+          {/* 舉報按鈕 */}
+          {user && user.id !== review.user.id && (
+            <button
+              onClick={() => onReport(review.id)}
+              className="hover:text-red-400 transition-colors"
+              title="舉報"
+            >
+              <Flag className="w-3 h-3" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 回覆區域 */}
+      {review.replyCount > 0 && (
+        <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
+          <button
+            onClick={() => onToggleReplies(review.id)}
+            className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
+          >
+            <ChevronDown
+              className={`w-4 h-4 transition-transform ${
+                expandedReplies.has(review.id) ? "rotate-180" : ""
+              }`}
+            />
+            {expandedReplies.has(review.id) ? "收起回覆" : `查看 ${review.replyCount} 則回覆`}
+          </button>
+
+          {expandedReplies.has(review.id) && (
+            <div className="mt-3 space-y-3">
+              {review.replies.map((reply) => (
+                <div
+                  key={reply.id}
+                  className="pl-4 border-l-2 border-[var(--color-border)]"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-sm">{reply.user.avatar || "👤"}</span>
+                    <span className="text-sm font-medium text-[var(--color-text)]">
+                      {reply.user.name}
+                    </span>
+                    <span className="text-xs text-[var(--color-text-dark)]">
+                      {formatDate(reply.createdAt)}
+                    </span>
+                  </div>
+                  <p className="text-sm text-[var(--color-text-muted)]">
+                    {reply.content}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 回覆輸入框 */}
+      {replyingTo === review.id && (
+        <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={replyContent}
+              onChange={(e) => onReplyContentChange(e.target.value)}
+              placeholder="寫下你的回覆..."
+              className="input flex-1 py-2 text-sm"
+            />
+            <button
+              onClick={() => onReplySubmit(review.id)}
+              disabled={!replyContent.trim()}
+              className="btn btn-primary py-2 px-3"
+            >
+              <Send className="w-4 h-4" />
+            </button>
+            <button
+              onClick={onReplyCancel}
+              className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+});
+
 export default function ReviewSection() {
   const { user, token } = useAuth();
   const [data, setData] = useState<ReviewListResult | null>(null);
@@ -173,7 +375,7 @@ export default function ReviewSection() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       const response = await fetch("/api/graphql", {
         method: "POST",
@@ -199,13 +401,13 @@ export default function ReviewSection() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [sortBy, token]);
 
   useEffect(() => {
     fetchReviews();
-  }, [sortBy, token]);
+  }, [fetchReviews]);
 
-  const handleSubmitReview = async (e: React.FormEvent) => {
+  const handleSubmitReview = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
 
@@ -240,9 +442,9 @@ export default function ReviewSection() {
     } finally {
       setSubmitting(false);
     }
-  };
+  }, [user, token, formData, fetchReviews]);
 
-  const handleLike = async (reviewId: number, isLiked: boolean) => {
+  const handleLike = useCallback(async (reviewId: number, isLiked: boolean) => {
     if (!user) return;
 
     try {
@@ -276,9 +478,9 @@ export default function ReviewSection() {
     } catch (err) {
       console.error("點贊失敗:", err);
     }
-  };
+  }, [user, token, data]);
 
-  const handleReply = async (reviewId: number) => {
+  const handleReply = useCallback(async (reviewId: number) => {
     if (!user || !replyContent.trim()) return;
 
     try {
@@ -312,9 +514,9 @@ export default function ReviewSection() {
     } catch (err) {
       console.error("回覆失敗:", err);
     }
-  };
+  }, [user, token, replyContent, data]);
 
-  const handleReport = async (reviewId: number) => {
+  const handleReport = useCallback(async (reviewId: number) => {
     if (!user || !reportReason.trim()) return;
 
     try {
@@ -336,11 +538,41 @@ export default function ReviewSection() {
     } catch (err) {
       console.error("舉報失敗:", err);
     }
-  };
+  }, [user, token, reportReason]);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("zh-TW");
-  };
+  // 回覆相關的回調函數
+  const handleReplyClick = useCallback((reviewId: number) => {
+    setReplyingTo((prev) => prev === reviewId ? null : reviewId);
+  }, []);
+
+  const handleReplyContentChange = useCallback((content: string) => {
+    setReplyContent(content);
+  }, []);
+
+  const handleReplyCancel = useCallback(() => {
+    setReplyingTo(null);
+    setReplyContent("");
+  }, []);
+
+  const handleToggleReplies = useCallback((reviewId: number) => {
+    setExpandedReplies((prev) => {
+      const next = new Set(prev);
+      if (next.has(reviewId)) {
+        next.delete(reviewId);
+      } else {
+        next.add(reviewId);
+      }
+      return next;
+    });
+  }, []);
+
+  // 使用 useMemo 緩存統計數據
+  const stats = useMemo(() => data?.stats || {
+    totalReviews: 0,
+    averageRating: 0,
+    recommendedPercent: 0,
+    ratingDistribution: [0, 0, 0, 0, 0],
+  }, [data?.stats]);
 
   if (loading) {
     return (
@@ -358,13 +590,6 @@ export default function ReviewSection() {
       </div>
     );
   }
-
-  const stats = data?.stats || {
-    totalReviews: 0,
-    averageRating: 0,
-    recommendedPercent: 0,
-    ratingDistribution: [0, 0, 0, 0, 0],
-  };
 
   return (
     <div>
@@ -411,182 +636,21 @@ export default function ReviewSection() {
           </div>
         ) : (
           data?.reviews.map((review) => (
-            <div key={review.id} className="card p-4 sm:p-5">
-              {/* 評價頭部 */}
-              <div className="flex items-start justify-between gap-4 mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-green-500/20 to-emerald-500/20 flex items-center justify-center text-xl sm:text-2xl">
-                    {review.user.avatar || "👤"}
-                  </div>
-                  <div>
-                    <div className="font-semibold text-[var(--color-text)]">
-                      {review.user.name}
-                    </div>
-                    <div className="text-xs text-[var(--color-text-muted)]">
-                      遊戲時數：{review.user.gameHours} 小時
-                    </div>
-                  </div>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  {review.isRecommended ? (
-                    <span className="flex items-center gap-1 text-xs sm:text-sm text-green-400">
-                      <ThumbsUp className="w-4 h-4" />
-                      推薦
-                    </span>
-                  ) : (
-                    <span className="text-xs sm:text-sm text-red-400">不推薦</span>
-                  )}
-                  <div className="flex gap-0.5">
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <Star
-                        key={star}
-                        className={`w-3 h-3 sm:w-4 sm:h-4 ${
-                          star <= review.rating
-                            ? "text-yellow-400 fill-yellow-400"
-                            : "text-[var(--color-text-dark)]"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* 評價內容 */}
-              <p className="text-sm sm:text-base text-[var(--color-text-muted)] leading-relaxed mb-3">
-                {review.content}
-              </p>
-
-              {/* 評價底部 */}
-              <div className="flex items-center justify-between text-xs text-[var(--color-text-dark)]">
-                <span>{formatDate(review.createdAt)}</span>
-                <div className="flex items-center gap-3">
-                  {/* 點贊按鈕 */}
-                  <button
-                    onClick={() => user && handleLike(review.id, review.isLikedByMe)}
-                    className={`flex items-center gap-1 transition-colors ${
-                      review.isLikedByMe
-                        ? "text-green-400"
-                        : "hover:text-[var(--color-text-muted)]"
-                    } ${!user ? "opacity-50 cursor-not-allowed" : ""}`}
-                    disabled={!user}
-                    title={user ? "" : "請先登入"}
-                  >
-                    <ThumbsUp className="w-3 h-3" />
-                    {review.likeCount}
-                  </button>
-
-                  {/* 回覆按鈕 */}
-                  <button
-                    onClick={() => {
-                      if (user) {
-                        setReplyingTo(replyingTo === review.id ? null : review.id);
-                      }
-                    }}
-                    className={`flex items-center gap-1 hover:text-[var(--color-text-muted)] transition-colors ${
-                      !user ? "opacity-50 cursor-not-allowed" : ""
-                    }`}
-                    disabled={!user}
-                    title={user ? "" : "請先登入"}
-                  >
-                    <MessageCircle className="w-3 h-3" />
-                    {review.replyCount}
-                  </button>
-
-                  {/* 舉報按鈕 */}
-                  {user && user.id !== review.user.id && (
-                    <button
-                      onClick={() => setReportingId(review.id)}
-                      className="hover:text-red-400 transition-colors"
-                      title="舉報"
-                    >
-                      <Flag className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* 回覆區域 */}
-              {review.replyCount > 0 && (
-                <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
-                  <button
-                    onClick={() =>
-                      setExpandedReplies((prev) => {
-                        const next = new Set(prev);
-                        if (next.has(review.id)) {
-                          next.delete(review.id);
-                        } else {
-                          next.add(review.id);
-                        }
-                        return next;
-                      })
-                    }
-                    className="flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors"
-                  >
-                    <ChevronDown
-                      className={`w-4 h-4 transition-transform ${
-                        expandedReplies.has(review.id) ? "rotate-180" : ""
-                      }`}
-                    />
-                    {expandedReplies.has(review.id) ? "收起回覆" : `查看 ${review.replyCount} 則回覆`}
-                  </button>
-
-                  {expandedReplies.has(review.id) && (
-                    <div className="mt-3 space-y-3">
-                      {review.replies.map((reply) => (
-                        <div
-                          key={reply.id}
-                          className="pl-4 border-l-2 border-[var(--color-border)]"
-                        >
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-sm">{reply.user.avatar || "👤"}</span>
-                            <span className="text-sm font-medium text-[var(--color-text)]">
-                              {reply.user.name}
-                            </span>
-                            <span className="text-xs text-[var(--color-text-dark)]">
-                              {formatDate(reply.createdAt)}
-                            </span>
-                          </div>
-                          <p className="text-sm text-[var(--color-text-muted)]">
-                            {reply.content}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* 回覆輸入框 */}
-              {replyingTo === review.id && (
-                <div className="mt-3 pt-3 border-t border-[var(--color-border)]">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={replyContent}
-                      onChange={(e) => setReplyContent(e.target.value)}
-                      placeholder="寫下你的回覆..."
-                      className="input flex-1 py-2 text-sm"
-                    />
-                    <button
-                      onClick={() => handleReply(review.id)}
-                      disabled={!replyContent.trim()}
-                      className="btn btn-primary py-2 px-3"
-                    >
-                      <Send className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => {
-                        setReplyingTo(null);
-                        setReplyContent("");
-                      }}
-                      className="p-2 text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
+            <ReviewItem
+              key={review.id}
+              review={review}
+              user={user}
+              expandedReplies={expandedReplies}
+              replyingTo={replyingTo}
+              replyContent={replyContent}
+              onLike={handleLike}
+              onReply={handleReplyClick}
+              onReplyContentChange={handleReplyContentChange}
+              onReplySubmit={handleReply}
+              onReplyCancel={handleReplyCancel}
+              onToggleReplies={handleToggleReplies}
+              onReport={(id) => setReportingId(id)}
+            />
           ))
         )}
       </div>

@@ -1,6 +1,6 @@
 /**
  * GraphQL 客戶端
- * 使用原生 fetch API
+ * 使用原生 fetch API + 快取優化
  */
 
 interface GraphQLResponse<T = unknown> {
@@ -8,9 +8,26 @@ interface GraphQLResponse<T = unknown> {
   errors?: Array<{ message: string }>;
 }
 
+// 簡易內存快取（用於客戶端）
+const queryCache = new Map<string, { data: unknown; timestamp: number }>();
+const CACHE_TTL = 30 * 1000; // 30 秒快取過期時間
+
+// 判斷是否為讀取操作（可快取）
+function isReadOperation(query: string): boolean {
+  const trimmed = query.trim().toLowerCase();
+  return trimmed.startsWith('query') ||
+         (!trimmed.startsWith('mutation') && !trimmed.startsWith('subscription'));
+}
+
+// 生成快取鍵
+function getCacheKey(query: string, variables?: Record<string, unknown>): string {
+  return JSON.stringify({ query: query.trim(), variables });
+}
+
 export async function graphqlFetch<T = unknown>(
   query: string,
-  variables?: Record<string, unknown>
+  variables?: Record<string, unknown>,
+  options?: { skipCache?: boolean }
 ): Promise<T> {
   const url = typeof window === 'undefined'
     ? `http://localhost:${process.env.PORT || 3000}/api/graphql`
@@ -28,12 +45,31 @@ export async function graphqlFetch<T = unknown>(
     }
   }
 
+  // 客戶端快取邏輯（僅對讀取操作）
+  const canUseCache = typeof window !== 'undefined' &&
+                      isReadOperation(query) &&
+                      !options?.skipCache;
+
+  if (canUseCache) {
+    const cacheKey = getCacheKey(query, variables);
+    const cached = queryCache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return cached.data as T;
+    }
+  }
+
   const response = await fetch(url, {
     method: "POST",
     headers,
     body: JSON.stringify({ query, variables }),
-    cache: "no-store",
-  });
+    // 對讀取操作使用瀏覽器快取，mutation 使用 no-store
+    cache: isReadOperation(query) ? "default" : "no-store",
+    // Next.js 重新驗證設定（伺服器端）
+    next: typeof window === 'undefined' && isReadOperation(query)
+      ? { revalidate: 60 } as RequestInit['next']
+      : undefined,
+  } as RequestInit);
 
   if (!response.ok) {
     throw new Error(`GraphQL request failed: ${response.status} ${response.statusText}`);
@@ -63,7 +99,36 @@ export async function graphqlFetch<T = unknown>(
     throw new Error("No data returned from GraphQL query");
   }
 
+  // 將結果存入快取（僅客戶端讀取操作）
+  if (canUseCache) {
+    const cacheKey = getCacheKey(query, variables);
+    queryCache.set(cacheKey, { data: result.data, timestamp: Date.now() });
+
+    // 清理過期快取（限制快取大小）
+    if (queryCache.size > 100) {
+      const now = Date.now();
+      for (const [key, value] of queryCache.entries()) {
+        if (now - value.timestamp > CACHE_TTL) {
+          queryCache.delete(key);
+        }
+      }
+    }
+  }
+
   return result.data;
+}
+
+// 手動清除快取（mutation 後使用）
+export function invalidateCache(pattern?: string): void {
+  if (pattern) {
+    for (const key of queryCache.keys()) {
+      if (key.includes(pattern)) {
+        queryCache.delete(key);
+      }
+    }
+  } else {
+    queryCache.clear();
+  }
 }
 
 export const getClient = () => ({

@@ -3,6 +3,16 @@ import { JSONScalar } from "./utils/jsonScalar";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
+// 分頁限制常數
+const MAX_PAGE_SIZE = 100;
+const DEFAULT_PAGE_SIZE = 20;
+
+// 安全的分頁大小處理
+function sanitizePageSize(pageSize?: number): number {
+  if (!pageSize || pageSize < 1) return DEFAULT_PAGE_SIZE;
+  return Math.min(pageSize, MAX_PAGE_SIZE);
+}
+
 // 從上下文獲取當前用戶
 interface Context {
   userId?: number;
@@ -136,7 +146,8 @@ const CategoryResolvers = {
 // Post Resolvers
 const PostResolvers = {
   Query: {
-    posts: async (_: unknown, { page = 1, pageSize = 20, categoryId, search }: { page?: number; pageSize?: number; categoryId?: number; search?: string }) => {
+    posts: async (_: unknown, { page = 1, pageSize, categoryId, search }: { page?: number; pageSize?: number; categoryId?: number; search?: string }) => {
+      const safePageSize = sanitizePageSize(pageSize);
       try {
         const where: { categoryId?: number; OR?: Array<{ title: { contains: string; mode: 'insensitive' } } | { content: { contains: string; mode: 'insensitive' } }> } = {};
 
@@ -158,8 +169,8 @@ const PostResolvers = {
             { isPinned: 'desc' },
             { createdAt: 'desc' },
           ],
-          skip: (page - 1) * pageSize,
-          take: pageSize,
+          skip: (page - 1) * safePageSize,
+          take: safePageSize,
           include: { category: true },
         });
 
@@ -167,8 +178,8 @@ const PostResolvers = {
           posts,
           total,
           page,
-          pageSize,
-          hasMore: total > page * pageSize,
+          pageSize: safePageSize,
+          hasMore: total > page * safePageSize,
         };
       } catch (error) {
         console.warn('資料庫未配置，使用假數據');
@@ -299,7 +310,8 @@ const CommentResolvers = {
 // Announcement Resolvers
 const AnnouncementResolvers = {
   Query: {
-    announcements: async (_: unknown, { page = 1, pageSize = 20, type }: { page?: number; pageSize?: number; type?: string }) => {
+    announcements: async (_: unknown, { page = 1, pageSize, type }: { page?: number; pageSize?: number; type?: string }) => {
+      const safePageSize = sanitizePageSize(pageSize);
       try {
         const where: { type?: string; isPublished: boolean } = { isPublished: true };
 
@@ -314,16 +326,16 @@ const AnnouncementResolvers = {
             { isPinned: 'desc' },
             { publishedAt: 'desc' },
           ],
-          skip: (page - 1) * pageSize,
-          take: pageSize,
+          skip: (page - 1) * safePageSize,
+          take: safePageSize,
         });
 
         return {
           announcements,
           total,
           page,
-          pageSize,
-          hasMore: total > page * pageSize,
+          pageSize: safePageSize,
+          hasMore: total > page * safePageSize,
         };
       } catch (error) {
         console.warn('資料庫未配置，使用假數據');
@@ -471,19 +483,20 @@ const UserResolvers = {
     user: async (_: unknown, { id }: { id: number }) => {
       return await prisma.user.findUnique({ where: { id } });
     },
-    users: async (_: unknown, { page = 1, pageSize = 20 }: { page?: number; pageSize?: number }) => {
+    users: async (_: unknown, { page = 1, pageSize }: { page?: number; pageSize?: number }) => {
+      const safePageSize = sanitizePageSize(pageSize);
       const total = await prisma.user.count();
       const users = await prisma.user.findMany({
         orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * pageSize,
-        take: pageSize,
+        skip: (page - 1) * safePageSize,
+        take: safePageSize,
       });
       return {
         users,
         total,
         page,
-        pageSize,
-        hasMore: total > page * pageSize,
+        pageSize: safePageSize,
+        hasMore: total > page * safePageSize,
       };
     },
   },
@@ -584,7 +597,8 @@ const UserResolvers = {
 // Review Resolvers
 const ReviewResolvers = {
   Query: {
-    reviews: async (_: unknown, { page = 1, pageSize = 10, sortBy = 'newest' }: { page?: number; pageSize?: number; sortBy?: string }, context: Context) => {
+    reviews: async (_: unknown, { page = 1, pageSize, sortBy = 'newest' }: { page?: number; pageSize?: number; sortBy?: string }, context: Context) => {
+      const safePageSize = sanitizePageSize(pageSize || 10);
       const where = { isApproved: true, isHidden: false };
 
       const total = await prisma.review.count({ where });
@@ -610,8 +624,8 @@ const ReviewResolvers = {
       const reviews = await prisma.review.findMany({
         where,
         orderBy,
-        skip: (page - 1) * pageSize,
-        take: pageSize,
+        skip: (page - 1) * safePageSize,
+        take: safePageSize,
         include: {
           user: true,
           likes: true,
@@ -619,21 +633,36 @@ const ReviewResolvers = {
         },
       });
 
-      // 計算統計數據
-      const allReviews = await prisma.review.findMany({ where });
-      const totalReviews = allReviews.length;
-      const averageRating = totalReviews > 0
-        ? allReviews.reduce((sum, r) => sum + r.rating, 0) / totalReviews
-        : 0;
-      const recommendedCount = allReviews.filter(r => r.isRecommended).length;
+      // 使用 aggregate 和 groupBy 優化統計查詢（避免 N+1）
+      const [aggregateResult, recommendedResult, ratingGroups] = await Promise.all([
+        // 計算平均評分和總數
+        prisma.review.aggregate({
+          where,
+          _avg: { rating: true },
+          _count: { id: true },
+        }),
+        // 計算推薦數量
+        prisma.review.count({
+          where: { ...where, isRecommended: true },
+        }),
+        // 按評分分組計算分佈
+        prisma.review.groupBy({
+          by: ['rating'],
+          where,
+          _count: { id: true },
+        }),
+      ]);
+
+      const totalReviews = aggregateResult._count.id;
+      const averageRating = aggregateResult._avg.rating || 0;
+      const recommendedCount = recommendedResult;
       const recommendedPercent = totalReviews > 0
         ? (recommendedCount / totalReviews) * 100
         : 0;
 
       // 評分分佈 [1星數量, 2星數量, 3星數量, 4星數量, 5星數量]
-      const ratingDistribution = [1, 2, 3, 4, 5].map(
-        rating => allReviews.filter(r => r.rating === rating).length
-      );
+      const ratingMap = new Map(ratingGroups.map(g => [g.rating, g._count.id]));
+      const ratingDistribution = [1, 2, 3, 4, 5].map(rating => ratingMap.get(rating) || 0);
 
       // 標記當前用戶是否已點贊
       const reviewsWithLikeStatus = reviews.map(review => ({
@@ -647,8 +676,8 @@ const ReviewResolvers = {
         reviews: reviewsWithLikeStatus,
         total,
         page,
-        pageSize,
-        hasMore: total > page * pageSize,
+        pageSize: safePageSize,
+        hasMore: total > page * safePageSize,
         stats: {
           totalReviews,
           averageRating: Math.round(averageRating * 10) / 10,

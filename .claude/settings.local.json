@@ -14,7 +14,11 @@
       "Bash(pnpm build:*)",
       "Bash(PGPASSWORD=kingdoms123 psql:*)",
       "Bash(pnpm add:*)",
-      "Bash(pnpm remove:*)"
+      "Bash(pnpm remove:*)",
+      "Bash(ls:*)",
+      "Bash(sudo tee:*)",
+      "Bash(sudo systemctl reload:*)",
+      "Bash(sudo systemctl status:*)"
     ],
     "deny": [],
     "ask": []
