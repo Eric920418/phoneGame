@@ -18,7 +18,8 @@
       "Bash(ls:*)",
       "Bash(sudo tee:*)",
       "Bash(sudo systemctl reload:*)",
-      "Bash(sudo systemctl status:*)"
+      "Bash(sudo systemctl status:*)",
+      "Bash(crontab:*)"
     ],
     "deny": [],
     "ask": []

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Crown, Bell, MessageSquare, FolderOpen, LogOut, Settings, Users, BarChart, LayoutGrid } from "lucide-react";
+import { Crown, Bell, MessageSquare, FolderOpen, LogOut, Settings, Users, BarChart, LayoutGrid, Star } from "lucide-react";
 import { graphqlFetch } from "@/lib/apolloClient";
 
 interface DashboardStats {
@@ -88,6 +88,13 @@ export default function AdminDashboard() {
       href: "/admin/content",
       color: "#f59e0b",
     },
+    {
+      title: "評論管理",
+      description: "管理玩家評價與審核",
+      icon: Star,
+      href: "/admin/reviews",
+      color: "#10b981",
+    },
   ];
 
   const formatNumber = (num: number) => {
@@ -115,7 +122,7 @@ export default function AdminDashboard() {
                 <Crown className="w-6 h-6 text-[var(--color-bg-dark)]" />
               </div>
               <div>
-                <h1 className="text-lg font-bold text-[var(--color-text)]">Kingdoms 管理後台</h1>
+                <h1 className="text-lg font-bold text-[var(--color-text)]">破浪三國 管理後台</h1>
               </div>
             </div>
 

@@ -17,11 +17,11 @@ export default function Footer() {
                 <Crown className="w-6 h-6 text-[var(--color-bg-dark)]" />
               </div>
               <span className="text-xl font-bold text-[var(--color-text)]">
-                Kingdoms
+                破浪三國
               </span>
             </Link>
             <p className="text-[var(--color-text-muted)] max-w-md">
-              歡迎來到 Kingdoms 官方網站。在這裡獲取最新遊戲公告、參與社群討論、分享你的遊戲體驗。
+              歡迎來到破浪三國官方網站。在這裡獲取最新遊戲公告、參與社群討論、分享你的遊戲體驗。
             </p>
           </div>
 
@@ -70,7 +70,7 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-8 border-t border-[var(--color-border)] flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-[var(--color-text-dark)] text-sm">
-            &copy; {currentYear} Kingdoms. All rights reserved.
+            &copy; {currentYear} 破浪三國. All rights reserved.
           </p>
           <div className="flex items-center gap-4 text-sm">
             <Link

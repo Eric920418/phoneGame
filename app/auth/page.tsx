@@ -88,7 +88,7 @@ export default function AuthPage() {
             <Crown className="w-8 h-8 text-[var(--color-bg-dark)]" />
           </div>
           <h1 className="text-2xl font-bold text-[var(--color-text)]">
-            {mode === "login" ? "歡迎回來" : "加入 Kingdoms"}
+            {mode === "login" ? "歡迎回來" : "加入破浪三國"}
           </h1>
           <p className="text-[var(--color-text-muted)] mt-1">
             {mode === "login" ? "登入以發表評價" : "創建帳號開始遊戲之旅"}
