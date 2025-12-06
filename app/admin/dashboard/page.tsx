@@ -189,22 +189,7 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* Quick Links */}
-        <div className="mt-8 flex items-center gap-4">
-          <Link
-            href="/"
-            className="text-[var(--color-text-muted)] hover:text-[var(--color-primary)] text-sm transition-colors"
-          >
-            查看前台網站 →
-          </Link>
-          <Link
-            href="/admin/settings"
-            className="flex items-center gap-1 text-[var(--color-text-muted)] hover:text-[var(--color-primary)] text-sm transition-colors"
-          >
-            <Settings className="w-4 h-4" />
-            系統設定
-          </Link>
-        </div>
+    
       </main>
     </div>
   );
