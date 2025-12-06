@@ -73,10 +73,10 @@ export default function AdminAnnouncementsPage() {
   };
 
   useEffect(() => {
-    if (session) {
+    if (user) {
       fetchAnnouncements();
     }
-  }, [session]);
+  }, [user]);
 
   const generateSlug = (title: string) => {
     return title

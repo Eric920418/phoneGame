@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { graphqlFetch } from "@/lib/apolloClient";
 import { MessageSquare, Eye, Clock, Pin, Lock, ChevronRight, Search, Plus } from "lucide-react";
+import ForumSidebar from "@/components/ForumSidebar";
 
 interface Category {
   id: number;
@@ -173,45 +174,7 @@ export default async function ForumPage({ searchParams }: PageProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar - Categories */}
-          <div className="lg:col-span-1">
-            <h2 className="text-lg font-semibold text-[var(--color-text)] mb-4">分類</h2>
-            <div className="space-y-2">
-              <Link
-                href="/forum"
-                className={`card p-3 flex items-center gap-3 ${!currentCategory ? 'border-[var(--color-primary)]' : ''}`}
-              >
-                <div className="w-8 h-8 rounded bg-[var(--color-primary)]/10 flex items-center justify-center">
-                  <MessageSquare className="w-4 h-4 text-[var(--color-primary)]" />
-                </div>
-                <div className="flex-1">
-                  <span className="text-[var(--color-text)] text-sm font-medium">全部</span>
-                </div>
-              </Link>
-
-              {categories.map((category) => (
-                <Link
-                  key={category.id}
-                  href={`/forum?category=${category.slug}`}
-                  className={`card p-3 flex items-center gap-3 ${currentCategory === category.slug ? 'border-[var(--color-primary)]' : ''}`}
-                >
-                  <div
-                    className="w-8 h-8 rounded flex items-center justify-center text-sm"
-                    style={{ backgroundColor: `${category.color}20` }}
-                  >
-                    {category.icon || "💬"}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[var(--color-text)] text-sm font-medium block truncate">
-                      {category.name}
-                    </span>
-                  </div>
-                  <span className="text-[var(--color-text-dark)] text-xs">
-                    {category.postCount}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
+          <ForumSidebar categories={categories} currentCategory={currentCategory} />
 
           {/* Main - Posts */}
           <div className="lg:col-span-3">

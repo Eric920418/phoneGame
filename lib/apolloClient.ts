@@ -16,11 +16,21 @@ export async function graphqlFetch<T = unknown>(
     ? `http://localhost:${process.env.PORT || 3000}/api/graphql`
     : "/api/graphql";
 
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  // 客戶端：從 localStorage 讀取 token
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem("auth_token");
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+  }
+
   const response = await fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify({ query, variables }),
     cache: "no-store",
   });

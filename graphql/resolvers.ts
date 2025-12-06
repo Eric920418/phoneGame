@@ -370,12 +370,17 @@ const AnnouncementResolvers = {
   },
   Mutation: {
     createAnnouncement: async (_: unknown, { input }: { input: { title: string; slug: string; content: string; excerpt?: string; coverImage?: string; type?: string; isPinned?: boolean; isPublished?: boolean } }) => {
-      return await prisma.announcement.create({
-        data: {
-          ...input,
-          type: input.type || 'general',
-        },
-      });
+      try {
+        return await prisma.announcement.create({
+          data: {
+            ...input,
+            type: input.type || 'general',
+          },
+        });
+      } catch (error) {
+        console.error('createAnnouncement error:', error);
+        throw error;
+      }
     },
     updateAnnouncement: async (_: unknown, { id, input }: { id: number; input: { title?: string; slug?: string; content?: string; excerpt?: string; coverImage?: string; type?: string; isPinned?: boolean; isPublished?: boolean } }) => {
       return await prisma.announcement.update({

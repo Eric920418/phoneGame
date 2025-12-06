@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Send, AlertCircle } from "lucide-react";
+import { ArrowLeft, Send, AlertCircle, Plus } from "lucide-react";
 import { graphqlFetch } from "@/lib/apolloClient";
+import AddCategoryModal from "@/components/AddCategoryModal";
 
 interface Category {
   id: number;
@@ -18,6 +19,7 @@ export default function NewPostPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showAddCategoryModal, setShowAddCategoryModal] = useState(false);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -27,29 +29,34 @@ export default function NewPostPage() {
     categoryId: "",
   });
 
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const data = await graphqlFetch<{ categories: Category[] }>(`
-          query {
-            categories {
-              id
-              name
-              slug
-              icon
-            }
+  const fetchCategories = async () => {
+    try {
+      const data = await graphqlFetch<{ categories: Category[] }>(`
+        query {
+          categories {
+            id
+            name
+            slug
+            icon
           }
-        `);
-        setCategories(data.categories);
-        if (data.categories.length > 0) {
-          setFormData(prev => ({ ...prev, categoryId: data.categories[0].id.toString() }));
         }
-      } catch (err) {
-        console.error("獲取分類失敗:", err);
+      `);
+      setCategories(data.categories);
+      if (data.categories.length > 0 && !formData.categoryId) {
+        setFormData(prev => ({ ...prev, categoryId: data.categories[0].id.toString() }));
       }
+    } catch (err) {
+      console.error("獲取分類失敗:", err);
     }
+  };
+
+  useEffect(() => {
     fetchCategories();
   }, []);
+
+  const handleCategoryAdded = () => {
+    fetchCategories();
+  };
 
   const generateSlug = (title: string) => {
     return title
@@ -164,18 +171,29 @@ export default function NewPostPage() {
               <label className="block text-[var(--color-text)] text-sm font-medium mb-2">
                 分類 <span className="text-red-400">*</span>
               </label>
-              <select
-                value={formData.categoryId}
-                onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-                className="input"
-                required
-              >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.icon} {cat.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex gap-2">
+                <select
+                  value={formData.categoryId}
+                  onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+                  className="input flex-1"
+                  required
+                >
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>
+                      {cat.icon} {cat.name}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setShowAddCategoryModal(true)}
+                  className="btn btn-secondary"
+                  title="新增分類"
+                >
+                  <Plus className="w-4 h-4" />
+                  新增
+                </button>
+              </div>
             </div>
 
             {/* Title */}
@@ -233,6 +251,12 @@ export default function NewPostPage() {
           </div>
         </form>
       </div>
+
+      <AddCategoryModal
+        isOpen={showAddCategoryModal}
+        onClose={() => setShowAddCategoryModal(false)}
+        onSuccess={handleCategoryAdded}
+      />
     </div>
   );
 }

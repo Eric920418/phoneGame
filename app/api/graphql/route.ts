@@ -4,58 +4,27 @@ import path from "path";
 import resolvers from "../../../graphql/resolvers";
 import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
-
-// 本地開發環境允許的 IP
-const ALLOWED_IP_RANGES = [
-  { ip: "127.0.0.1" },
-  { ip: "::1" },
-  { ip: "localhost" },
-  { ip: "::ffff:127.0.0.1" },
-];
-
-function getClientIP(request: Request): string {
-  const forwarded = request.headers.get('x-forwarded-for');
-  if (forwarded) {
-    return forwarded.split(',')[0].trim();
-  }
-
-  const realIP = request.headers.get('x-real-ip');
-  if (realIP) {
-    return realIP.trim();
-  }
-
-  return '127.0.0.1';
-}
-
-function isIPAllowed(clientIP: string): boolean {
-  // 開發環境默認允許本地 IP
-  if (process.env.NODE_ENV === 'development') {
-    if (clientIP.includes('127.0') || clientIP.includes('::1') || clientIP === 'localhost') {
-      return true;
-    }
-  }
-
-  for (const range of ALLOWED_IP_RANGES) {
-    if (clientIP === range.ip) {
-      return true;
-    }
-  }
-
-  return false;
-}
+import { prisma } from "../../../graphql/prismaClient";
 
 interface TokenPayload {
   userId?: number;
   accessToken?: string;
 }
 
-async function verifyToken(request: Request): Promise<{ isValid: boolean; userId?: number }> {
+async function verifyToken(request: Request): Promise<{ isValid: boolean; userId?: number; isAdmin?: boolean }> {
   const authHeader = request.headers.get("Authorization");
   if (authHeader && authHeader.startsWith("Bearer ")) {
     const token = authHeader.substring(7);
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || "") as TokenPayload;
-      return { isValid: true, userId: decoded.userId };
+      if (decoded.userId) {
+        const user = await prisma.user.findUnique({
+          where: { id: decoded.userId },
+          select: { isAdmin: true }
+        });
+        return { isValid: true, userId: decoded.userId, isAdmin: user?.isAdmin || false };
+      }
+      return { isValid: true, userId: decoded.userId, isAdmin: false };
     } catch (error) {
       console.error("Token verification failed:", error);
       return { isValid: false };
@@ -86,8 +55,8 @@ const withAuth = (resolvers: Record<string, unknown>) => {
   if ((resolvers as { Mutation?: Record<string, unknown> }).Mutation) {
     (wrappedResolvers as { Mutation: Record<string, unknown> }).Mutation = Object.keys((resolvers as { Mutation: Record<string, unknown> }).Mutation).reduce(
       (acc: Record<string, unknown>, key: string) => {
-        acc[key] = async (parent: unknown, args: unknown, context: { isIPAllowed: boolean; isAuthenticated: boolean; clientIP: string; userId?: number }, info: unknown) => {
-          // 用戶相關操作不需要 IP 白名單和管理員認證
+        acc[key] = async (parent: unknown, args: unknown, context: { isAuthenticated: boolean; isAdmin: boolean; userId?: number }, info: unknown) => {
+          // 用戶相關操作不需要管理員認證
           if (PUBLIC_MUTATIONS.includes(key)) {
             // register 和 login 不需要任何認證
             if (key === 'register' || key === 'login') {
@@ -97,16 +66,16 @@ const withAuth = (resolvers: Record<string, unknown>) => {
             return ((resolvers as { Mutation: Record<string, (parent: unknown, args: unknown, context: unknown, info: unknown) => unknown> }).Mutation)[key](parent, args, context, info);
           }
 
-          // 管理員操作需要 IP 白名單和認證
-          if (!context.isIPAllowed) {
-            throw new Error(
-              `拒絕存取：您的 IP 地址 (${context.clientIP}) 沒有執行修改操作的權限。`
-            );
-          }
-
+          // 管理員操作需要認證且必須是管理員
           if (!context.isAuthenticated) {
             throw new Error(
               "驗證失敗：需要有效的 Authorization Bearer Token 才能執行修改操作"
+            );
+          }
+
+          if (!context.isAdmin) {
+            throw new Error(
+              "權限不足：只有管理員才能執行此操作"
             );
           }
 
@@ -137,15 +106,13 @@ const yoga = createYoga({
   fetchAPI: { Response: NextResponse },
   async context({ request }) {
     let isAuthenticated = false;
-    let isIPWhitelisted = false;
-    let clientIP = "unknown";
+    let isAdmin = false;
     let userId: number | undefined = undefined;
 
     try {
-      clientIP = getClientIP(request);
-      isIPWhitelisted = isIPAllowed(clientIP);
       const tokenResult = await verifyToken(request);
       isAuthenticated = tokenResult.isValid;
+      isAdmin = tokenResult.isAdmin || false;
       userId = tokenResult.userId;
     } catch (error) {
       console.error("驗證錯誤:", error);
@@ -153,8 +120,7 @@ const yoga = createYoga({
 
     return {
       isAuthenticated,
-      isIPAllowed: isIPWhitelisted,
-      clientIP,
+      isAdmin,
       userId,
     };
   },

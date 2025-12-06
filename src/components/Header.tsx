@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, Crown, MessageSquare, Bell, Shield, Star } from "lucide-react";
+import { Menu, X, Crown, MessageSquare, Bell, Star } from "lucide-react";
 import UserMenu from "./UserMenu";
 
 export default function Header() {
@@ -72,14 +72,6 @@ export default function Header() {
                   <span>{item.label}</span>
                 </Link>
               ))}
-              <Link
-                href="/admin/login"
-                onClick={() => setIsMenuOpen(false)}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-primary)] transition-all"
-              >
-                <Shield className="w-5 h-5" />
-                <span>管理後台</span>
-              </Link>
             </nav>
           </div>
         )}

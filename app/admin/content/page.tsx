@@ -115,10 +115,10 @@ export default function AdminContentPage() {
   };
 
   useEffect(() => {
-    if (session) {
+    if (user) {
       fetchContentBlocks();
     }
-  }, [session]);
+  }, [user]);
 
   const handleSectionClick = (key: string) => {
     setActiveSection(key);

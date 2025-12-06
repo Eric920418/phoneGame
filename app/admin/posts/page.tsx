@@ -112,11 +112,11 @@ export default function AdminPostsPage() {
   };
 
   useEffect(() => {
-    if (session) {
+    if (user) {
       fetchCategories();
       fetchPosts();
     }
-  }, [session]);
+  }, [user]);
 
   const generateSlug = (title: string) => {
     return title

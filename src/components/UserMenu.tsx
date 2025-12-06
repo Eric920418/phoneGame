@@ -9,6 +9,7 @@ import {
   Star,
   ChevronDown,
   Loader2,
+  Shield,
 } from "lucide-react";
 
 export default function UserMenu() {
@@ -83,6 +84,16 @@ export default function UserMenu() {
 
           {/* 菜單項 */}
           <div className="py-2">
+            {user.isAdmin && (
+              <Link
+                href="/admin/dashboard"
+                onClick={() => setIsOpen(false)}
+                className="flex items-center gap-3 px-4 py-2 text-[var(--color-primary)] hover:bg-[var(--color-bg-darker)] transition-colors"
+              >
+                <Shield className="w-4 h-4" />
+                <span>管理後台</span>
+              </Link>
+            )}
             <Link
               href="/#reviews"
               onClick={() => setIsOpen(false)}

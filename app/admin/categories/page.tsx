@@ -67,10 +67,10 @@ export default function AdminCategoriesPage() {
   };
 
   useEffect(() => {
-    if (session) {
+    if (user) {
       fetchCategories();
     }
-  }, [session]);
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
