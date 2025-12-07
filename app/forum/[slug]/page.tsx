@@ -3,6 +3,9 @@ import { graphqlFetch } from "@/lib/apolloClient";
 import { ArrowLeft, Eye, Clock, MessageSquare, Pin, Lock, User } from "lucide-react";
 import CommentSection from "@/components/Forum/CommentSection";
 
+// 強制動態渲染，確保每次都從資料庫獲取最新資料
+export const dynamic = 'force-dynamic';
+
 interface Category {
   id: number;
   name: string;
@@ -27,6 +30,9 @@ interface Post {
 }
 
 async function getPost(slug: string) {
+  // 解碼 URL 編碼的 slug（Next.js params 傳遞的是 URL 編碼的字符串）
+  const decodedSlug = decodeURIComponent(slug);
+
   try {
     const data = await graphqlFetch<{ post: Post }>(`
       query($slug: String!) {
@@ -51,7 +57,7 @@ async function getPost(slug: string) {
           }
         }
       }
-    `, { slug });
+    `, { slug: decodedSlug });
 
     // Increment views
     if (data.post) {
@@ -174,7 +180,7 @@ export default async function PostPage({ params }: PageProps) {
 
           {/* Content */}
           <div
-            className="prose mt-6"
+            className="prose mt-6 whitespace-pre-line"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
         </article>

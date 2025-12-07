@@ -86,10 +86,8 @@ const CategoryResolvers = {
         const categories = await prisma.category.findMany({
           orderBy: { order: 'asc' },
         });
-        return categories.map((cat) => ({
-          ...cat,
-          postCount: 0,
-        }));
+        // 不設置 postCount，讓 Category resolver 計算
+        return categories;
       } catch (error) {
         console.warn('資料庫未配置，使用假數據');
         return mockCategories;

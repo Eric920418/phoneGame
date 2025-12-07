@@ -44,9 +44,7 @@ const defaultData: Record<string, unknown[]> = {
   beginnerGuides: [
     { chapter: 1, title: "建立角色", desc: "選擇陣營與職業" },
   ],
-  dropItems: [
-    { name: "赤兔馬", location: "虎牢關", boss: "呂布", rate: "0.5%", rarity: "傳說", color: "#ff6b00" },
-  ],
+  dropItems: [],
   dungeons: [
     { name: "虎牢關", level: 60, difficulty: "傳說", color: "#ff6b00", players: "5人", boss: "呂布" },
   ],
@@ -159,7 +157,13 @@ export default function AdminContentPage() {
 
   const addItem = () => {
     if (!activeSection) return;
-    const template = defaultData[activeSection]?.[0] || {};
+
+    // 為沒有預設資料的區塊提供模板
+    const emptyTemplates: Record<string, unknown> = {
+      dropItems: { boss: "", location: "", drops: [] },
+    };
+
+    const template = defaultData[activeSection]?.[0] || emptyTemplates[activeSection] || {};
     const newItem = JSON.parse(JSON.stringify(template));
     if ('id' in newItem) newItem.id = Date.now();
     if ('rank' in newItem) newItem.rank = editingData.length + 1;
@@ -469,11 +473,11 @@ export default function AdminContentPage() {
 
       case "dropItems":
         return editingData.map((item: unknown, index: number) => {
-          const data = item as { name: string; location: string; boss: string; rate: string; rarity: string; color: string };
+          const data = item as { boss: string; location: string; drops: { name: string; rate: string; rarity: string; color: string }[] };
           return (
             <div key={index} className="card p-4 space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-[var(--color-primary)] font-medium">掉落物 #{index + 1}</span>
+                <span className="text-[var(--color-primary)] font-medium">BOSS #{index + 1}</span>
                 <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -481,49 +485,70 @@ export default function AdminContentPage() {
               <div className="grid grid-cols-2 gap-3">
                 <input
                   type="text"
-                  value={data.name}
-                  onChange={(e) => updateItem(index, "name", e.target.value)}
-                  placeholder="物品名稱"
+                  value={data.boss}
+                  onChange={(e) => updateItem(index, "boss", e.target.value)}
+                  placeholder="BOSS 名稱 (如: 呂布)"
                   className="input"
                 />
                 <input
                   type="text"
                   value={data.location}
                   onChange={(e) => updateItem(index, "location", e.target.value)}
-                  placeholder="掉落地點"
+                  placeholder="出沒地點 (如: 虎牢關)"
                   className="input"
                 />
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                <input
-                  type="text"
-                  value={data.boss}
-                  onChange={(e) => updateItem(index, "boss", e.target.value)}
-                  placeholder="來源 BOSS"
-                  className="input"
-                />
-                <input
-                  type="text"
-                  value={data.rate}
-                  onChange={(e) => updateItem(index, "rate", e.target.value)}
-                  placeholder="掉落機率 (如: 0.5%)"
-                  className="input"
-                />
-                <select
-                  value={data.rarity}
-                  onChange={(e) => {
-                    const rarity = e.target.value;
-                    const colors: Record<string, string> = { "傳說": "#ff6b00", "史詩": "#a855f7", "稀有": "#3b82f6", "普通": "#6b7280" };
-                    updateItem(index, "rarity", rarity);
-                    updateItem(index, "color", colors[rarity] || "#6b7280");
-                  }}
-                  className="input"
+              <div className="space-y-2">
+                <label className="text-[var(--color-text)] text-sm flex items-center gap-2">
+                  <Gift className="w-4 h-4 text-[var(--color-primary)]" />
+                  掉落物品列表
+                </label>
+                {(data.drops || []).map((drop, dIndex) => (
+                  <div key={dIndex} className="flex items-center gap-2 bg-[var(--color-bg-dark)] p-3 rounded-lg">
+                    <input
+                      type="text"
+                      value={drop.name}
+                      onChange={(e) => updateNestedItem(index, "drops", dIndex, "name", e.target.value)}
+                      placeholder="物品名稱"
+                      className="input flex-1"
+                    />
+                    <input
+                      type="text"
+                      value={drop.rate}
+                      onChange={(e) => updateNestedItem(index, "drops", dIndex, "rate", e.target.value)}
+                      placeholder="機率 (如: 0.5%)"
+                      className="input w-24"
+                    />
+                    <select
+                      value={drop.rarity}
+                      onChange={(e) => {
+                        const rarity = e.target.value;
+                        const colors: Record<string, string> = { "傳說": "#ff6b00", "史詩": "#a855f7", "稀有": "#3b82f6", "普通": "#6b7280" };
+                        updateNestedItem(index, "drops", dIndex, "rarity", rarity);
+                        updateNestedItem(index, "drops", dIndex, "color", colors[rarity] || "#6b7280");
+                      }}
+                      className="input w-28"
+                    >
+                      <option value="傳說">🟠 傳說</option>
+                      <option value="史詩">🟣 史詩</option>
+                      <option value="稀有">🔵 稀有</option>
+                      <option value="普通">⚪ 普通</option>
+                    </select>
+                    <button
+                      onClick={() => removeNestedItem(index, "drops", dIndex)}
+                      className="text-red-400 hover:text-red-300 p-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+                <button
+                  onClick={() => addNestedItem(index, "drops", { name: "", rate: "", rarity: "稀有", color: "#3b82f6" })}
+                  className="text-[var(--color-primary)] text-sm hover:underline flex items-center gap-1"
                 >
-                  <option value="傳說">🟠 傳說</option>
-                  <option value="史詩">🟣 史詩</option>
-                  <option value="稀有">🔵 稀有</option>
-                  <option value="普通">⚪ 普通</option>
-                </select>
+                  <Plus className="w-4 h-4" />
+                  新增掉落物品
+                </button>
               </div>
             </div>
           );

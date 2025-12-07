@@ -59,16 +59,19 @@ export async function graphqlFetch<T = unknown>(
     }
   }
 
+  // 決定是否使用快取
+  const shouldUseCache = isReadOperation(query) && !options?.skipCache;
+
   const response = await fetch(url, {
     method: "POST",
     headers,
     body: JSON.stringify({ query, variables }),
-    // 對讀取操作使用瀏覽器快取，mutation 使用 no-store
-    cache: isReadOperation(query) ? "default" : "no-store",
-    // Next.js 重新驗證設定（伺服器端）
-    next: typeof window === 'undefined' && isReadOperation(query)
+    // 使用 no-store 當 skipCache 為 true 或非讀取操作
+    cache: shouldUseCache ? "default" : "no-store",
+    // Next.js 重新驗證設定（伺服器端）- skipCache 時跳過
+    next: typeof window === 'undefined' && shouldUseCache
       ? { revalidate: 60 } as RequestInit['next']
-      : undefined,
+      : { revalidate: 0 } as RequestInit['next'],
   } as RequestInit);
 
   if (!response.ok) {

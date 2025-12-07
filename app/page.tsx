@@ -92,13 +92,8 @@ const beginnerGuides = [
   { chapter: 4, title: "加入公會", desc: "團隊合作與福利" },
 ];
 
-// 掉落查詢數據
-const dropItems = [
-  { name: "赤兔馬", location: "虎牢關", boss: "呂布", rate: "0.5%", rarity: "傳說", color: "#ff6b00" },
-  { name: "青龍偃月刀", location: "樊城", boss: "關羽影", rate: "2%", rarity: "史詩", color: "#a855f7" },
-  { name: "諸葛錦囊", location: "臥龍崗", boss: "任意怪物", rate: "5%", rarity: "稀有", color: "#3b82f6" },
-  { name: "五虎將令牌", location: "五虎將副本", boss: "各五虎將", rate: "1%", rarity: "傳說", color: "#ff6b00" },
-];
+// 掉落查詢數據 - 從資料庫讀取，不使用預設假資料
+const dropItems: { boss: string; location: string; drops: { name: string; rate: string; rarity: string; color: string }[] }[] = [];
 
 // 副本列表
 const dungeons = [
@@ -784,123 +779,69 @@ export default async function HomePage() {
               color="#f39c12"
               href="/guide/drops"
             />
-            {/* 桌面版：表格顯示 */}
-            <div className="hidden md:block card overflow-hidden">
-              <table className="w-full">
-                <thead className="bg-[var(--color-bg-darker)]">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-[var(--color-text)]">
-                      物品
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-[var(--color-text)]">
-                      地點
-                    </th>
-                    <th className="px-4 py-3 text-left text-sm font-medium text-[var(--color-text)]">
-                      來源
-                    </th>
-                    <th className="px-4 py-3 text-right text-sm font-medium text-[var(--color-text)]">
-                      機率
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-border)]">
-                  {displayDropItems.map((item, index) => (
-                    <tr
-                      key={index}
-                      className="hover:bg-[var(--color-bg-card-hover)] transition-colors"
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <Star
-                            className="w-4 h-4 shrink-0"
-                            style={{ color: item.color }}
-                          />
-                          <span
-                            className="font-medium"
-                            style={{ color: item.color }}
-                          >
-                            {item.name}
-                          </span>
-                          <span
-                            className="text-xs px-1.5 py-0.5 rounded"
-                            style={{
-                              backgroundColor: `${item.color}20`,
-                              color: item.color,
-                            }}
-                          >
-                            {item.rarity}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">
-                        <div className="flex items-center gap-1">
+            {/* 以 BOSS 為主的卡片式顯示 */}
+            {displayDropItems.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {displayDropItems.map((bossData, index) => (
+                  <div key={index} className="card p-4 hover:border-[#f39c12]/30 transition-all">
+                    {/* BOSS 標題 */}
+                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[var(--color-border)]">
+                      <div className="w-10 h-10 rounded-lg bg-[#f39c12]/10 flex items-center justify-center">
+                        <Skull className="w-5 h-5 text-[#f39c12]" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-[var(--color-text)] text-lg">{bossData.boss}</h3>
+                        <div className="flex items-center gap-1 text-sm text-[var(--color-text-muted)]">
                           <MapPin className="w-3 h-3" />
-                          {item.location}
+                          {bossData.location}
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-[var(--color-text-muted)]">
-                        {item.boss}
-                      </td>
-                      <td className="px-4 py-3 text-right text-sm font-medium text-[var(--color-primary)]">
-                        {item.rate}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {/* 手機版：卡片顯示 */}
-            <div className="md:hidden space-y-3">
-              {displayDropItems.map((item, index) => (
-                <div key={index} className="card p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <Star
-                        className="w-4 h-4 shrink-0"
-                        style={{ color: item.color }}
-                      />
-                      <span
-                        className="font-medium"
-                        style={{ color: item.color }}
-                      >
-                        {item.name}
-                      </span>
+                      </div>
                     </div>
-                    <span
-                      className="text-xs px-1.5 py-0.5 rounded"
-                      style={{
-                        backgroundColor: `${item.color}20`,
-                        color: item.color,
-                      }}
-                    >
-                      {item.rarity}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div className="text-[var(--color-text-muted)]">
-                      <span className="text-xs text-[var(--color-text-dark)]">
-                        地點：
-                      </span>
-                      {item.location}
-                    </div>
-                    <div className="text-[var(--color-text-muted)]">
-                      <span className="text-xs text-[var(--color-text-dark)]">
-                        來源：
-                      </span>
-                      {item.boss}
+                    {/* 掉落物品列表 */}
+                    <div className="space-y-2">
+                      {(bossData.drops || []).map((drop, dIndex) => (
+                        <div
+                          key={dIndex}
+                          className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-bg-darker)] hover:bg-[var(--color-bg-card-hover)] transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <Star
+                              className="w-4 h-4 shrink-0"
+                              style={{ color: drop.color }}
+                            />
+                            <span
+                              className="font-medium text-sm"
+                              style={{ color: drop.color }}
+                            >
+                              {drop.name}
+                            </span>
+                            <span
+                              className="text-xs px-1.5 py-0.5 rounded"
+                              style={{
+                                backgroundColor: `${drop.color}20`,
+                                color: drop.color,
+                              }}
+                            >
+                              {drop.rarity}
+                            </span>
+                          </div>
+                          <span className="text-sm font-medium text-[var(--color-primary)]">
+                            {drop.rate}
+                          </span>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <div className="mt-2 text-right">
-                    <span className="text-xs text-[var(--color-text-dark)]">
-                      掉落機率：
-                    </span>
-                    <span className="font-medium text-[var(--color-primary)]">
-                      {item.rate}
-                    </span>
-                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="card p-8 text-center">
+                <div className="w-12 h-12 rounded-full bg-[#f39c12]/10 flex items-center justify-center mx-auto mb-3">
+                  <Search className="w-6 h-6 text-[#f39c12]" />
                 </div>
-              ))}
-            </div>
+                <p className="text-[var(--color-text-muted)]">暫無掉落資料，敬請期待</p>
+              </div>
+            )}
           </FramedSection>
 
           {/* ==================== 7. 副本介紹 Section ==================== */}
