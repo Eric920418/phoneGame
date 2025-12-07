@@ -707,7 +707,7 @@ export default async function HomePage() {
           </FramedSection>
 
           {/* ==================== 4. 遊戲設定 Section ==================== */}
-          <FramedSection id="settings" compact={true}>
+          <FramedSection id="settings" compact={false}>
             <SectionTitle
               icon={Settings}
               title="遊戲設定"
