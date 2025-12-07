@@ -941,48 +941,7 @@ export default async function HomePage() {
             </div>
           </FramedSection>
 
-          {/* ==================== 9. BOSS介紹 Section ==================== */}
-          <FramedSection id="boss" compact={true}>
-            <SectionTitle
-              icon={Skull}
-              title="BOSS介紹"
-              color="#c0392b"
-              href="/guide/boss"
-            />
-            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              {displayBossList.map((boss, index) => (
-                <div
-                  key={index}
-                  className="card p-3 sm:p-5 hover:border-rose-500/30 transition-all group cursor-pointer"
-                >
-                  <div className="flex items-center justify-between mb-2 sm:mb-3">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-rose-500/20 flex items-center justify-center shrink-0">
-                      <Skull className="w-5 h-5 sm:w-6 sm:h-6 text-rose-400" />
-                    </div>
-                    <span
-                      className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 sm:py-1 rounded"
-                      style={{
-                        backgroundColor: `${boss.color}20`,
-                        color: boss.color,
-                      }}
-                    >
-                      {boss.type}
-                    </span>
-                  </div>
-                  <h3 className="text-base sm:text-lg font-bold text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors">
-                    {boss.name}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-[var(--color-text-muted)] italic mb-1 sm:mb-2 truncate">
-                    「{boss.title}」
-                  </p>
-                  <div className="flex items-center gap-1 text-[10px] sm:text-xs text-[var(--color-text-dark)]">
-                    <MapPin className="w-3 h-3 shrink-0" />
-                    <span className="truncate">{boss.location}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </FramedSection>
+
 
           {/* ==================== 10. 國戰時間 Section ==================== */}
           <FramedSection id="nation-war" compact={true}>
@@ -1234,7 +1193,7 @@ export default async function HomePage() {
                 攻略專區
               </h3>
               <ul className="space-y-2">
-                {["新手攻略", "副本介紹", "BOSS介紹"].map((item, i) => (
+                {["新手攻略", "副本介紹"].map((item, i) => (
                   <li key={i}>
                     <a
                       href={`#${["beginner", "dungeon", "boss"][i]}`}

@@ -21,7 +21,6 @@ const contentSections = [
   { key: "dropItems", title: "掉落查詢", icon: Search, color: "#f39c12" },
   { key: "dungeons", title: "副本介紹", icon: Map, color: "#1abc9c" },
   { key: "treasureBoxes", title: "寶箱內容", icon: Gift, color: "#f1c40f" },
-  { key: "bossList", title: "BOSS介紹", icon: Skull, color: "#c0392b" },
   { key: "warSchedule", title: "國戰時間", icon: Swords, color: "#8e44ad" },
   { key: "arenaRanking", title: "武魂擂台", icon: Trophy, color: "#c9a227" },
   { key: "playerReviews", title: "玩家評價", icon: Quote, color: "#10b981" },
