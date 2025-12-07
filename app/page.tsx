@@ -772,7 +772,7 @@ export default async function HomePage() {
           </FramedSection>
 
           {/* ==================== 6. 掉落查詢 Section ==================== */}
-          <FramedSection id="drops" compact={true}>
+          <FramedSection id="drops" compact={false}>
             <SectionTitle
               icon={Search}
               title="掉落查詢"
