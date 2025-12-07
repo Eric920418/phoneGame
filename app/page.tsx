@@ -321,7 +321,7 @@ function FramedSection({
       <div className={`relative z-10 px-6 pb-20 sm:px-8 sm:pb-24 md:px-10  lg:px-16 lg:pb-12 ${
         compact
           ? "pt-20 lg:pt-28"
-          : "pt-32 lg:pt-72"
+          : "pt-32 lg:pt-48"
       }`}>
         {children}
       </div>
