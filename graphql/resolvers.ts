@@ -787,21 +787,28 @@ const ReviewResolvers = {
       });
     },
     deleteReview: async (_: unknown, { id }: { id: number }, context: Context) => {
-      const user = await getUserFromContext(context);
-      if (!user) {
-        throw new Error('請先登入');
-      }
+      try {
+        const user = await getUserFromContext(context);
+        if (!user) {
+          throw new Error('請先登入');
+        }
 
-      const review = await prisma.review.findUnique({ where: { id } });
-      if (!review) {
-        throw new Error('評價不存在');
-      }
-      if (review.userId !== user.id && !user.isAdmin) {
-        throw new Error('無權刪除此評價');
-      }
+        const review = await prisma.review.findUnique({ where: { id } });
+        if (!review) {
+          throw new Error('評價不存在');
+        }
+        if (review.userId !== user.id && !user.isAdmin) {
+          throw new Error('無權刪除此評價');
+        }
 
-      await prisma.review.delete({ where: { id } });
-      return true;
+        // 直接刪除評論，關聯數據會通過 onDelete: Cascade 自動刪除
+        await prisma.review.delete({ where: { id } });
+
+        return true;
+      } catch (error) {
+        console.error('[deleteReview] 刪除評論失敗:', error);
+        throw error;
+      }
     },
     createReviewReply: async (_: unknown, { input }: { input: { content: string; reviewId: number } }, context: Context) => {
       const user = await getUserFromContext(context);

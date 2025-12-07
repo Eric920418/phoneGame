@@ -136,9 +136,11 @@ export default function AdminCategoriesPage() {
           deleteCategory(id: $id)
         }
       `, { id });
-      fetchCategories();
+      // 直接從本地狀態移除
+      setCategories(prev => prev.filter(c => c.id !== id));
     } catch (err) {
       console.error("刪除失敗:", err);
+      alert("刪除失敗：" + (err instanceof Error ? err.message : "未知錯誤"));
     }
   };
 

@@ -208,7 +208,8 @@ export default function AdminPostsPage() {
         id,
         input: { isPinned: !isPinned },
       });
-      fetchPosts();
+      // 直接更新本地狀態
+      setPosts(prev => prev.map(p => p.id === id ? { ...p, isPinned: !isPinned } : p));
     } catch (err) {
       console.error("更新失敗:", err);
     }
@@ -226,7 +227,8 @@ export default function AdminPostsPage() {
         id,
         input: { isLocked: !isLocked },
       });
-      fetchPosts();
+      // 直接更新本地狀態
+      setPosts(prev => prev.map(p => p.id === id ? { ...p, isLocked: !isLocked } : p));
     } catch (err) {
       console.error("更新失敗:", err);
     }
@@ -241,9 +243,11 @@ export default function AdminPostsPage() {
           deletePost(id: $id)
         }
       `, { id });
-      fetchPosts();
+      // 直接從本地狀態移除
+      setPosts(prev => prev.filter(p => p.id !== id));
     } catch (err) {
       console.error("刪除失敗:", err);
+      alert("刪除失敗：" + (err instanceof Error ? err.message : "未知錯誤"));
     }
   };
 

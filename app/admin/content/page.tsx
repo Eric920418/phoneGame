@@ -30,7 +30,7 @@ const contentSections = [
 // 默认数据
 const defaultData: Record<string, unknown[]> = {
   eventAnnouncements: [
-    { id: 1, title: "雙十二狂歡活動", date: "12/12-12/15", type: "限時", isHot: true },
+    { id: 1, title: "雙十二狂歡活動", date: "12/12-12/15", type: "限時", isHot: true, image: "", content: "活動詳細內容..." },
   ],
   sponsorPlans: [
     { name: "青銅", price: 100, color: "#cd7f32", benefits: ["500 元寶", "專屬稱號"], popular: false },
@@ -219,7 +219,31 @@ export default function AdminContentPage() {
     switch (activeSection) {
       case "eventAnnouncements":
         return editingData.map((item: unknown, index: number) => {
-          const data = item as { title: string; date: string; type: string; isHot: boolean };
+          const data = item as { title: string; date: string; type: string; isHot: boolean; image: string; content: string };
+
+          const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+              const res = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+              });
+              const result = await res.json();
+              if (result.url) {
+                updateItem(index, "image", result.url);
+              } else {
+                setError("圖片上傳失敗");
+              }
+            } catch {
+              setError("圖片上傳失敗");
+            }
+          };
+
           return (
             <div key={index} className="card p-4 space-y-3">
               <div className="flex items-center justify-between">
@@ -249,6 +273,42 @@ export default function AdminContentPage() {
                   onChange={(e) => updateItem(index, "type", e.target.value)}
                   placeholder="類型 (如: 限時)"
                   className="input"
+                />
+              </div>
+              <div>
+                <label className="text-[var(--color-text)] text-sm mb-2 block">活動圖片</label>
+                <div className="flex gap-2">
+                  <label className="btn btn-secondary cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    選擇圖片
+                  </label>
+                  {data.image && (
+                    <button
+                      onClick={() => updateItem(index, "image", "")}
+                      className="btn btn-secondary text-red-400"
+                    >
+                      移除圖片
+                    </button>
+                  )}
+                </div>
+                {data.image && (
+                  <div className="mt-2 relative rounded-lg overflow-hidden border border-[var(--color-border)]">
+                    <img src={data.image} alt="預覽" className="w-full h-32 object-cover" />
+                  </div>
+                )}
+              </div>
+              <div>
+                <label className="text-[var(--color-text)] text-sm mb-2 block">活動詳細內容 (支援 HTML)</label>
+                <textarea
+                  value={data.content || ""}
+                  onChange={(e) => updateItem(index, "content", e.target.value)}
+                  placeholder="<p>活動詳細內容...</p>"
+                  className="input w-full min-h-[150px] font-mono text-sm"
                 />
               </div>
               <label className="flex items-center gap-2 cursor-pointer">

@@ -104,6 +104,7 @@ const yoga = createYoga({
   }),
   graphqlEndpoint: "/api/graphql",
   fetchAPI: { Response: NextResponse },
+  maskedErrors: false, // 顯示完整錯誤訊息
   async context({ request }) {
     let isAuthenticated = false;
     let isAdmin = false;

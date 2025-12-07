@@ -1,5 +1,9 @@
 import Link from "next/link";
 import { graphqlFetch } from "@/lib/apolloClient";
+
+// 強制動態渲染，不使用緩存
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 import {
   Bell,
   MessageSquare,
@@ -58,14 +62,6 @@ interface Category {
 }
 
 // ==================== 靜態數據 ====================
-
-// 活動公告數據
-const eventAnnouncements = [
-  { id: 1, title: "雙十二狂歡活動", date: "12/12-12/15", type: "限時", isHot: true },
-  { id: 2, title: "新武將「諸葛亮」限時登場", date: "12/10-12/20", type: "新內容", isHot: true },
-  { id: 3, title: "每週挑戰賽事", date: "12/08-12/14", type: "競技", isHot: false },
-  { id: 4, title: "公會招募活動", date: "12/01-12/31", type: "社群", isHot: false },
-];
 
 // 贊助方案
 const sponsorPlans = [
@@ -193,8 +189,18 @@ const playerReviews = [
 ];
 
 // ==================== 內容區塊介面 ====================
+interface EventAnnouncementItem {
+  id: number;
+  title: string;
+  date: string;
+  type: string;
+  isHot: boolean;
+  image?: string;
+  content?: string;
+}
+
 interface ContentBlocks {
-  eventAnnouncements?: typeof eventAnnouncements;
+  eventAnnouncements?: EventAnnouncementItem[];
   sponsorPlans?: typeof sponsorPlans;
   downloadItems?: typeof downloadItems;
   gameSettings?: typeof gameSettings;
@@ -235,7 +241,7 @@ async function getHomeData() {
           postCount
         }
       }
-    `);
+    `, undefined, { skipCache: true });
     return data;
   } catch (error) {
     console.error("獲取首頁數據失敗:", error);
@@ -254,7 +260,7 @@ async function getContentBlocks(): Promise<ContentBlocks> {
           payload
         }
       }
-    `);
+    `, undefined, { skipCache: true });
 
     const blocks: ContentBlocks = {};
     data.contentBlocks.forEach((block) => {
@@ -372,8 +378,8 @@ export default async function HomePage() {
     getContentBlocks(),
   ]);
 
-  // 使用数据库数据或默认数据
-  const displayEventAnnouncements = contentBlocks.eventAnnouncements || eventAnnouncements;
+  // 使用数据库数据
+  const displayEventAnnouncements = contentBlocks.eventAnnouncements || [];
   const displaySponsorPlans = contentBlocks.sponsorPlans || sponsorPlans;
   const displayDownloadItems = contentBlocks.downloadItems || downloadItems;
   const displayGameSettings = contentBlocks.gameSettings || gameSettings;
@@ -455,32 +461,50 @@ export default async function HomePage() {
               color="#e74c3c"
               href="/guide/announcements"
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-              {displayEventAnnouncements.map((event) => (
-                <div
-                  key={event.id}
-                  className="card p-2 sm:p-4 hover:border-red-500/30 transition-all group cursor-pointer"
-                >
-                  <div className="flex items-center gap-2 mb-2 flex-wrap">
-                    {event.isHot && (
-                      <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[10px] sm:text-xs font-semibold">
-                        🔥 熱門
-                      </span>
+            {displayEventAnnouncements.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                {displayEventAnnouncements.map((event: { id: number; title: string; date: string; type: string; isHot: boolean; image?: string }) => (
+                  <Link
+                    key={event.id}
+                    href={`/guide/announcements/${event.id}`}
+                    className="card p-2 sm:p-4 hover:border-red-500/30 transition-all group"
+                  >
+                    {event.image && (
+                      <div className="relative w-full h-20 sm:h-24 rounded-lg overflow-hidden mb-2 border border-[var(--color-border)]">
+                        <Image
+                          src={event.image}
+                          alt={event.title}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform"
+                        />
+                      </div>
                     )}
-                    <span className="text-[10px] sm:text-xs text-[var(--color-text-dark)]">
-                      {event.type}
-                    </span>
-                  </div>
-                  <h3 className="font-semibold text-sm sm:text-base text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors mb-2 line-clamp-2">
-                    {event.title}
-                  </h3>
-                  <div className="flex items-center gap-1 text-[10px] sm:text-xs text-[var(--color-text-muted)]">
-                    <Calendar className="w-3 h-3 shrink-0" />
-                    {event.date}
-                  </div>
-                </div>
-              ))}
-            </div>
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                      {event.isHot && (
+                        <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[10px] sm:text-xs font-semibold">
+                          🔥 熱門
+                        </span>
+                      )}
+                      <span className="text-[10px] sm:text-xs text-[var(--color-text-dark)]">
+                        {event.type}
+                      </span>
+                    </div>
+                    <h3 className="font-semibold text-sm sm:text-base text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors mb-2 line-clamp-2">
+                      {event.title}
+                    </h3>
+                    <div className="flex items-center gap-1 text-[10px] sm:text-xs text-[var(--color-text-muted)]">
+                      <Calendar className="w-3 h-3 shrink-0" />
+                      {event.date}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="card p-8 text-center">
+                <Megaphone className="w-12 h-12 text-[var(--color-text-dark)] mx-auto mb-4" />
+                <p className="text-[var(--color-text-muted)]">暫無活動公告</p>
+              </div>
+            )}
           </FramedSection>
 
           {/* ==================== 最新公告 & 討論區 ==================== */}

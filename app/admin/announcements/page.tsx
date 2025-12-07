@@ -159,9 +159,11 @@ export default function AdminAnnouncementsPage() {
           deleteAnnouncement(id: $id)
         }
       `, { id });
-      fetchAnnouncements();
+      // 直接從本地狀態移除
+      setAnnouncements(prev => prev.filter(a => a.id !== id));
     } catch (err) {
       console.error("刪除失敗:", err);
+      alert("刪除失敗：" + (err instanceof Error ? err.message : "未知錯誤"));
     }
   };
 

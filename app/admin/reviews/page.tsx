@@ -100,7 +100,9 @@ export default function AdminReviewsPage() {
           deleteReview(id: $id)
         }
       `, { id });
-      fetchReviews();
+      // 直接從本地狀態移除，不需要重新獲取
+      setReviews(prev => prev.filter(r => r.id !== id));
+      setTotal(prev => prev - 1);
     } catch (err) {
       console.error("刪除失敗:", err);
       alert("刪除失敗：" + (err instanceof Error ? err.message : "未知錯誤"));
@@ -115,10 +117,14 @@ export default function AdminReviewsPage() {
         mutation($id: Int!) {
           hideReview(id: $id) {
             id
+            isHidden
           }
         }
       `, { id });
-      fetchReviews();
+      // 直接更新本地狀態
+      setReviews(prev => prev.map(r =>
+        r.id === id ? { ...r, isHidden: !r.isHidden } : r
+      ));
     } catch (err) {
       console.error("隱藏失敗:", err);
     }
