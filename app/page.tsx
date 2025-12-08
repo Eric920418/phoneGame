@@ -71,10 +71,9 @@ const sponsorPlans = [
   { name: "鑽石", price: 1000, color: "#b9f2ff", benefits: ["15000 元寶", "神話坐騎", "永久加成"] },
 ];
 
-// 下載項目
+// 下載項目（只需要連結）
 const downloadItems = [
-  { name: "Windows 客戶端", icon: Monitor, size: "3.2 GB", version: "v2.5.3" },
-  { name: "Android 版本", icon: Smartphone, size: "1.8 GB", version: "v2.5.3" },
+  { link: "" },
 ];
 
 // 遊戲設定建議
@@ -673,42 +672,25 @@ export default async function HomePage() {
               color="#3498db"
               href="/guide/download"
             />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {displayDownloadItems.map((item, index) => {
-                // 图标映射：支持从数据库读取的字符串图标名
-                const iconMap: Record<string, React.ElementType> = {
-                  Monitor,
-                  Smartphone,
-                };
-                const IconComp =
-                  typeof item.icon === "string"
-                    ? iconMap[item.icon] || Monitor
-                    : item.icon;
-                return (
-                  <div
-                    key={index}
-                    className="card p-4 sm:p-6 hover:border-blue-500/30 transition-all"
+            <div className="flex justify-center">
+              {(() => {
+                const downloadLink = (displayDownloadItems[0] as { link?: string })?.link || "";
+                return downloadLink ? (
+                  <a
+                    href={downloadLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary text-lg px-8 py-4 flex items-center gap-3"
                   >
-                    <div className="flex items-center gap-3 sm:gap-4">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0">
-                        <IconComp className="w-6 h-6 sm:w-7 sm:h-7 text-blue-400" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-[var(--color-text)] truncate">
-                          {item.name}
-                        </h3>
-                        <div className="text-sm text-[var(--color-text-muted)]">
-                          {item.version} • {item.size}
-                        </div>
-                      </div>
-                      <button className="btn-primary flex items-center gap-2 shrink-0">
-                        <FileDown className="w-4 h-4" />
-                        <span className="hidden sm:inline">下載</span>
-                      </button>
-                    </div>
+                    <FileDown className="w-6 h-6" />
+                    立即下載遊戲
+                  </a>
+                ) : (
+                  <div className="text-[var(--color-text-muted)] text-center py-8">
+                    下載連結尚未設定
                   </div>
                 );
-              })}
+              })()}
             </div>
           </FramedSection>
 

@@ -35,7 +35,7 @@ const defaultData: Record<string, unknown[]> = {
     { name: "青銅", price: 100, color: "#cd7f32", benefits: ["500 元寶", "專屬稱號"], popular: false, link: "" },
   ],
   downloadItems: [
-    { name: "Windows 客戶端", icon: "Monitor", size: "3.2 GB", version: "v2.5.3" },
+    { link: "" },
   ],
   gameSettings: [
     { category: "畫面", settings: [{ name: "解析度", value: "1920x1080" }] },
@@ -392,51 +392,34 @@ export default function AdminContentPage() {
           );
         });
 
-      case "downloadItems":
-        return editingData.map((item: unknown, index: number) => {
-          const data = item as { name: string; icon: string; size: string; version: string };
-          return (
-            <div key={index} className="card p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[var(--color-primary)] font-medium">下載項目 #{index + 1}</span>
-                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-              <input
-                type="text"
-                value={data.name}
-                onChange={(e) => updateItem(index, "name", e.target.value)}
-                placeholder="名稱 (如: Windows 客戶端)"
-                className="input w-full"
-              />
-              <div className="grid grid-cols-3 gap-3">
-                <select
-                  value={data.icon}
-                  onChange={(e) => updateItem(index, "icon", e.target.value)}
-                  className="input"
-                >
-                  <option value="Monitor">💻 電腦版</option>
-                  <option value="Smartphone">📱 手機版</option>
-                </select>
-                <input
-                  type="text"
-                  value={data.size}
-                  onChange={(e) => updateItem(index, "size", e.target.value)}
-                  placeholder="檔案大小 (如: 3.2 GB)"
-                  className="input"
-                />
-                <input
-                  type="text"
-                  value={data.version}
-                  onChange={(e) => updateItem(index, "version", e.target.value)}
-                  placeholder="版本 (如: v2.5.3)"
-                  className="input"
-                />
-              </div>
+      case "downloadItems": {
+        // 下載專區只需要一個連結
+        const downloadData = (editingData[0] as { link?: string }) || { link: "" };
+        return (
+          <div className="card p-4 space-y-3">
+            <div className="flex items-center gap-2 mb-2">
+              <Download className="w-5 h-5 text-[var(--color-primary)]" />
+              <span className="text-[var(--color-text)] font-medium">下載連結設定</span>
             </div>
-          );
-        });
+            <p className="text-[var(--color-text-muted)] text-sm">
+              設定下載按鈕的外部連結，用戶點擊後將導向此連結下載遊戲。
+            </p>
+            <input
+              type="url"
+              value={downloadData.link || ""}
+              onChange={(e) => {
+                if (editingData.length === 0) {
+                  setEditingData([{ link: e.target.value }]);
+                } else {
+                  updateItem(0, "link", e.target.value);
+                }
+              }}
+              placeholder="輸入下載連結 (如: https://drive.google.com/...)"
+              className="input w-full"
+            />
+          </div>
+        );
+      }
 
       case "beginnerGuides":
         return editingData.map((item: unknown, index: number) => {
