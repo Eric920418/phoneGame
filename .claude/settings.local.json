@@ -19,7 +19,10 @@
       "Bash(sudo tee:*)",
       "Bash(sudo systemctl reload:*)",
       "Bash(sudo systemctl status:*)",
-      "Bash(crontab:*)"
+      "Bash(crontab:*)",
+      "Bash(timeout 10 pnpm start:*)",
+      "Bash(sudo systemctl restart:*)",
+      "Bash(pm2 restart:*)"
     ],
     "deny": [],
     "ask": []

@@ -20,9 +20,9 @@ const contentSections = [
   { key: "beginnerGuides", title: "新手攻略", icon: BookOpen, color: "#2ecc71" },
   { key: "dropItems", title: "掉落查詢", icon: Search, color: "#f39c12" },
   { key: "dungeons", title: "副本介紹", icon: Map, color: "#1abc9c" },
-  { key: "treasureBoxes", title: "寶箱內容", icon: Gift, color: "#f1c40f" },
+  { key: "treasureBoxes", title: "寶箱福袋內容", icon: Gift, color: "#f1c40f" },
   { key: "warSchedule", title: "國戰時間", icon: Swords, color: "#8e44ad" },
-  { key: "arenaRanking", title: "武魂擂台", icon: Trophy, color: "#c9a227" },
+  { key: "arenaRanking", title: "三國排行", icon: Trophy, color: "#c9a227" },
   { key: "playerReviews", title: "玩家評價", icon: Quote, color: "#10b981" },
 ];
 
@@ -32,7 +32,7 @@ const defaultData: Record<string, unknown[]> = {
     { id: 1, title: "雙十二狂歡活動", date: "12/12-12/15", type: "限時", isHot: true, image: "", content: "活動詳細內容..." },
   ],
   sponsorPlans: [
-    { name: "青銅", price: 100, color: "#cd7f32", benefits: ["500 元寶", "專屬稱號"], popular: false },
+    { name: "青銅", price: 100, color: "#cd7f32", benefits: ["500 元寶", "專屬稱號"], popular: false, link: "" },
   ],
   downloadItems: [
     { name: "Windows 客戶端", icon: "Monitor", size: "3.2 GB", version: "v2.5.3" },
@@ -44,9 +44,7 @@ const defaultData: Record<string, unknown[]> = {
     { chapter: 1, title: "建立角色", desc: "選擇陣營與職業" },
   ],
   dropItems: [],
-  dungeons: [
-    { name: "虎牢關", level: 60, difficulty: "傳說", color: "#ff6b00", players: "5人", boss: "呂布" },
-  ],
+  dungeons: [],
   treasureBoxes: [
     { name: "傳說寶箱", color: "#ff6b00", items: ["赤兔馬 1%", "傳說武器 5%"] },
   ],
@@ -56,9 +54,11 @@ const defaultData: Record<string, unknown[]> = {
   warSchedule: [
     { day: "週六", time: "19:00-22:00", type: "國戰", highlight: true },
   ],
-  arenaRanking: [
-    { rank: 1, name: "無敵戰神", guild: "天下第一", score: 2850 },
-  ],
+  arenaRanking: {
+    levelRanking: [],
+    nationWarRanking: [],
+    chibiRanking: [],
+  },
   playerReviews: [
     { id: 1, name: "龍戰天下", avatar: "🐉", rating: 5, hours: 1280, date: "2024-12-01", content: "很好玩！", helpful: 156, isRecommended: true },
   ],
@@ -119,8 +119,14 @@ export default function AdminContentPage() {
 
   const handleSectionClick = (key: string) => {
     setActiveSection(key);
-    const data = blocks[key] || defaultData[key] || [];
-    setEditingData(JSON.parse(JSON.stringify(data)));
+    // arenaRanking 使用對象格式而非數組
+    if (key === "arenaRanking") {
+      const data = blocks[key] || defaultData[key] || { levelRanking: [], nationWarRanking: [], chibiRanking: [] };
+      setEditingData(JSON.parse(JSON.stringify(data)) as unknown as unknown[]);
+    } else {
+      const data = blocks[key] || defaultData[key] || [];
+      setEditingData(JSON.parse(JSON.stringify(data)));
+    }
     setError(null);
     setSuccess(null);
   };
@@ -160,6 +166,7 @@ export default function AdminContentPage() {
     // 為沒有預設資料的區塊提供模板
     const emptyTemplates: Record<string, unknown> = {
       dropItems: { boss: "", location: "", drops: [] },
+      dungeons: { name: "", level: 1, players: "", boss: "", cooldown: "", rewards: [] },
     };
 
     const template = defaultData[activeSection]?.[0] || emptyTemplates[activeSection] || {};
@@ -329,7 +336,7 @@ export default function AdminContentPage() {
 
       case "sponsorPlans":
         return editingData.map((item: unknown, index: number) => {
-          const data = item as { name: string; price: number; color: string; benefits: string[]; popular?: boolean };
+          const data = item as { name: string; price: number; color: string; benefits: string[]; popular?: boolean; link?: string };
           return (
             <div key={index} className="card p-4 space-y-3">
               <div className="flex items-center justify-between">
@@ -472,7 +479,7 @@ export default function AdminContentPage() {
 
       case "dropItems":
         return editingData.map((item: unknown, index: number) => {
-          const data = item as { boss: string; location: string; drops: { name: string; rate: string; rarity: string; color: string }[] };
+          const data = item as { boss: string; location: string; drops: { name: string; type: string }[] };
           return (
             <div key={index} className="card p-4 space-y-3">
               <div className="flex items-center justify-between">
@@ -513,26 +520,11 @@ export default function AdminContentPage() {
                     />
                     <input
                       type="text"
-                      value={drop.rate}
-                      onChange={(e) => updateNestedItem(index, "drops", dIndex, "rate", e.target.value)}
-                      placeholder="機率 (如: 0.5%)"
-                      className="input w-24"
+                      value={drop.type}
+                      onChange={(e) => updateNestedItem(index, "drops", dIndex, "type", e.target.value)}
+                      placeholder="類型 (如: 武器、材料)"
+                      className="input w-32"
                     />
-                    <select
-                      value={drop.rarity}
-                      onChange={(e) => {
-                        const rarity = e.target.value;
-                        const colors: Record<string, string> = { "傳說": "#ff6b00", "史詩": "#a855f7", "稀有": "#3b82f6", "普通": "#6b7280" };
-                        updateNestedItem(index, "drops", dIndex, "rarity", rarity);
-                        updateNestedItem(index, "drops", dIndex, "color", colors[rarity] || "#6b7280");
-                      }}
-                      className="input w-28"
-                    >
-                      <option value="傳說">🟠 傳說</option>
-                      <option value="史詩">🟣 史詩</option>
-                      <option value="稀有">🔵 稀有</option>
-                      <option value="普通">⚪ 普通</option>
-                    </select>
                     <button
                       onClick={() => removeNestedItem(index, "drops", dIndex)}
                       className="text-red-400 hover:text-red-300 p-2"
@@ -542,7 +534,7 @@ export default function AdminContentPage() {
                   </div>
                 ))}
                 <button
-                  onClick={() => addNestedItem(index, "drops", { name: "", rate: "", rarity: "稀有", color: "#3b82f6" })}
+                  onClick={() => addNestedItem(index, "drops", { name: "", type: "" })}
                   className="text-[var(--color-primary)] text-sm hover:underline flex items-center gap-1"
                 >
                   <Plus className="w-4 h-4" />
@@ -555,7 +547,7 @@ export default function AdminContentPage() {
 
       case "dungeons":
         return editingData.map((item: unknown, index: number) => {
-          const data = item as { name: string; level: number; difficulty: string; color: string; players: string; boss: string };
+          const data = item as { name: string; level: number; players: string; boss: string; cooldown?: string; rewards?: string[] };
           return (
             <div key={index} className="card p-4 space-y-3">
               <div className="flex items-center justify-between">
@@ -582,21 +574,6 @@ export default function AdminContentPage() {
                 />
               </div>
               <div className="grid grid-cols-3 gap-3">
-                <select
-                  value={data.difficulty}
-                  onChange={(e) => {
-                    const diff = e.target.value;
-                    const colors: Record<string, string> = { "傳說": "#ff6b00", "史詩": "#a855f7", "困難": "#3b82f6", "普通": "#22c55e" };
-                    updateItem(index, "difficulty", diff);
-                    updateItem(index, "color", colors[diff] || "#6b7280");
-                  }}
-                  className="input"
-                >
-                  <option value="傳說">🟠 傳說</option>
-                  <option value="史詩">🟣 史詩</option>
-                  <option value="困難">🔵 困難</option>
-                  <option value="普通">🟢 普通</option>
-                </select>
                 <input
                   type="text"
                   value={data.players}
@@ -610,6 +587,22 @@ export default function AdminContentPage() {
                   onChange={(e) => updateItem(index, "boss", e.target.value)}
                   placeholder="最終 BOSS"
                   className="input"
+                />
+                <input
+                  type="text"
+                  value={data.cooldown || ""}
+                  onChange={(e) => updateItem(index, "cooldown", e.target.value)}
+                  placeholder="冷卻時間 (如: 每日1次)"
+                  className="input"
+                />
+              </div>
+              <div>
+                <label className="text-[var(--color-text)] text-sm mb-2 block">通關獎勵 (每行一個)</label>
+                <textarea
+                  value={(data.rewards || []).join("\n")}
+                  onChange={(e) => updateItem(index, "rewards", e.target.value.split("\n").filter(Boolean))}
+                  placeholder="傳說武器&#10;元寶 x500&#10;稀有坐騎"
+                  className="input w-full min-h-[100px]"
                 />
               </div>
             </div>
@@ -646,7 +639,7 @@ export default function AdminContentPage() {
                 </div>
               </div>
               <div>
-                <label className="text-[var(--color-text)] text-sm mb-2 block">寶箱內容 (每行一個，格式: 物品名 機率)</label>
+                <label className="text-[var(--color-text)] text-sm mb-2 block">寶箱福袋內容 (每行一個，格式: 物品名 機率)</label>
                 <textarea
                   value={(data.items || []).join("\n")}
                   onChange={(e) => updateItem(index, "items", e.target.value.split("\n").filter(Boolean))}
@@ -769,51 +762,108 @@ export default function AdminContentPage() {
           );
         });
 
-      case "arenaRanking":
-        return editingData.map((item: unknown, index: number) => {
-          const data = item as { rank: number; name: string; guild: string; score: number };
-          return (
-            <div key={index} className="card p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[var(--color-primary)] font-medium">排名 #{index + 1}</span>
-                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="grid grid-cols-4 gap-3">
-                <input
-                  type="number"
-                  value={data.rank}
-                  onChange={(e) => updateItem(index, "rank", parseInt(e.target.value) || 1)}
-                  placeholder="名次"
-                  className="input"
-                  min={1}
-                />
-                <input
-                  type="text"
-                  value={data.name}
-                  onChange={(e) => updateItem(index, "name", e.target.value)}
-                  placeholder="玩家名稱"
-                  className="input"
-                />
-                <input
-                  type="text"
-                  value={data.guild}
-                  onChange={(e) => updateItem(index, "guild", e.target.value)}
-                  placeholder="所屬公會"
-                  className="input"
-                />
-                <input
-                  type="number"
-                  value={data.score}
-                  onChange={(e) => updateItem(index, "score", parseInt(e.target.value) || 0)}
-                  placeholder="積分"
-                  className="input"
-                />
-              </div>
-            </div>
-          );
-        });
+      case "arenaRanking": {
+        // 三國排行使用物件格式，包含三種排行
+        const rankingData = (editingData as unknown) as {
+          levelRanking?: { rank: number; name: string; guild: string; score: number }[];
+          nationWarRanking?: { rank: number; name: string; guild: string; score: number }[];
+          chibiRanking?: { rank: number; name: string; guild: string; score: number }[];
+        };
+
+        const updateRankingItem = (type: string, index: number, field: string, value: unknown) => {
+          const newData = { ...rankingData };
+          const arr = (newData as Record<string, unknown[]>)[type] as Record<string, unknown>[];
+          if (arr && arr[index]) {
+            arr[index][field] = value;
+          }
+          setEditingData(newData as unknown as unknown[]);
+        };
+
+        const addRankingItem = (type: string) => {
+          const newData = { ...rankingData };
+          const arr = ((newData as Record<string, unknown[]>)[type] || []) as unknown[];
+          arr.push({ rank: arr.length + 1, name: "", guild: "", score: 0 });
+          (newData as Record<string, unknown[]>)[type] = arr;
+          setEditingData(newData as unknown as unknown[]);
+        };
+
+        const removeRankingItem = (type: string, index: number) => {
+          const newData = { ...rankingData };
+          const arr = (newData as Record<string, unknown[]>)[type] as unknown[];
+          arr.splice(index, 1);
+          // 重新排序 rank
+          arr.forEach((item, i) => {
+            (item as { rank: number }).rank = i + 1;
+          });
+          setEditingData(newData as unknown as unknown[]);
+        };
+
+        const rankingTypes = [
+          { key: "levelRanking", title: "等級排行", color: "#fbbf24" },
+          { key: "nationWarRanking", title: "國戰討敵排行", color: "#ef4444" },
+          { key: "chibiRanking", title: "赤壁討敵排行", color: "#f97316" },
+        ];
+
+        return (
+          <div className="space-y-6">
+            {rankingTypes.map((rankType) => {
+              const items = (rankingData as Record<string, { rank: number; name: string; guild: string; score: number }[]>)[rankType.key] || [];
+              return (
+                <div key={rankType.key} className="card p-4">
+                  <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2" style={{ color: rankType.color }}>
+                    <Trophy className="w-4 h-4" />
+                    {rankType.title}
+                  </h3>
+                  <div className="space-y-3">
+                    {items.map((item, index) => (
+                      <div key={index} className="flex items-center gap-2 p-3 bg-[var(--color-bg-dark)] rounded-lg">
+                        <span className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shrink-0" style={{ backgroundColor: `${rankType.color}20`, color: rankType.color }}>
+                          {item.rank}
+                        </span>
+                        <input
+                          type="text"
+                          value={item.name}
+                          onChange={(e) => updateRankingItem(rankType.key, index, "name", e.target.value)}
+                          placeholder="玩家名稱"
+                          className="input flex-1"
+                        />
+                        <input
+                          type="text"
+                          value={item.guild}
+                          onChange={(e) => updateRankingItem(rankType.key, index, "guild", e.target.value)}
+                          placeholder="公會"
+                          className="input w-28"
+                        />
+                        <input
+                          type="number"
+                          value={item.score}
+                          onChange={(e) => updateRankingItem(rankType.key, index, "score", parseInt(e.target.value) || 0)}
+                          placeholder="分數"
+                          className="input w-24"
+                        />
+                        <button
+                          onClick={() => removeRankingItem(rankType.key, index)}
+                          className="text-red-400 hover:text-red-300 p-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => addRankingItem(rankType.key)}
+                      className="text-sm hover:underline flex items-center gap-1"
+                      style={{ color: rankType.color }}
+                    >
+                      <Plus className="w-4 h-4" />
+                      新增排名
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        );
+      }
 
       case "playerReviews":
         return editingData.map((item: unknown, index: number) => {
@@ -1068,13 +1118,16 @@ export default function AdminContentPage() {
                   {renderForm()}
                 </div>
 
-                <button
-                  onClick={addItem}
-                  className="mt-4 w-full card p-4 flex items-center justify-center gap-2 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors border-dashed"
-                >
-                  <Plus className="w-5 h-5" />
-                  新增項目
-                </button>
+                {/* 三國排行有自己的新增邏輯，不顯示通用新增按鈕 */}
+                {activeSection !== "arenaRanking" && (
+                  <button
+                    onClick={addItem}
+                    className="mt-4 w-full card p-4 flex items-center justify-center gap-2 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors border-dashed"
+                  >
+                    <Plus className="w-5 h-5" />
+                    新增項目
+                  </button>
+                )}
               </div>
             ) : (
               <div className="card p-12 text-center">

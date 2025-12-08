@@ -93,7 +93,7 @@ const beginnerGuides = [
 ];
 
 // 掉落查詢數據 - 從資料庫讀取，不使用預設假資料
-const dropItems: { boss: string; location: string; drops: { name: string; rate: string; rarity: string; color: string }[] }[] = [];
+const dropItems: { boss: string; location: string; drops: { name: string; type: string }[] }[] = [];
 
 // 副本列表
 const dungeons = [
@@ -103,7 +103,7 @@ const dungeons = [
   { name: "長坂坡", level: 40, difficulty: "困難", color: "#3b82f6", players: "3人", boss: "曹軍先鋒" },
 ];
 
-// 寶箱內容
+// 寶箱福袋內容
 const treasureBoxes = [
   { name: "傳說寶箱", color: "#ff6b00", items: ["赤兔馬 1%", "傳說武器 5%", "元寶 x1000 20%"] },
   { name: "史詩寶箱", color: "#a855f7", items: ["史詩武器 3%", "稀有材料 15%", "元寶 x500 20%"] },
@@ -126,14 +126,16 @@ const warSchedule = [
   { day: "週二/四", time: "20:00-21:30", type: "資源戰", highlight: false },
 ];
 
-// 武魂擂台排行
-const arenaRanking = [
-  { rank: 1, name: "無敵戰神", guild: "天下第一", score: 2850 },
-  { rank: 2, name: "劍舞蒼穹", guild: "霸王軍團", score: 2720 },
-  { rank: 3, name: "風雲再起", guild: "龍騰虎躍", score: 2680 },
-  { rank: 4, name: "一劍封喉", guild: "劍指天涯", score: 2590 },
-  { rank: 5, name: "戰無不勝", guild: "天下第一", score: 2540 },
-];
+// 三國排行數據 - 從資料庫讀取，不使用預設假資料
+const arenaRanking: {
+  levelRanking: { rank: number; name: string; guild: string; score: number }[];
+  nationWarRanking: { rank: number; name: string; guild: string; score: number }[];
+  chibiRanking: { rank: number; name: string; guild: string; score: number }[];
+} = {
+  levelRanking: [],
+  nationWarRanking: [],
+  chibiRanking: [],
+};
 
 // 玩家評價數據
 const playerReviews = [
@@ -384,7 +386,11 @@ export default async function HomePage() {
   const displayTreasureBoxes = contentBlocks.treasureBoxes || treasureBoxes;
   const displayBossList = contentBlocks.bossList || bossList;
   const displayWarSchedule = contentBlocks.warSchedule || warSchedule;
-  const displayArenaRanking = contentBlocks.arenaRanking || arenaRanking;
+  const displayArenaRanking = (contentBlocks.arenaRanking || arenaRanking) as {
+    levelRanking?: { rank: number; name: string; guild: string; score: number }[];
+    nationWarRanking?: { rank: number; name: string; guild: string; score: number }[];
+    chibiRanking?: { rank: number; name: string; guild: string; score: number }[];
+  };
   const displayPlayerReviews = contentBlocks.playerReviews || playerReviews;
 
   return (
@@ -750,7 +756,7 @@ export default async function HomePage() {
               href="/guide/beginner"
             />
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-              {displayBeginnerGuides.map((guide) => (
+              {displayBeginnerGuides.slice(0, 4).map((guide) => (
                 <div
                   key={guide.chapter}
                   className="card p-3 sm:p-5 hover:border-green-500/30 transition-all group cursor-pointer"
@@ -760,10 +766,10 @@ export default async function HomePage() {
                       {guide.chapter}
                     </span>
                   </div>
-                  <h3 className="font-semibold text-sm sm:text-base text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors mb-1">
+                  <h3 className="font-semibold text-sm sm:text-base text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors mb-1 line-clamp-1">
                     {guide.title}
                   </h3>
-                  <p className="text-[10px] sm:text-xs text-[var(--color-text-muted)]">
+                  <p className="text-[10px] sm:text-xs text-[var(--color-text-muted)] line-clamp-2">
                     {guide.desc}
                   </p>
                 </div>
@@ -779,10 +785,10 @@ export default async function HomePage() {
               color="#f39c12"
               href="/guide/drops"
             />
-            {/* 以 BOSS 為主的卡片式顯示 */}
+            {/* 以 BOSS 為主的卡片式顯示 - 最多顯示 4 個 */}
             {displayDropItems.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {displayDropItems.map((bossData, index) => (
+                {displayDropItems.slice(0, 4).map((bossData, index) => (
                   <div key={index} className="card p-4 hover:border-[#f39c12]/30 transition-all">
                     {/* BOSS 標題 */}
                     <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[var(--color-border)]">
@@ -805,29 +811,16 @@ export default async function HomePage() {
                           className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-bg-darker)] hover:bg-[var(--color-bg-card-hover)] transition-colors"
                         >
                           <div className="flex items-center gap-2">
-                            <Star
-                              className="w-4 h-4 shrink-0"
-                              style={{ color: drop.color }}
-                            />
-                            <span
-                              className="font-medium text-sm"
-                              style={{ color: drop.color }}
-                            >
+                            <Star className="w-4 h-4 shrink-0 text-[#f39c12]" />
+                            <span className="font-medium text-sm text-[var(--color-text)]">
                               {drop.name}
                             </span>
-                            <span
-                              className="text-xs px-1.5 py-0.5 rounded"
-                              style={{
-                                backgroundColor: `${drop.color}20`,
-                                color: drop.color,
-                              }}
-                            >
-                              {drop.rarity}
-                            </span>
                           </div>
-                          <span className="text-sm font-medium text-[var(--color-primary)]">
-                            {drop.rate}
-                          </span>
+                          {drop.type && (
+                            <span className="text-xs px-2 py-1 rounded bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+                              {drop.type}
+                            </span>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -890,11 +883,11 @@ export default async function HomePage() {
             </div>
           </FramedSection>
 
-          {/* ==================== 8. 寶箱內容 Section ==================== */}
+          {/* ==================== 8. 寶箱福袋內容 Section ==================== */}
           <FramedSection id="treasure" compact={true}>
             <SectionTitle
               icon={Gift}
-              title="寶箱內容"
+              title="寶箱福袋內容"
               color="#f1c40f"
               href="/guide/treasure"
             />
@@ -923,18 +916,24 @@ export default async function HomePage() {
                     </h3>
                   </div>
                   <ul className="space-y-1.5 sm:space-y-2">
-                    {box.items.map((item, i) => (
-                      <li
-                        key={i}
-                        className="flex items-center gap-2 text-xs sm:text-sm text-[var(--color-text-muted)] py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg bg-[var(--color-bg-darker)]"
-                      >
-                        <Star
-                          className="w-3 h-3 shrink-0"
-                          style={{ color: box.color }}
-                        />
-                        <span className="truncate">{item}</span>
-                      </li>
-                    ))}
+                    {(box.items || []).map((item, i) => {
+                      // 支持兩種格式：字符串或對象
+                      const displayText = typeof item === 'string'
+                        ? item
+                        : `${item.name} ${item.rate}`;
+                      return (
+                        <li
+                          key={i}
+                          className="flex items-center gap-2 text-xs sm:text-sm text-[var(--color-text-muted)] py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg bg-[var(--color-bg-darker)]"
+                        >
+                          <Star
+                            className="w-3 h-3 shrink-0"
+                            style={{ color: box.color }}
+                          />
+                          <span className="truncate">{displayText}</span>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ))}
@@ -1055,23 +1054,23 @@ export default async function HomePage() {
             </div>
           </FramedSection>
 
-          {/* ==================== 11. 武魂擂台 Section ==================== */}
+          {/* ==================== 11. 三國排行 Section ==================== */}
           <FramedSection id="arena" compact={true}>
             <SectionTitle
               icon={Trophy}
-              title="武魂擂台"
+              title="三國排行"
               color="#c9a227"
               href="/guide/arena"
             />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              {/* 排行榜 */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+              {/* 等級排行 */}
               <div className="card p-4 h-[350px] flex flex-col">
                 <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
-                  <Medal className="w-3 h-3 text-amber-400" />
-                  本賽季排行榜
+                  <Medal className="w-4 h-4 text-amber-400" />
+                  等級排行
                 </h3>
                 <div className="space-y-2 overflow-y-auto flex-1">
-                  {displayArenaRanking.map((player) => (
+                  {(displayArenaRanking.levelRanking || []).map((player) => (
                     <div
                       key={player.rank}
                       className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]"
@@ -1106,6 +1105,55 @@ export default async function HomePage() {
                         </div>
                       </div>
                       <span className="font-bold text-amber-400 text-sm sm:text-base shrink-0 ml-2">
+                        Lv.{player.score}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 國戰討敵排行 */}
+              <div className="card p-4 h-[350px] flex flex-col">
+                <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
+                  <Swords className="w-4 h-4 text-red-400" />
+                  國戰討敵排行
+                </h3>
+                <div className="space-y-2 overflow-y-auto flex-1">
+                  {(displayArenaRanking.nationWarRanking || []).map((player) => (
+                    <div
+                      key={player.rank}
+                      className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]"
+                    >
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                        <span
+                          className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold shrink-0 ${
+                            player.rank === 1
+                              ? "bg-yellow-500/20 text-yellow-400"
+                              : player.rank === 2
+                              ? "bg-gray-400/20 text-gray-300"
+                              : player.rank === 3
+                              ? "bg-orange-500/20 text-orange-400"
+                              : "bg-[var(--color-bg-card)] text-[var(--color-text-muted)]"
+                          }`}
+                        >
+                          {player.rank}
+                        </span>
+                        <div className="min-w-0">
+                          <span
+                            className={`font-medium text-sm truncate block ${
+                              player.rank <= 3
+                                ? "text-[var(--color-primary)]"
+                                : "text-[var(--color-text)]"
+                            }`}
+                          >
+                            {player.name}
+                          </span>
+                          <p className="text-[10px] sm:text-xs text-[var(--color-text-dark)] truncate">
+                            {player.guild}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="font-bold text-red-400 text-sm sm:text-base shrink-0 ml-2">
                         {player.score}
                       </span>
                     </div>
@@ -1113,60 +1161,49 @@ export default async function HomePage() {
                 </div>
               </div>
 
-              {/* 段位說明 */}
+              {/* 赤壁討敵排行 */}
               <div className="card p-4 h-[350px] flex flex-col">
                 <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
-                  <Star className="w-4 h-4 text-amber-400" />
-                  段位說明
+                  <Flame className="w-4 h-4 text-orange-400" />
+                  赤壁討敵排行
                 </h3>
-                <div className="space-y-2 sm:space-y-3 overflow-y-auto flex-1">
-                  {[
-                    {
-                      name: "王者",
-                      icon: "👑",
-                      score: "2500+",
-                      color: "#ff6b00",
-                    },
-                    {
-                      name: "宗師",
-                      icon: "🏆",
-                      score: "2000-2499",
-                      color: "#a855f7",
-                    },
-                    {
-                      name: "大師",
-                      icon: "⭐",
-                      score: "1500-1999",
-                      color: "#3b82f6",
-                    },
-                    {
-                      name: "精英",
-                      icon: "🎖️",
-                      score: "1000-1499",
-                      color: "#22c55e",
-                    },
-                    {
-                      name: "新秀",
-                      icon: "🌟",
-                      score: "0-999",
-                      color: "#6b7280",
-                    },
-                  ].map((tier, index) => (
+                <div className="space-y-2 overflow-y-auto flex-1">
+                  {(displayArenaRanking.chibiRanking || []).map((player) => (
                     <div
-                      key={index}
+                      key={player.rank}
                       className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]"
                     >
-                      <div className="flex items-center gap-2 sm:gap-3">
-                        <span className="text-lg sm:text-xl">{tier.icon}</span>
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                         <span
-                          className="font-medium text-sm"
-                          style={{ color: tier.color }}
+                          className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold shrink-0 ${
+                            player.rank === 1
+                              ? "bg-yellow-500/20 text-yellow-400"
+                              : player.rank === 2
+                              ? "bg-gray-400/20 text-gray-300"
+                              : player.rank === 3
+                              ? "bg-orange-500/20 text-orange-400"
+                              : "bg-[var(--color-bg-card)] text-[var(--color-text-muted)]"
+                          }`}
                         >
-                          {tier.name}
+                          {player.rank}
                         </span>
+                        <div className="min-w-0">
+                          <span
+                            className={`font-medium text-sm truncate block ${
+                              player.rank <= 3
+                                ? "text-[var(--color-primary)]"
+                                : "text-[var(--color-text)]"
+                            }`}
+                          >
+                            {player.name}
+                          </span>
+                          <p className="text-[10px] sm:text-xs text-[var(--color-text-dark)] truncate">
+                            {player.guild}
+                          </p>
+                        </div>
                       </div>
-                      <span className="text-xs sm:text-sm text-[var(--color-text-muted)]">
-                        {tier.score}
+                      <span className="font-bold text-orange-400 text-sm sm:text-base shrink-0 ml-2">
+                        {player.score}
                       </span>
                     </div>
                   ))}
@@ -1211,7 +1248,7 @@ export default async function HomePage() {
                 資料查詢
               </h3>
               <ul className="space-y-2">
-                {["掉落查詢", "寶箱內容", "遊戲設定"].map((item, i) => (
+                {["掉落查詢", "寶箱福袋內容", "遊戲設定"].map((item, i) => (
                   <li key={i}>
                     <a
                       href={`#${["drops", "treasure", "settings"][i]}`}
@@ -1229,7 +1266,7 @@ export default async function HomePage() {
                 競技活動
               </h3>
               <ul className="space-y-2">
-                {["國戰時間", "武魂擂台", "活動公告"].map((item, i) => (
+                {["國戰時間", "三國排行", "活動公告"].map((item, i) => (
                   <li key={i}>
                     <a
                       href={`#${["nation-war", "arena", "announcements"][i]}`}
