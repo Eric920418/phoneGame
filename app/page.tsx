@@ -884,7 +884,7 @@ export default async function HomePage() {
           </FramedSection>
 
           {/* ==================== 8. 寶箱福袋內容 Section ==================== */}
-          <FramedSection id="treasure" compact={true}>
+          <FramedSection id="treasure" compact={false}>
             <SectionTitle
               icon={Gift}
               title="寶箱福袋內容"
