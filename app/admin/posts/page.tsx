@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -36,6 +36,7 @@ export default function AdminPostsPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const fetchedRef = useRef(false);
 
   // Form state
   const [showForm, setShowForm] = useState(false);
@@ -58,7 +59,7 @@ export default function AdminPostsPage() {
     }
   }, [isLoading, user, router]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const data = await graphqlFetch<{ categories: Category[] }>(`
         query {
@@ -74,9 +75,9 @@ export default function AdminPostsPage() {
     } catch (err) {
       console.error("獲取分類失敗:", err);
     }
-  };
+  }, []);
 
-  const fetchPosts = async () => {
+  const fetchPosts = useCallback(async () => {
     try {
       const data = await graphqlFetch<{ posts: { posts: Post[] } }>(`
         query {
@@ -109,14 +110,15 @@ export default function AdminPostsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    if (user) {
-      fetchCategories();
-      fetchPosts();
-    }
-  }, [user]);
+    // 使用 user?.id 而非整個 user 對象，防止重複觸發
+    if (!user?.id || fetchedRef.current) return;
+    fetchedRef.current = true;
+    fetchCategories();
+    fetchPosts();
+  }, [user?.id, fetchCategories, fetchPosts]);
 
   const generateSlug = (title: string) => {
     return title
@@ -188,6 +190,7 @@ export default function AdminPostsPage() {
         isPinned: false,
         isLocked: false,
       });
+      fetchedRef.current = false; // 允許重新請求
       fetchPosts();
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失敗");

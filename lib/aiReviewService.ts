@@ -1,8 +1,12 @@
 import OpenAI from "openai";
 import { prisma } from "@/graphql/prismaClient";
 
+const OPENAI_TIMEOUT = 30000; // 30 秒超時
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  timeout: OPENAI_TIMEOUT, // 添加超時設置
+  maxRetries: 2, // 最多重試 2 次
 });
 
 // 中文玩家名稱池 - 更自然的網名
@@ -61,21 +65,41 @@ const REVIEW_PERSONAS = [
   }
 ];
 
+// 帶超時的 Promise 封裝
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
+    )
+  ]);
+}
+
+const DB_TIMEOUT = 10000; // 10 秒數據庫超時
+
 // 從資料庫獲取最新內容
 async function getLatestContent() {
   try {
-    // 獲取最新公告
-    const announcements = await prisma.announcement.findMany({
-      where: { isPublished: true },
-      orderBy: { publishedAt: 'desc' },
-      take: 5,
-      select: { title: true, excerpt: true, type: true }
-    });
+    // 獲取最新公告（帶超時）
+    const announcements = await withTimeout(
+      prisma.announcement.findMany({
+        where: { isPublished: true },
+        orderBy: { publishedAt: 'desc' },
+        take: 5,
+        select: { title: true, excerpt: true, type: true }
+      }),
+      DB_TIMEOUT,
+      '獲取公告超時'
+    );
 
-    // 獲取內容區塊（這些是從後台管理的動態內容）
-    const contentBlocks = await prisma.contentBlock.findMany({
-      select: { key: true, payload: true }
-    });
+    // 獲取內容區塊（帶超時）
+    const contentBlocks = await withTimeout(
+      prisma.contentBlock.findMany({
+        select: { key: true, payload: true }
+      }),
+      DB_TIMEOUT,
+      '獲取內容區塊超時'
+    );
 
     // 解析內容區塊
     const parsedBlocks: Record<string, unknown> = {};

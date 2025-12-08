@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -19,8 +19,13 @@ export default function AdminDashboard() {
   const router = useRouter();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
+    // 使用 user?.id 而非整個 user 對象，避免重複觸發
+    if (!user?.id || fetchedRef.current) return;
+    fetchedRef.current = true;
+
     const fetchStats = async () => {
       try {
         const data = await graphqlFetch<{ dashboardStats: DashboardStats }>(`
@@ -41,10 +46,8 @@ export default function AdminDashboard() {
       }
     };
 
-    if (user) {
-      fetchStats();
-    }
-  }, [user]);
+    fetchStats();
+  }, [user?.id]);
 
   if (isLoading || loading) {
     return (

@@ -6,9 +6,21 @@ import { NextResponse } from "next/server";
 import jwt from "jsonwebtoken";
 import { prisma } from "../../../graphql/prismaClient";
 
+const DB_QUERY_TIMEOUT = 5000; // 5 秒數據庫查詢超時
+
 interface TokenPayload {
   userId?: number;
   accessToken?: string;
+}
+
+// 帶超時的 Promise 封裝
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('數據庫查詢超時')), timeoutMs)
+    )
+  ]);
 }
 
 async function verifyToken(request: Request): Promise<{ isValid: boolean; userId?: number; isAdmin?: boolean }> {
@@ -18,10 +30,14 @@ async function verifyToken(request: Request): Promise<{ isValid: boolean; userId
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET || process.env.NEXTAUTH_SECRET || "") as TokenPayload;
       if (decoded.userId) {
-        const user = await prisma.user.findUnique({
-          where: { id: decoded.userId },
-          select: { isAdmin: true }
-        });
+        // 添加超時控制防止數據庫查詢卡住
+        const user = await withTimeout(
+          prisma.user.findUnique({
+            where: { id: decoded.userId },
+            select: { isAdmin: true }
+          }),
+          DB_QUERY_TIMEOUT
+        );
         return { isValid: true, userId: decoded.userId, isAdmin: user?.isAdmin || false };
       }
       return { isValid: true, userId: decoded.userId, isAdmin: false };

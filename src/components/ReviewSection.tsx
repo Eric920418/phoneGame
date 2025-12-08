@@ -1,7 +1,29 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo, memo } from "react";
+import { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+
+const FETCH_TIMEOUT = 15000; // 15 秒超時
+
+// 帶超時的 fetch 封裝
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeout: number = FETCH_TIMEOUT
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 import {
   Star,
   ThumbsUp,
@@ -365,6 +387,7 @@ export default function ReviewSection() {
   const [replyContent, setReplyContent] = useState("");
   const [reportingId, setReportingId] = useState<number | null>(null);
   const [reportReason, setReportReason] = useState("");
+  const fetchingRef = useRef(false); // 防止重複請求
 
   // 表單狀態
   const [formData, setFormData] = useState({
@@ -376,8 +399,12 @@ export default function ReviewSection() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const fetchReviews = useCallback(async () => {
+    // 防止重複請求
+    if (fetchingRef.current) return;
+    fetchingRef.current = true;
+
     try {
-      const response = await fetch("/api/graphql", {
+      const response = await fetchWithTimeout("/api/graphql", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -395,11 +422,17 @@ export default function ReviewSection() {
         setError(result.errors[0].message);
       } else {
         setData(result.data.reviews);
+        setError(null);
       }
     } catch (err) {
-      setError("獲取評價失敗");
+      if (err instanceof Error && err.name === 'AbortError') {
+        setError("請求超時，請重新整理頁面");
+      } else {
+        setError("獲取評價失敗");
+      }
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
   }, [sortBy, token]);
 
@@ -415,7 +448,7 @@ export default function ReviewSection() {
     setFormError(null);
 
     try {
-      const response = await fetch("/api/graphql", {
+      const response = await fetchWithTimeout("/api/graphql", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -435,10 +468,15 @@ export default function ReviewSection() {
         setShowForm(false);
         setFormData({ content: "", rating: 5, isRecommended: true });
         // 重新獲取評價列表
+        fetchingRef.current = false; // 允許重新請求
         fetchReviews();
       }
     } catch (err) {
-      setFormError("提交評價失敗");
+      if (err instanceof Error && err.name === 'AbortError') {
+        setFormError("請求超時，請稍後再試");
+      } else {
+        setFormError("提交評價失敗");
+      }
     } finally {
       setSubmitting(false);
     }
@@ -448,7 +486,7 @@ export default function ReviewSection() {
     if (!user) return;
 
     try {
-      const response = await fetch("/api/graphql", {
+      const response = await fetchWithTimeout("/api/graphql", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -458,7 +496,7 @@ export default function ReviewSection() {
           query: isLiked ? UNLIKE_REVIEW_MUTATION : LIKE_REVIEW_MUTATION,
           variables: { reviewId },
         }),
-      });
+      }, 10000); // 10 秒超時
 
       const result = await response.json();
 
@@ -484,7 +522,7 @@ export default function ReviewSection() {
     if (!user || !replyContent.trim()) return;
 
     try {
-      const response = await fetch("/api/graphql", {
+      const response = await fetchWithTimeout("/api/graphql", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -494,7 +532,7 @@ export default function ReviewSection() {
           query: CREATE_REPLY_MUTATION,
           variables: { input: { reviewId, content: replyContent } },
         }),
-      });
+      }, 10000); // 10 秒超時
 
       const result = await response.json();
 
@@ -520,7 +558,7 @@ export default function ReviewSection() {
     if (!user || !reportReason.trim()) return;
 
     try {
-      await fetch("/api/graphql", {
+      await fetchWithTimeout("/api/graphql", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -530,7 +568,7 @@ export default function ReviewSection() {
           query: REPORT_REVIEW_MUTATION,
           variables: { input: { reviewId, reason: reportReason } },
         }),
-      });
+      }, 10000); // 10 秒超時
 
       setReportingId(null);
       setReportReason("");

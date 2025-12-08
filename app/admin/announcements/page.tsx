@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -25,6 +25,7 @@ export default function AdminAnnouncementsPage() {
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const fetchedRef = useRef(false);
 
   // Form state
   const [showForm, setShowForm] = useState(false);
@@ -45,7 +46,7 @@ export default function AdminAnnouncementsPage() {
     }
   }, [isLoading, user, router]);
 
-  const fetchAnnouncements = async () => {
+  const fetchAnnouncements = useCallback(async () => {
     try {
       const data = await graphqlFetch<{ announcements: { announcements: Announcement[] } }>(`
         query {
@@ -70,13 +71,14 @@ export default function AdminAnnouncementsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    if (user) {
-      fetchAnnouncements();
-    }
-  }, [user]);
+    // 使用 user?.id 而非整個 user 對象，防止重複觸發
+    if (!user?.id || fetchedRef.current) return;
+    fetchedRef.current = true;
+    fetchAnnouncements();
+  }, [user?.id, fetchAnnouncements]);
 
   const generateSlug = (title: string) => {
     return title
@@ -142,6 +144,7 @@ export default function AdminAnnouncementsPage() {
         isPinned: false,
         isPublished: true,
       });
+      fetchedRef.current = false; // 允許重新請求
       fetchAnnouncements();
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失敗");

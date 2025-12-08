@@ -1,6 +1,8 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
+
+const FETCH_TIMEOUT = 10000; // 10 秒超時
 
 interface User {
   id: number;
@@ -79,9 +81,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const fetchedRef = useRef(false); // 防止重複請求
 
   // 初始化時從 localStorage 讀取 token
   useEffect(() => {
+    // 防止重複執行
+    if (fetchedRef.current) return;
+    fetchedRef.current = true;
+
     const storedToken = localStorage.getItem("auth_token");
     if (storedToken) {
       setToken(storedToken);
@@ -92,6 +99,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const fetchCurrentUser = async (authToken: string) => {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+
     try {
       const response = await fetch("/api/graphql", {
         method: "POST",
@@ -100,8 +110,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           Authorization: `Bearer ${authToken}`,
         },
         body: JSON.stringify({ query: ME_QUERY }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const result = await response.json();
 
       if (result.errors) {
@@ -113,7 +125,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(result.data.me);
       }
     } catch (err) {
-      console.error("獲取用戶信息失敗:", err);
+      clearTimeout(timeoutId);
+      if (err instanceof Error && err.name === 'AbortError') {
+        console.error("獲取用戶信息超時");
+      } else {
+        console.error("獲取用戶信息失敗:", err);
+      }
       localStorage.removeItem("auth_token");
       setToken(null);
     } finally {
@@ -125,6 +142,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     setIsLoading(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+
     try {
       const response = await fetch("/api/graphql", {
         method: "POST",
@@ -133,8 +153,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           query: LOGIN_MUTATION,
           variables: { input: { email, password } },
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const result = await response.json();
 
       if (result.errors) {
@@ -151,7 +173,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       return userData;
     } catch (err) {
-      setError("登入失敗，請稍後再試");
+      clearTimeout(timeoutId);
+      if (err instanceof Error && err.name === 'AbortError') {
+        setError("登入請求超時，請稍後再試");
+      } else {
+        setError("登入失敗，請稍後再試");
+      }
       setIsLoading(false);
       return null;
     }
@@ -166,6 +193,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
     setIsLoading(true);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
+
     try {
       const response = await fetch("/api/graphql", {
         method: "POST",
@@ -174,8 +204,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           query: REGISTER_MUTATION,
           variables: { input: { email, password, name, avatar } },
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
       const result = await response.json();
 
       if (result.errors) {
@@ -192,7 +224,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       return userData;
     } catch (err) {
-      setError("註冊失敗，請稍後再試");
+      clearTimeout(timeoutId);
+      if (err instanceof Error && err.name === 'AbortError') {
+        setError("註冊請求超時，請稍後再試");
+      } else {
+        setError("註冊失敗，請稍後再試");
+      }
       setIsLoading(false);
       return null;
     }

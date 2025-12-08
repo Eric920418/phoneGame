@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -41,6 +41,7 @@ export default function AdminReviewsPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "visible" | "hidden">("all");
   const [deleting, setDeleting] = useState<number | null>(null);
+  const fetchedRef = useRef(false);
 
   useEffect(() => {
     if (!isLoading && (!user || !user.isAdmin)) {
@@ -48,7 +49,7 @@ export default function AdminReviewsPage() {
     }
   }, [isLoading, user, router]);
 
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
       const data = await graphqlFetch<{ reviews: ReviewListResult }>(`
         query {
@@ -82,13 +83,14 @@ export default function AdminReviewsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    if (user) {
-      fetchReviews();
-    }
-  }, [user]);
+    // 使用 user?.id 而非整個 user 對象，防止重複觸發
+    if (!user?.id || fetchedRef.current) return;
+    fetchedRef.current = true;
+    fetchReviews();
+  }, [user?.id, fetchReviews]);
 
   const handleDelete = async (id: number) => {
     if (!confirm("確定要刪除這則評論嗎？此操作無法復原。")) return;

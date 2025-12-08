@@ -1,6 +1,6 @@
 /**
  * GraphQL 客戶端
- * 使用原生 fetch API + 快取優化
+ * 使用原生 fetch API + 快取優化 + 超時控制
  */
 
 interface GraphQLResponse<T = unknown> {
@@ -11,6 +11,27 @@ interface GraphQLResponse<T = unknown> {
 // 簡易內存快取（用於客戶端）
 const queryCache = new Map<string, { data: unknown; timestamp: number }>();
 const CACHE_TTL = 30 * 1000; // 30 秒快取過期時間
+const FETCH_TIMEOUT = 15000; // 15 秒請求超時
+
+// 帶超時的 fetch 封裝
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit,
+  timeout: number = FETCH_TIMEOUT
+): Promise<Response> {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
 
 // 判斷是否為讀取操作（可快取）
 function isReadOperation(query: string): boolean {
@@ -62,17 +83,25 @@ export async function graphqlFetch<T = unknown>(
   // 決定是否使用快取
   const shouldUseCache = isReadOperation(query) && !options?.skipCache;
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers,
-    body: JSON.stringify({ query, variables }),
-    // 使用 no-store 當 skipCache 為 true 或非讀取操作
-    cache: shouldUseCache ? "default" : "no-store",
-    // Next.js 重新驗證設定（伺服器端）- skipCache 時跳過
-    next: typeof window === 'undefined' && shouldUseCache
-      ? { revalidate: 60 } as RequestInit['next']
-      : { revalidate: 0 } as RequestInit['next'],
-  } as RequestInit);
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ query, variables }),
+      // 使用 no-store 當 skipCache 為 true 或非讀取操作
+      cache: shouldUseCache ? "default" : "no-store",
+      // Next.js 重新驗證設定（伺服器端）- skipCache 時跳過
+      next: typeof window === 'undefined' && shouldUseCache
+        ? { revalidate: 60 } as RequestInit['next']
+        : { revalidate: 0 } as RequestInit['next'],
+    } as RequestInit);
+  } catch (error) {
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new Error('請求超時，請稍後再試');
+    }
+    throw error;
+  }
 
   if (!response.ok) {
     throw new Error(`GraphQL request failed: ${response.status} ${response.statusText}`);
