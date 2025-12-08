@@ -666,7 +666,7 @@ export default async function HomePage() {
           </FramedSection>
 
           {/* ==================== 3. 下載專區 Section ==================== */}
-          <FramedSection id="download" compact>
+          <FramedSection id="download" compact={true}>
             <SectionTitle
               icon={Download}
               title="下載專區"
