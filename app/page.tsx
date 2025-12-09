@@ -621,8 +621,9 @@ export default async function HomePage() {
             />
             <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               {displaySponsorPlans.map((plan, index) => (
-                <div
+                <Link
                   key={index}
+                  href="/guide/sponsor"
                   className={`card p-3 sm:p-5 text-center relative transition-all hover:scale-[1.02] ${
                     plan.popular
                       ? "border-[var(--color-primary)] ring-2 ring-[var(--color-primary)]/20"
@@ -659,7 +660,7 @@ export default async function HomePage() {
                       </li>
                     ))}
                   </ul>
-                </div>
+                </Link>
               ))}
             </div>
           </FramedSection>
@@ -704,7 +705,7 @@ export default async function HomePage() {
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
               {displayGameSettings.map((group, index) => (
-                <div key={index} className="card p-4 sm:p-5">
+                <Link key={index} href="/guide/settings" className="card p-4 sm:p-5 hover:border-purple-500/30 transition-all">
                   <h3 className="font-semibold text-[var(--color-text)] mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
                     <Shield className="w-4 h-4 text-purple-400 shrink-0" />
                     {group.category}設定
@@ -724,7 +725,7 @@ export default async function HomePage() {
                       </div>
                     ))}
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </FramedSection>
@@ -739,8 +740,9 @@ export default async function HomePage() {
             />
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
               {displayBeginnerGuides.slice(0, 4).map((guide) => (
-                <div
+                <Link
                   key={guide.chapter}
+                  href={`/guide/beginner/${guide.chapter}`}
                   className="card p-3 sm:p-5 hover:border-green-500/30 transition-all group cursor-pointer"
                 >
                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-green-500/20 flex items-center justify-center mb-2 sm:mb-3">
@@ -754,7 +756,7 @@ export default async function HomePage() {
                   <p className="text-[10px] sm:text-xs text-[var(--color-text-muted)] line-clamp-2">
                     {guide.desc}
                   </p>
-                </div>
+                </Link>
               ))}
             </div>
           </FramedSection>
@@ -771,7 +773,7 @@ export default async function HomePage() {
             {displayDropItems.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {displayDropItems.slice(0, 4).map((bossData, index) => (
-                  <div key={index} className="card p-4 hover:border-[#f39c12]/30 transition-all">
+                  <Link key={index} href="/guide/drops" className="card p-4 hover:border-[#f39c12]/30 transition-all block">
                     {/* BOSS 標題 */}
                     <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[var(--color-border)]">
                       <div className="w-10 h-10 rounded-lg bg-[#f39c12]/10 flex items-center justify-center">
@@ -806,7 +808,7 @@ export default async function HomePage() {
                         </div>
                       ))}
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             ) : (
@@ -829,8 +831,9 @@ export default async function HomePage() {
             />
             <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {displayDungeons.map((dungeon, index) => (
-                <div
+                <Link
                   key={index}
+                  href="/guide/dungeon"
                   className="card p-3 sm:p-5 hover:border-teal-500/30 transition-all group cursor-pointer"
                 >
                   <div className="flex items-center justify-between mb-2 sm:mb-3">
@@ -860,7 +863,7 @@ export default async function HomePage() {
                       <span className="truncate">{dungeon.boss}</span>
                     </span>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           </FramedSection>
@@ -875,9 +878,10 @@ export default async function HomePage() {
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
               {displayTreasureBoxes.map((box, index) => (
-                <div
+                <Link
                   key={index}
-                  className="card p-4 sm:p-5"
+                  href="/guide/treasure"
+                  className="card p-4 sm:p-5 hover:scale-[1.02] transition-all"
                   style={{ borderColor: `${box.color}30` }}
                 >
                   <div className="flex items-center gap-3 mb-3 sm:mb-4">
@@ -917,7 +921,7 @@ export default async function HomePage() {
                       );
                     })}
                   </ul>
-                </div>
+                </Link>
               ))}
             </div>
           </FramedSection>
@@ -934,7 +938,7 @@ export default async function HomePage() {
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               {/* 時間表 */}
-              <div className="card p-4 h-[300px] flex flex-col">
+              <Link href="/guide/nation-war" className="card p-4 h-[300px] flex flex-col hover:border-violet-500/30 transition-all">
                 <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
                   <Clock className="w-4 h-4 text-violet-400" />
                   每週時程表
@@ -975,10 +979,10 @@ export default async function HomePage() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </Link>
 
               {/* 三國陣營 */}
-              <div className="card p-4 h-[300px] flex flex-col">
+              <Link href="/guide/nation-war" className="card p-4 h-[300px] flex flex-col hover:border-violet-500/30 transition-all">
                 <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
                   <Flag className="w-4 h-4 text-violet-400" />
                   三國陣營
@@ -1032,7 +1036,7 @@ export default async function HomePage() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </Link>
             </div>
           </FramedSection>
 
@@ -1046,7 +1050,7 @@ export default async function HomePage() {
             />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               {/* 等級排行 */}
-              <div className="card p-4 h-[350px] flex flex-col">
+              <Link href="/guide/arena" className="card p-4 h-[350px] flex flex-col hover:border-amber-500/30 transition-all">
                 <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
                   <Medal className="w-4 h-4 text-amber-400" />
                   等級排行
@@ -1092,10 +1096,10 @@ export default async function HomePage() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </Link>
 
               {/* 國戰討敵排行 */}
-              <div className="card p-4 h-[350px] flex flex-col">
+              <Link href="/guide/arena" className="card p-4 h-[350px] flex flex-col hover:border-red-500/30 transition-all">
                 <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
                   <Swords className="w-4 h-4 text-red-400" />
                   國戰討敵排行
@@ -1141,10 +1145,10 @@ export default async function HomePage() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </Link>
 
               {/* 赤壁討敵排行 */}
-              <div className="card p-4 h-[350px] flex flex-col">
+              <Link href="/guide/arena" className="card p-4 h-[350px] flex flex-col hover:border-orange-500/30 transition-all">
                 <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
                   <Flame className="w-4 h-4 text-orange-400" />
                   赤壁討敵排行
@@ -1190,7 +1194,7 @@ export default async function HomePage() {
                     </div>
                   ))}
                 </div>
-              </div>
+              </Link>
             </div>
           </FramedSection>
 
