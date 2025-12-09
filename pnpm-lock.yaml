@@ -10,16 +10,16 @@ importers:
     dependencies:
       '@apollo/client':
         specifier: ^3.13.1
-        version: 3.14.0(@types/react@19.2.7)(graphql-ws@6.0.6(graphql@16.12.0)(ws@8.18.3))(graphql@16.12.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 3.14.0(@types/react@19.0.1)(graphql-ws@6.0.6(graphql@16.12.0)(ws@8.18.3))(graphql@16.12.0)(react-dom@19.0.1(react@19.0.1))(react@19.0.1)
       '@apollo/link-error':
         specifier: 2.0.0-beta.3
-        version: 2.0.0-beta.3(@types/react@19.2.7)(graphql-ws@6.0.6(graphql@16.12.0)(ws@8.18.3))(graphql@16.12.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 2.0.0-beta.3(@types/react@19.0.1)(graphql-ws@6.0.6(graphql@16.12.0)(ws@8.18.3))(graphql@16.12.0)(react-dom@19.0.1(react@19.0.1))(react@19.0.1)
       '@ckeditor/ckeditor5-build-classic':
         specifier: ^44.3.0
         version: 44.3.0
       '@ckeditor/ckeditor5-react':
         specifier: ^9.5.0
-        version: 9.5.0(ckeditor5@44.3.0)(react@19.2.0)
+        version: 9.5.0(ckeditor5@44.3.0)(react@19.0.1)
       '@graphql-tools/load-files':
         specifier: ^7.0.1
         version: 7.0.1(graphql@16.12.0)
@@ -46,7 +46,7 @@ importers:
         version: 44.3.0
       framer-motion:
         specifier: ^12.5.0
-        version: 12.23.24(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 12.23.24(react-dom@19.0.1(react@19.0.1))(react@19.0.1)
       graphql:
         specifier: ^16.10.0
         version: 16.12.0
@@ -64,10 +64,10 @@ importers:
         version: 9.0.2
       lucide-react:
         specifier: ^0.482.0
-        version: 0.482.0(react@19.2.0)
+        version: 0.482.0(react@19.0.1)
       next:
         specifier: 16.0.7
-        version: 16.0.7(@babel/core@7.28.5)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+        version: 16.0.7(@babel/core@7.28.5)(react-dom@19.0.1(react@19.0.1))(react@19.0.1)
       openai:
         specifier: ^6.10.0
         version: 6.10.0(ws@8.18.3)(zod@3.25.76)
@@ -75,11 +75,11 @@ importers:
         specifier: ^6.5.0
         version: 6.19.0(typescript@5.9.3)
       react:
-        specifier: ^19.0.0
-        version: 19.2.0
+        specifier: ^19.0.1
+        version: 19.0.1
       react-dom:
-        specifier: ^19.0.0
-        version: 19.2.0(react@19.2.0)
+        specifier: ^19.0.1
+        version: 19.0.1(react@19.0.1)
       sharp:
         specifier: ^0.34.5
         version: 0.34.5
@@ -109,11 +109,11 @@ importers:
         specifier: ^20.17.23
         version: 20.19.25
       '@types/react':
-        specifier: ^19.0.10
-        version: 19.2.7
+        specifier: ^19.0.1
+        version: 19.0.1
       '@types/react-dom':
-        specifier: ^19.0.4
-        version: 19.2.3(@types/react@19.2.7)
+        specifier: ^19.0.1
+        version: 19.0.1
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.22(postcss@8.5.6)
@@ -1662,10 +1662,11 @@ packages:
   '@types/node@20.19.25':
     resolution: {integrity: sha512-ZsJzA5thDQMSQO788d7IocwwQbI8B5OPzmqNvpf3NY/+MHDAS759Wo0gd2WQeXYt5AAAQjzcrTVC6SKCuYgoCQ==}
 
-  '@types/react-dom@19.2.3':
-    resolution: {integrity: sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==}
-    peerDependencies:
-      '@types/react': ^19.2.0
+  '@types/react-dom@19.0.1':
+    resolution: {integrity: sha512-hljHij7MpWPKF6u5vojuyfV0YA4YURsQG7KT6SzV0Zs2BXAtgdTxG6A229Ub/xiWV4w/7JL8fi6aAyjshH4meA==}
+
+  '@types/react@19.0.1':
+    resolution: {integrity: sha512-YW6614BDhqbpR5KtUYzTA+zlA7nayzJRA9ljz9CQoxthR0sDisYZLuvSMsil36t4EH/uAt8T52Xb4sVw17G+SQ==}
 
   '@types/react@19.2.7':
     resolution: {integrity: sha512-MWtvHrGZLFttgeEj28VXHxpmwYbor/ATPYbBfSFZEIRK0ecCFLl2Qo55z52Hss+UV9CRN7trSeq1zbgx7YDWWg==}
@@ -3565,16 +3566,16 @@ packages:
   rc9@2.1.2:
     resolution: {integrity: sha512-btXCnMmRIBINM2LDZoEmOogIZU7Qe7zn4BpomSKZ/ykbLObuBdvG+mFq11DL6fjH1DRwHhrlgtYWG96bJiC7Cg==}
 
-  react-dom@19.2.0:
-    resolution: {integrity: sha512-UlbRu4cAiGaIewkPyiRGJk0imDN2T3JjieT6spoL2UeSf5od4n5LB/mQ4ejmxhCFT1tYe8IvaFulzynWovsEFQ==}
+  react-dom@19.0.1:
+    resolution: {integrity: sha512-3TJg51HSbJiLVYCS6vWwWsyqoS36aGEOCmtLLHxROlSZZ5Bk10xpxHFbrCu4DdqgR85DDc9Vucxqhai3g2xjtA==}
     peerDependencies:
-      react: ^19.2.0
+      react: ^19.0.1
 
   react-is@16.13.1:
     resolution: {integrity: sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==}
 
-  react@19.2.0:
-    resolution: {integrity: sha512-tmbWg6W31tQLeB5cdIBOicJDJRR2KzXsV7uSK9iNfLWQ5bIZfxuPEHp7M8wiHyHnn0DD1i7w3Zmin0FtkrwoCQ==}
+  react@19.0.1:
+    resolution: {integrity: sha512-nVRaZCuEyvu69sWrkdwjP6QY57C+lY+uMNNMyWUFJb9Z/JlaBOQus7mSMfGYsblv7R691u6SSJA/dX9IRnyyLQ==}
     engines: {node: '>=0.10.0'}
 
   readable-stream@3.6.2:
@@ -3682,8 +3683,8 @@ packages:
   safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
 
-  scheduler@0.27.0:
-    resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
+  scheduler@0.25.0:
+    resolution: {integrity: sha512-xFVuu11jh+xcO7JOAGJNOXld8/TcEHK/4CituBUeUb5hqxJLj9YuemAEuvm9gQ/+pgXYfbQuqAkiYu+u7YEsNA==}
 
   scuid@1.1.0:
     resolution: {integrity: sha512-MuCAyrGZcTLfQoH2XoBlQ8C6bzwN88XT/0slOGz0pn8+gIP85BOAfYa44ZXQUTOwRwPU0QvgU+V+OSajl/59Xg==}
@@ -4140,7 +4141,7 @@ snapshots:
 
   '@alloc/quick-lru@5.2.0': {}
 
-  '@apollo/client@3.14.0(@types/react@19.2.7)(graphql-ws@6.0.6(graphql@16.12.0)(ws@8.18.3))(graphql@16.12.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@apollo/client@3.14.0(@types/react@19.0.1)(graphql-ws@6.0.6(graphql@16.12.0)(ws@8.18.3))(graphql@16.12.0)(react-dom@19.0.1(react@19.0.1))(react@19.0.1)':
     dependencies:
       '@graphql-typed-document-node/core': 3.2.0(graphql@16.12.0)
       '@wry/caches': 1.0.1
@@ -4151,21 +4152,21 @@ snapshots:
       hoist-non-react-statics: 3.3.2
       optimism: 0.18.1
       prop-types: 15.8.1
-      rehackt: 0.1.0(@types/react@19.2.7)(react@19.2.0)
+      rehackt: 0.1.0(@types/react@19.0.1)(react@19.0.1)
       symbol-observable: 4.0.0
       ts-invariant: 0.10.3
       tslib: 2.8.1
       zen-observable-ts: 1.2.5
     optionalDependencies:
       graphql-ws: 6.0.6(graphql@16.12.0)(ws@8.18.3)
-      react: 19.2.0
-      react-dom: 19.2.0(react@19.2.0)
+      react: 19.0.1
+      react-dom: 19.0.1(react@19.0.1)
     transitivePeerDependencies:
       - '@types/react'
 
-  '@apollo/link-error@2.0.0-beta.3(@types/react@19.2.7)(graphql-ws@6.0.6(graphql@16.12.0)(ws@8.18.3))(graphql@16.12.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)':
+  '@apollo/link-error@2.0.0-beta.3(@types/react@19.0.1)(graphql-ws@6.0.6(graphql@16.12.0)(ws@8.18.3))(graphql@16.12.0)(react-dom@19.0.1(react@19.0.1))(react@19.0.1)':
     dependencies:
-      '@apollo/client': 3.14.0(@types/react@19.2.7)(graphql-ws@6.0.6(graphql@16.12.0)(ws@8.18.3))(graphql@16.12.0)(react-dom@19.2.0(react@19.2.0))(react@19.2.0)
+      '@apollo/client': 3.14.0(@types/react@19.0.1)(graphql-ws@6.0.6(graphql@16.12.0)(ws@8.18.3))(graphql@16.12.0)(react-dom@19.0.1(react@19.0.1))(react@19.0.1)
       tslib: 1.14.1
     transitivePeerDependencies:
       - '@types/react'
@@ -4942,11 +4943,11 @@ snapshots:
       '@ckeditor/ckeditor5-engine': 44.3.0
       ckeditor5: 44.3.0
 
-  '@ckeditor/ckeditor5-react@9.5.0(ckeditor5@44.3.0)(react@19.2.0)':
+  '@ckeditor/ckeditor5-react@9.5.0(ckeditor5@44.3.0)(react@19.0.1)':
     dependencies:
       '@ckeditor/ckeditor5-integrations-common': 2.2.3(ckeditor5@44.3.0)
       ckeditor5: 44.3.0
-      react: 19.2.0
+      react: 19.0.1
 
   '@ckeditor/ckeditor5-remove-format@44.3.0':
     dependencies:
@@ -6201,9 +6202,13 @@ snapshots:
     dependencies:
       undici-types: 6.21.0
 
-  '@types/react-dom@19.2.3(@types/react@19.2.7)':
+  '@types/react-dom@19.0.1':
     dependencies:
       '@types/react': 19.2.7
+
+  '@types/react@19.0.1':
+    dependencies:
+      csstype: 3.2.3
 
   '@types/react@19.2.7':
     dependencies:
@@ -7422,14 +7427,14 @@ snapshots:
 
   fraction.js@5.3.4: {}
 
-  framer-motion@12.23.24(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+  framer-motion@12.23.24(react-dom@19.0.1(react@19.0.1))(react@19.0.1):
     dependencies:
       motion-dom: 12.23.23
       motion-utils: 12.23.6
       tslib: 2.8.1
     optionalDependencies:
-      react: 19.2.0
-      react-dom: 19.2.0(react@19.2.0)
+      react: 19.0.1
+      react-dom: 19.0.1(react@19.0.1)
 
   fs.realpath@1.0.0: {}
 
@@ -8068,9 +8073,9 @@ snapshots:
     dependencies:
       yallist: 3.1.1
 
-  lucide-react@0.482.0(react@19.2.0):
+  lucide-react@0.482.0(react@19.0.1):
     dependencies:
-      react: 19.2.0
+      react: 19.0.1
 
   magic-string@0.30.21:
     dependencies:
@@ -8123,15 +8128,15 @@ snapshots:
 
   natural-compare@1.4.0: {}
 
-  next@16.0.7(@babel/core@7.28.5)(react-dom@19.2.0(react@19.2.0))(react@19.2.0):
+  next@16.0.7(@babel/core@7.28.5)(react-dom@19.0.1(react@19.0.1))(react@19.0.1):
     dependencies:
       '@next/env': 16.0.7
       '@swc/helpers': 0.5.15
       caniuse-lite: 1.0.30001757
       postcss: 8.4.31
-      react: 19.2.0
-      react-dom: 19.2.0(react@19.2.0)
-      styled-jsx: 5.1.6(@babel/core@7.28.5)(react@19.2.0)
+      react: 19.0.1
+      react-dom: 19.0.1(react@19.0.1)
+      styled-jsx: 5.1.6(@babel/core@7.28.5)(react@19.0.1)
     optionalDependencies:
       '@next/swc-darwin-arm64': 16.0.7
       '@next/swc-darwin-x64': 16.0.7
@@ -8412,14 +8417,14 @@ snapshots:
       defu: 6.1.4
       destr: 2.0.5
 
-  react-dom@19.2.0(react@19.2.0):
+  react-dom@19.0.1(react@19.0.1):
     dependencies:
-      react: 19.2.0
-      scheduler: 0.27.0
+      react: 19.0.1
+      scheduler: 0.25.0
 
   react-is@16.13.1: {}
 
-  react@19.2.0: {}
+  react@19.0.1: {}
 
   readable-stream@3.6.2:
     dependencies:
@@ -8449,10 +8454,10 @@ snapshots:
       gopd: 1.2.0
       set-function-name: 2.0.2
 
-  rehackt@0.1.0(@types/react@19.2.7)(react@19.2.0):
+  rehackt@0.1.0(@types/react@19.0.1)(react@19.0.1):
     optionalDependencies:
-      '@types/react': 19.2.7
-      react: 19.2.0
+      '@types/react': 19.0.1
+      react: 19.0.1
 
   relay-runtime@12.0.0:
     dependencies:
@@ -8532,7 +8537,7 @@ snapshots:
 
   safer-buffer@2.1.2: {}
 
-  scheduler@0.27.0: {}
+  scheduler@0.25.0: {}
 
   scuid@1.1.0: {}
 
@@ -8745,10 +8750,10 @@ snapshots:
 
   strip-json-comments@3.1.1: {}
 
-  styled-jsx@5.1.6(@babel/core@7.28.5)(react@19.2.0):
+  styled-jsx@5.1.6(@babel/core@7.28.5)(react@19.0.1):
     dependencies:
       client-only: 0.0.1
-      react: 19.2.0
+      react: 19.0.1
     optionalDependencies:
       '@babel/core': 7.28.5
 
