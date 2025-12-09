@@ -83,7 +83,8 @@ interface PageProps {
 
 export default async function AnnouncementPage({ params }: PageProps) {
   const { slug } = await params;
-  const announcement = await getAnnouncement(slug);
+  const decodedSlug = decodeURIComponent(slug);
+  const announcement = await getAnnouncement(decodedSlug);
 
   if (!announcement) {
     return (

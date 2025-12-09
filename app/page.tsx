@@ -102,12 +102,8 @@ const dungeons = [
   { name: "長坂坡", level: 40, difficulty: "困難", color: "#3b82f6", players: "3人", boss: "曹軍先鋒" },
 ];
 
-// 寶箱福袋內容
-const treasureBoxes = [
-  { name: "傳說寶箱", color: "#ff6b00", items: ["赤兔馬 1%", "傳說武器 5%", "元寶 x1000 20%"] },
-  { name: "史詩寶箱", color: "#a855f7", items: ["史詩武器 3%", "稀有材料 15%", "元寶 x500 20%"] },
-  { name: "國戰寶箱", color: "#ef4444", items: ["虎符 5%", "專屬時裝 3%", "榮譽點數 30%"] },
-];
+// 寶箱福袋內容 - 空預設，使用資料庫資料
+const treasureBoxes: { name: string; items: string[] }[] = [];
 
 // BOSS 列表
 const bossList = [
@@ -696,34 +692,29 @@ export default async function HomePage() {
           </FramedSection>
 
           {/* ==================== 4. 遊戲設定 Section ==================== */}
-          <FramedSection id="settings" compact={false}>
+          <FramedSection id="settings" compact={true}>
             <SectionTitle
               icon={Settings}
               title="遊戲設定"
               color="#9b59b6"
               href="/guide/settings"
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               {displayGameSettings.map((group, index) => (
-                <Link key={index} href="/guide/settings" className="card p-4 sm:p-5 hover:border-purple-500/30 transition-all">
-                  <h3 className="font-semibold text-[var(--color-text)] mb-3 sm:mb-4 flex items-center gap-2 text-sm sm:text-base">
-                    <Shield className="w-4 h-4 text-purple-400 shrink-0" />
-                    {group.category}設定
-                  </h3>
-                  <div className="space-y-2 sm:space-y-3">
-                    {group.settings.map((setting, i) => (
-                      <div
-                        key={i}
-                        className="flex items-center justify-between py-1.5 sm:py-2 border-b border-[var(--color-border)]/50 last:border-0"
-                      >
-                        <span className="text-xs sm:text-sm text-[var(--color-text-muted)]">
-                          {setting.name}
-                        </span>
-                        <span className="text-xs sm:text-sm font-medium text-purple-400">
-                          {setting.value}
-                        </span>
-                      </div>
-                    ))}
+                <Link key={index} href="/guide/settings" className="card p-4 hover:border-purple-500/30 transition-all group">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center shrink-0">
+                      <Shield className="w-5 h-5 text-purple-400" />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="font-semibold text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors text-sm sm:text-base">
+                        {group.category}設定
+                      </h3>
+                      <p className="text-xs text-[var(--color-text-muted)]">
+                        {group.settings.length} 項設定建議
+                      </p>
+                    </div>
+                    <ChevronRight className="w-5 h-5 text-[var(--color-text-dark)] group-hover:text-[var(--color-primary)] transition-colors ml-auto shrink-0" />
                   </div>
                 </Link>
               ))}
@@ -869,61 +860,54 @@ export default async function HomePage() {
           </FramedSection>
 
           {/* ==================== 8. 寶箱福袋內容 Section ==================== */}
-          <FramedSection id="treasure" compact={false}>
+          <FramedSection id="treasure" compact={true}>
             <SectionTitle
               icon={Gift}
               title="寶箱福袋內容"
               color="#f1c40f"
               href="/guide/treasure"
             />
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
-              {displayTreasureBoxes.map((box, index) => (
-                <Link
-                  key={index}
-                  href="/guide/treasure"
-                  className="card p-4 sm:p-5 hover:scale-[1.02] transition-all"
-                  style={{ borderColor: `${box.color}30` }}
-                >
-                  <div className="flex items-center gap-3 mb-3 sm:mb-4">
-                    <div
-                      className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0"
-                      style={{ backgroundColor: `${box.color}20` }}
-                    >
-                      <Package
-                        className="w-5 h-5 sm:w-6 sm:h-6"
-                        style={{ color: box.color }}
-                      />
+            {displayTreasureBoxes.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                {displayTreasureBoxes.map((box, index) => (
+                  <Link
+                    key={index}
+                    href="/guide/treasure"
+                    className="card p-4 hover:border-yellow-500/30 transition-all"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <Gift className="w-5 h-5 text-yellow-400 shrink-0" />
+                      <h3 className="font-bold text-[var(--color-text)]">{box.name}</h3>
                     </div>
-                    <h3
-                      className="text-base sm:text-lg font-bold"
-                      style={{ color: box.color }}
-                    >
-                      {box.name}
-                    </h3>
-                  </div>
-                  <ul className="space-y-1.5 sm:space-y-2">
-                    {(box.items || []).map((item, i) => {
-                      // 支持兩種格式：字符串或對象
-                      const displayText = typeof item === 'string'
-                        ? item
-                        : `${item.name} ${item.rate}`;
-                      return (
-                        <li
-                          key={i}
-                          className="flex items-center gap-2 text-xs sm:text-sm text-[var(--color-text-muted)] py-1.5 sm:py-2 px-2 sm:px-3 rounded-lg bg-[var(--color-bg-darker)]"
-                        >
-                          <Star
-                            className="w-3 h-3 shrink-0"
-                            style={{ color: box.color }}
-                          />
-                          <span className="truncate">{displayText}</span>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </Link>
-              ))}
-            </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {(box.items || []).slice(0, 6).map((item, i) => {
+                        const displayText = typeof item === 'string' ? item : (item as { name?: string }).name || '';
+                        return (
+                          <span
+                            key={i}
+                            className="text-xs text-[var(--color-text-muted)] py-1 px-2 rounded bg-[var(--color-bg-darker)]"
+                          >
+                            {displayText}
+                          </span>
+                        );
+                      })}
+                      {(box.items || []).length > 6 && (
+                        <span className="text-xs text-yellow-400 py-1 px-2">
+                          +{box.items.length - 6}
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="card p-8 text-center">
+                <div className="w-12 h-12 rounded-full bg-yellow-500/10 flex items-center justify-center mx-auto mb-3">
+                  <Gift className="w-6 h-6 text-yellow-400" />
+                </div>
+                <p className="text-[var(--color-text-muted)]">暫無寶箱資料</p>
+              </div>
+            )}
           </FramedSection>
 
 

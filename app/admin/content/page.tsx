@@ -46,7 +46,7 @@ const defaultData: Record<string, unknown[]> = {
   dropItems: [],
   dungeons: [],
   treasureBoxes: [
-    { name: "傳說寶箱", color: "#ff6b00", items: ["赤兔馬 1%", "傳說武器 5%"] },
+    { name: "寶箱名稱", items: ["物品1", "物品2"] },
   ],
   bossList: [
     { name: "呂布", title: "無雙戰神", location: "虎牢關", level: 60, type: "副本", color: "#ff6b00" },
@@ -713,7 +713,7 @@ export default function AdminContentPage() {
 
       case "treasureBoxes":
         return editingData.map((item: unknown, index: number) => {
-          const data = item as { name: string; color: string; items: string[] };
+          const data = item as { name: string; items: string[] };
           return (
             <div key={index} className="card p-4 space-y-3">
               <div className="flex items-center justify-between">
@@ -722,30 +722,19 @@ export default function AdminContentPage() {
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-              <div className="flex gap-3 items-center">
-                <input
-                  type="text"
-                  value={data.name}
-                  onChange={(e) => updateItem(index, "name", e.target.value)}
-                  placeholder="寶箱名稱"
-                  className="input flex-1"
-                />
-                <div className="flex items-center gap-2">
-                  <span className="text-[var(--color-text-muted)] text-sm">顏色</span>
-                  <input
-                    type="color"
-                    value={data.color}
-                    onChange={(e) => updateItem(index, "color", e.target.value)}
-                    className="w-10 h-10 rounded cursor-pointer"
-                  />
-                </div>
-              </div>
+              <input
+                type="text"
+                value={data.name}
+                onChange={(e) => updateItem(index, "name", e.target.value)}
+                placeholder="寶箱名稱"
+                className="input w-full"
+              />
               <div>
-                <label className="text-[var(--color-text)] text-sm mb-2 block">寶箱福袋內容 (每行一個，格式: 物品名 機率)</label>
+                <label className="text-[var(--color-text)] text-sm mb-2 block">內容物 (每行一個)</label>
                 <textarea
                   value={(data.items || []).join("\n")}
                   onChange={(e) => updateItem(index, "items", e.target.value.split("\n").filter(Boolean))}
-                  placeholder="赤兔馬 1%&#10;傳說武器 5%&#10;元寶 x1000 20%"
+                  placeholder="赤兔馬&#10;傳說武器&#10;元寶 x1000"
                   className="input w-full min-h-[100px]"
                 />
               </div>
@@ -1220,7 +1209,7 @@ export default function AdminContentPage() {
                   {renderForm()}
                 </div>
 
-                {/* 三國排行有自己的新增邏輯，不顯示通用新增按鈕 */}
+                {/* 三國排行有自己的邏輯，不顯示通用新增按鈕 */}
                 {activeSection !== "arenaRanking" && (
                   <button
                     onClick={addItem}
