@@ -420,7 +420,7 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { value: "1000+", label: "活躍玩家" },
+              { value: "200+", label: "活躍玩家" },
               { value: "50+", label: "遊戲更新" },
               { value: "24/7", label: "客服支援" },
               { value: "99.9%", label: "服務穩定" },
