@@ -1,7 +1,8 @@
-import { BookOpen, ArrowLeft, Calendar } from "lucide-react";
+import { BookOpen, ArrowLeft, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
 import { graphqlFetch } from "@/lib/apolloClient";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import ImageGallery from "./ImageGallery";
 
 // 強制動態渲染
 export const dynamic = "force-dynamic";
@@ -12,6 +13,7 @@ interface GuideItem {
   title: string;
   desc: string;
   image?: string;
+  images?: string[];
   content?: string;
 }
 
@@ -66,6 +68,9 @@ export default async function BeginnerDetailPage({ params }: PageProps) {
   const prevGuide = currentIndex > 0 ? sortedGuides[currentIndex - 1] : null;
   const nextGuide = currentIndex < sortedGuides.length - 1 ? sortedGuides[currentIndex + 1] : null;
 
+  // 兼容舊資料：合併 image 和 images
+  const allImages = guide.images?.length ? guide.images : (guide.image ? [guide.image] : []);
+
   return (
     <div className="space-y-8">
       {/* 返回按鈕 */}
@@ -79,35 +84,22 @@ export default async function BeginnerDetailPage({ params }: PageProps) {
 
       {/* 攻略標題區 */}
       <div className="card overflow-hidden">
-        {/* 封面圖片 */}
-        {guide.image ? (
-          <div className="relative overflow-hidden">
-            <img
-              src={guide.image}
-              alt={guide.title}
-              className="w-full h-auto object-contain"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-            <div className="absolute bottom-6 left-6 right-6">
-              <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-500/80 text-white mb-3">
-                第 {guide.chapter} 章
-              </span>
-              <h1 className="text-3xl md:text-4xl font-bold text-white">
-                {guide.title}
-              </h1>
-            </div>
-          </div>
+        {/* 標題區 */}
+        <div className="p-6 border-b border-[var(--color-border)]">
+          <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-500/20 text-green-400 mb-3">
+            第 {guide.chapter} 章
+          </span>
+          <h1 className="text-3xl md:text-4xl font-bold text-[var(--color-text)]">
+            {guide.title}
+          </h1>
+        </div>
+
+        {/* 圖片展示區 */}
+        {allImages.length > 0 ? (
+          <ImageGallery images={allImages} title={guide.title} />
         ) : (
           <div className="relative h-48 bg-gradient-to-br from-green-500/20 to-green-600/10 flex items-center justify-center">
             <BookOpen className="w-20 h-20 text-green-500/30" />
-            <div className="absolute bottom-6 left-6 right-6">
-              <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-500/80 text-white mb-3">
-                第 {guide.chapter} 章
-              </span>
-              <h1 className="text-3xl md:text-4xl font-bold text-[var(--color-text)]">
-                {guide.title}
-              </h1>
-            </div>
           </div>
         )}
 

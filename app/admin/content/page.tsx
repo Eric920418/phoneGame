@@ -423,29 +423,52 @@ export default function AdminContentPage() {
 
       case "beginnerGuides":
         return editingData.map((item: unknown, index: number) => {
-          const data = item as { chapter: number; title: string; desc: string; image?: string; content?: string };
+          const data = item as { chapter: number; title: string; desc: string; image?: string; images?: string[]; content?: string };
+          // 兼容舊資料：如果有 image 但沒有 images，將 image 轉為 images 陣列
+          const images = data.images || (data.image ? [data.image] : []);
 
           const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
+            const files = e.target.files;
+            if (!files || files.length === 0) return;
 
-            const formData = new FormData();
-            formData.append("file", file);
+            for (const file of Array.from(files)) {
+              const formData = new FormData();
+              formData.append("file", file);
 
-            try {
-              const res = await fetch("/api/upload", {
-                method: "POST",
-                body: formData,
-              });
-              const result = await res.json();
-              if (result.url) {
-                updateItem(index, "image", result.url);
-              } else {
+              try {
+                const res = await fetch("/api/upload", {
+                  method: "POST",
+                  body: formData,
+                });
+                const result = await res.json();
+                if (result.url) {
+                  const currentImages = [...images, result.url];
+                  updateItem(index, "images", currentImages);
+                  // 同時清除舊的 image 欄位
+                  updateItem(index, "image", undefined);
+                } else {
+                  setError("圖片上傳失敗");
+                }
+              } catch {
                 setError("圖片上傳失敗");
               }
-            } catch {
-              setError("圖片上傳失敗");
             }
+            // 清空 input 以便重複上傳同檔案
+            e.target.value = "";
+          };
+
+          const removeImage = (imgIndex: number) => {
+            const newImages = images.filter((_, i) => i !== imgIndex);
+            updateItem(index, "images", newImages);
+          };
+
+          const moveImage = (imgIndex: number, direction: "up" | "down") => {
+            if (direction === "up" && imgIndex === 0) return;
+            if (direction === "down" && imgIndex === images.length - 1) return;
+            const newImages = [...images];
+            const swapIndex = direction === "up" ? imgIndex - 1 : imgIndex + 1;
+            [newImages[imgIndex], newImages[swapIndex]] = [newImages[swapIndex], newImages[imgIndex]];
+            updateItem(index, "images", newImages);
           };
 
           return (
@@ -481,29 +504,65 @@ export default function AdminContentPage() {
                 className="input w-full"
               />
               <div>
-                <label className="text-[var(--color-text)] text-sm mb-2 block">攻略圖片</label>
-                <div className="flex gap-2">
+                <label className="text-[var(--color-text)] text-sm mb-2 block">
+                  攻略圖片 ({images.length} 張)
+                </label>
+                <div className="flex gap-2 mb-3">
                   <label className="btn btn-secondary cursor-pointer">
                     <input
                       type="file"
                       accept="image/*"
+                      multiple
                       onChange={handleImageUpload}
                       className="hidden"
                     />
-                    選擇圖片
+                    <Plus className="w-4 h-4 mr-1" />
+                    新增圖片
                   </label>
-                  {data.image && (
+                  {images.length > 0 && (
                     <button
-                      onClick={() => updateItem(index, "image", "")}
+                      onClick={() => updateItem(index, "images", [])}
                       className="btn btn-secondary text-red-400"
                     >
-                      移除圖片
+                      清除全部
                     </button>
                   )}
                 </div>
-                {data.image && (
-                  <div className="mt-2 relative rounded-lg overflow-hidden border border-[var(--color-border)]">
-                    <img src={data.image} alt="預覽" className="w-full h-40 object-cover" />
+                {images.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {images.map((img, imgIndex) => (
+                      <div key={imgIndex} className="relative group rounded-lg overflow-hidden border border-[var(--color-border)]">
+                        <img src={img} alt={`圖片 ${imgIndex + 1}`} className="w-full h-32 object-cover" />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => moveImage(imgIndex, "up")}
+                            disabled={imgIndex === 0}
+                            className="p-1.5 rounded bg-white/20 hover:bg-white/30 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="往前移"
+                          >
+                            <ArrowLeft className="w-4 h-4 text-white" />
+                          </button>
+                          <button
+                            onClick={() => removeImage(imgIndex)}
+                            className="p-1.5 rounded bg-red-500/80 hover:bg-red-500"
+                            title="刪除"
+                          >
+                            <Trash2 className="w-4 h-4 text-white" />
+                          </button>
+                          <button
+                            onClick={() => moveImage(imgIndex, "down")}
+                            disabled={imgIndex === images.length - 1}
+                            className="p-1.5 rounded bg-white/20 hover:bg-white/30 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="往後移"
+                          >
+                            <ArrowLeft className="w-4 h-4 text-white rotate-180" />
+                          </button>
+                        </div>
+                        <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                          {imgIndex + 1}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 )}
               </div>

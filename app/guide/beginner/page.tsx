@@ -16,6 +16,7 @@ interface GuideItem {
   title: string;
   desc: string;
   image?: string;
+  images?: string[];
   content?: string;
 }
 
@@ -80,17 +81,21 @@ export default async function BeginnerPage() {
       {/* 攻略列表 */}
       {guides.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {guides.map((guide, index) => (
+          {guides.map((guide, index) => {
+            // 兼容舊資料：優先使用 images 陣列的第一張，否則使用 image
+            const coverImage = guide.images?.[0] || guide.image;
+
+            return (
             <Link
               key={index}
               href={`/guide/beginner/${guide.chapter}`}
               className="card overflow-hidden hover:border-green-500/30 transition-all group"
             >
               {/* 攻略圖片 */}
-              {guide.image ? (
+              {coverImage ? (
                 <div className="relative overflow-hidden">
                   <img
-                    src={guide.image}
+                    src={coverImage}
                     alt={guide.title}
                     className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-300"
                   />
@@ -123,7 +128,8 @@ export default async function BeginnerPage() {
                 </p>
               </div>
             </Link>
-          ))}
+          );
+          })}
         </div>
       ) : (
         <div className="card p-12 text-center">
