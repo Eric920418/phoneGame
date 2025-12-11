@@ -320,7 +320,7 @@ function FramedSection({
       <div className={`relative z-10 px-6 pb-20 sm:px-8 sm:pb-24 md:px-10  lg:px-16 lg:pb-12 ${
         compact
           ? "pt-20 lg:pt-28"
-          : "pt-32 lg:pt-48"
+          : "pt-32 lg:pt-54"
       }`}>
         {children}
       </div>
@@ -463,7 +463,7 @@ export default async function HomePage() {
             />
             {displayEventAnnouncements.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                {displayEventAnnouncements.map((event: { id: number; title: string; date: string; type: string; isHot: boolean; image?: string }) => (
+                {displayEventAnnouncements.slice(0, 4).map((event: { id: number; title: string; date: string; type: string; isHot: boolean; image?: string }) => (
                   <Link
                     key={event.id}
                     href={`/guide/announcements/${event.id}`}
