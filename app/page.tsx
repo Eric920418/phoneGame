@@ -520,7 +520,7 @@ export default async function HomePage() {
                 />
                 <div className="space-y-4">
                   {latestAnnouncements.length > 0 ? (
-                    latestAnnouncements.map((announcement) => (
+                    latestAnnouncements.slice(0, 3).map((announcement) => (
                       <Link
                         key={announcement.id}
                         href={`/announcements/${announcement.slug}`}
@@ -735,7 +735,7 @@ export default async function HomePage() {
           </FramedSection>
 
           {/* ==================== 5. 新手攻略 Section ==================== */}
-          <FramedSection id="beginner" compact>
+          <FramedSection id="beginner" compact={true}>
             <SectionTitle
               icon={BookOpen}
               title="新手攻略"
@@ -873,7 +873,7 @@ export default async function HomePage() {
           </FramedSection>
 
           {/* ==================== 8. 寶箱福袋內容 Section ==================== */}
-          <FramedSection id="treasure" compact={true}>
+          <FramedSection id="treasure" compact={false}>
             <SectionTitle
               icon={Gift}
               title="寶箱福袋內容"
