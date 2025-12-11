@@ -203,7 +203,6 @@ interface ContentBlocks {
   bossList?: typeof bossList;
   warSchedule?: typeof warSchedule;
   factions?: { name: string; color: string; leader: string; description: string; bonus: string }[];
-  factionsImage?: { image?: string }[];
   arenaRanking?: typeof arenaRanking;
   playerReviews?: typeof playerReviews;
 }
@@ -384,7 +383,6 @@ export default async function HomePage() {
   const displayBossList = contentBlocks.bossList || bossList;
   const displayWarSchedule = contentBlocks.warSchedule || warSchedule;
   const displayFactions = contentBlocks.factions || [];
-  const displayFactionsImage = contentBlocks.factionsImage?.[0]?.image || "";
   const displayArenaRanking = (contentBlocks.arenaRanking || arenaRanking) as {
     levelRanking?: { rank: number; name: string; guild: string; score: number }[];
     nationWarRanking?: { rank: number; name: string; guild: string; score: number }[];
@@ -984,15 +982,6 @@ export default async function HomePage() {
                   <Flag className="w-4 h-4 text-violet-400" />
                   三國陣營
                 </h3>
-                {displayFactionsImage && (
-                  <div className="mb-3 -mx-4 shrink-0">
-                    <img
-                      src={displayFactionsImage}
-                      alt="三國陣營"
-                      className="w-full h-24 object-cover"
-                    />
-                  </div>
-                )}
                 <div className="space-y-2 sm:space-y-3 overflow-y-auto flex-1">
                   {displayFactions.length > 0 ? (
                     displayFactions.map((faction, index) => (

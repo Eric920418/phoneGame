@@ -21,9 +21,7 @@ const contentSections = [
   { key: "dropItems", title: "掉落查詢", icon: Search, color: "#f39c12" },
   { key: "dungeons", title: "副本介紹", icon: Map, color: "#1abc9c" },
   { key: "treasureBoxes", title: "寶箱福袋內容", icon: Gift, color: "#f1c40f" },
-  { key: "warSchedule", title: "國戰時間", icon: Swords, color: "#8e44ad" },
-  { key: "factions", title: "三國陣營", icon: Flag, color: "#6366f1" },
-  { key: "factionsImage", title: "三國陣營圖片", icon: Flag, color: "#818cf8" },
+  { key: "nationWar", title: "國戰時間", icon: Swords, color: "#8e44ad" },
   { key: "arenaRanking", title: "三國排行", icon: Trophy, color: "#c9a227" },
   { key: "playerReviews", title: "玩家評價", icon: Quote, color: "#10b981" },
 ];
@@ -53,15 +51,21 @@ const defaultData: Record<string, unknown[]> = {
   bossList: [
     { name: "呂布", title: "無雙戰神", location: "虎牢關", level: 60, type: "副本", color: "#ff6b00" },
   ],
-  warSchedule: [
-    { day: "週六", time: "19:00-22:00", type: "國戰", highlight: true },
-  ],
-  factions: [
-    { name: "", color: "#3b82f6", leader: "", description: "", bonus: "" },
-  ],
-  factionsImage: [
-    { image: "" },
-  ],
+  nationWar: {
+    warSchedule: [
+      { day: "週六", time: "19:00-22:00", type: "國戰", highlight: true },
+    ],
+    rules: [
+      { title: "參戰資格", items: ["角色等級達到 30 級以上"] },
+    ],
+    rewards: [
+      { rank: "冠軍陣營", items: ["國戰寶箱 x3", "榮譽點數 x1000"] },
+    ],
+    factions: [
+      { name: "", color: "#3b82f6", leader: "", description: "", bonus: "" },
+    ],
+    factionsImage: "",
+  },
   arenaRanking: {
     levelRanking: [],
     nationWarRanking: [],
@@ -131,6 +135,22 @@ export default function AdminContentPage() {
     if (key === "arenaRanking") {
       const data = blocks[key] || defaultData[key] || { levelRanking: [], nationWarRanking: [], chibiRanking: [] };
       setEditingData(JSON.parse(JSON.stringify(data)) as unknown as unknown[]);
+    } else if (key === "nationWar") {
+      // nationWar 整合多個區塊：warSchedule, nationWar(rules/rewards), factions, factionsImage
+      const warSchedule = blocks["warSchedule"] || [];
+      const nationWarData = blocks["nationWar"] as { rules?: unknown[]; rewards?: unknown[] } || {};
+      const factions = blocks["factions"] || [];
+      const factionsImageData = blocks["factionsImage"] as { image?: string }[] || [];
+      const factionsImage = factionsImageData[0]?.image || "";
+
+      const combinedData = {
+        warSchedule: Array.isArray(warSchedule) ? warSchedule : [],
+        rules: nationWarData.rules || (defaultData.nationWar as { rules: unknown[] }).rules || [],
+        rewards: nationWarData.rewards || (defaultData.nationWar as { rewards: unknown[] }).rewards || [],
+        factions: Array.isArray(factions) ? factions : [],
+        factionsImage: factionsImage,
+      };
+      setEditingData(JSON.parse(JSON.stringify(combinedData)) as unknown as unknown[]);
     } else {
       const data = blocks[key] || defaultData[key] || [];
       setEditingData(JSON.parse(JSON.stringify(data)));
@@ -147,18 +167,60 @@ export default function AdminContentPage() {
     setSuccess(null);
 
     try {
-      await graphqlFetch(`
-        mutation($key: String!, $input: ContentBlockInput!) {
-          upsertContentBlock(key: $key, input: $input) {
-            id
-          }
-        }
-      `, {
-        key: activeSection,
-        input: { payload: editingData },
-      });
+      if (activeSection === "nationWar") {
+        // nationWar 需要分別儲存到多個 key
+        const data = editingData as unknown as {
+          warSchedule: unknown[];
+          rules: unknown[];
+          rewards: unknown[];
+          factions: unknown[];
+          factionsImage: string;
+        };
 
-      setBlocks({ ...blocks, [activeSection]: editingData });
+        await Promise.all([
+          graphqlFetch(`
+            mutation($key: String!, $input: ContentBlockInput!) {
+              upsertContentBlock(key: $key, input: $input) { id }
+            }
+          `, { key: "warSchedule", input: { payload: data.warSchedule } }),
+          graphqlFetch(`
+            mutation($key: String!, $input: ContentBlockInput!) {
+              upsertContentBlock(key: $key, input: $input) { id }
+            }
+          `, { key: "nationWar", input: { payload: { rules: data.rules, rewards: data.rewards } } }),
+          graphqlFetch(`
+            mutation($key: String!, $input: ContentBlockInput!) {
+              upsertContentBlock(key: $key, input: $input) { id }
+            }
+          `, { key: "factions", input: { payload: data.factions } }),
+          graphqlFetch(`
+            mutation($key: String!, $input: ContentBlockInput!) {
+              upsertContentBlock(key: $key, input: $input) { id }
+            }
+          `, { key: "factionsImage", input: { payload: [{ image: data.factionsImage }] } }),
+        ]);
+
+        setBlocks({
+          ...blocks,
+          warSchedule: data.warSchedule,
+          nationWar: { rules: data.rules, rewards: data.rewards },
+          factions: data.factions,
+          factionsImage: [{ image: data.factionsImage }],
+        });
+      } else {
+        await graphqlFetch(`
+          mutation($key: String!, $input: ContentBlockInput!) {
+            upsertContentBlock(key: $key, input: $input) {
+              id
+            }
+          }
+        `, {
+          key: activeSection,
+          input: { payload: editingData },
+        });
+
+        setBlocks({ ...blocks, [activeSection]: editingData });
+      }
       setSuccess("儲存成功！");
       setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
@@ -843,129 +905,48 @@ export default function AdminContentPage() {
           );
         });
 
-      case "warSchedule":
-        return editingData.map((item: unknown, index: number) => {
-          const data = item as { day: string; time: string; type: string; highlight: boolean };
-          return (
-            <div key={index} className="card p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[var(--color-primary)] font-medium">時段 #{index + 1}</span>
-                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <input
-                  type="text"
-                  value={data.day}
-                  onChange={(e) => updateItem(index, "day", e.target.value)}
-                  placeholder="日期 (如: 週六)"
-                  className="input"
-                />
-                <input
-                  type="text"
-                  value={data.time}
-                  onChange={(e) => updateItem(index, "time", e.target.value)}
-                  placeholder="時間 (如: 19:00-22:00)"
-                  className="input"
-                />
-                <input
-                  type="text"
-                  value={data.type}
-                  onChange={(e) => updateItem(index, "type", e.target.value)}
-                  placeholder="活動類型 (如: 國戰)"
-                  className="input"
-                />
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={data.highlight}
-                  onChange={(e) => updateItem(index, "highlight", e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <span className="text-[var(--color-text)] text-sm">重點活動 (特別標示)</span>
-              </label>
-            </div>
-          );
-        });
+      case "nationWar": {
+        // 國戰整合區塊：時間表、規則、獎勵、陣營、陣營圖片
+        const nationWarData = editingData as unknown as {
+          warSchedule: { day: string; time: string; type: string; highlight: boolean }[];
+          rules: { title: string; items: string[] }[];
+          rewards: { rank: string; items: string[]; image?: string }[];
+          factions: { name: string; color: string; leader: string; description: string; bonus: string }[];
+          factionsImage: string;
+        };
 
-      case "factions":
-        return editingData.map((item: unknown, index: number) => {
-          const data = item as { name: string; color: string; leader: string; description: string; bonus: string };
-          return (
-            <div key={index} className="card p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-[var(--color-primary)] font-medium">陣營 #{index + 1}</span>
-                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <input
-                  type="text"
-                  value={data.name}
-                  onChange={(e) => updateItem(index, "name", e.target.value)}
-                  placeholder="陣營名稱"
-                  className="input"
-                />
-                <input
-                  type="text"
-                  value={data.leader}
-                  onChange={(e) => updateItem(index, "leader", e.target.value)}
-                  placeholder="陣營首領"
-                  className="input"
-                />
-                <div className="flex items-center gap-2">
-                  <span className="text-[var(--color-text-muted)] text-sm">顏色</span>
-                  <input
-                    type="color"
-                    value={data.color}
-                    onChange={(e) => updateItem(index, "color", e.target.value)}
-                    className="w-10 h-10 rounded cursor-pointer"
-                  />
-                </div>
-              </div>
-              <input
-                type="text"
-                value={data.description}
-                onChange={(e) => updateItem(index, "description", e.target.value)}
-                placeholder="陣營描述"
-                className="input w-full"
-              />
-              <input
-                type="text"
-                value={data.bonus}
-                onChange={(e) => updateItem(index, "bonus", e.target.value)}
-                placeholder="陣營加成 (如: 攻擊力加成 5%)"
-                className="input w-full"
-              />
-            </div>
-          );
-        });
+        const updateNationWarField = (field: string, value: unknown) => {
+          setEditingData({ ...nationWarData, [field]: value } as unknown as unknown[]);
+        };
 
-      case "factionsImage": {
-        const imageData = (editingData[0] as { image?: string }) || { image: "" };
+        const updateNationWarArrayItem = (field: string, index: number, subField: string, value: unknown) => {
+          const arr = [...(nationWarData as Record<string, unknown[]>)[field]] as Record<string, unknown>[];
+          arr[index][subField] = value;
+          setEditingData({ ...nationWarData, [field]: arr } as unknown as unknown[]);
+        };
 
-        const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const addNationWarArrayItem = (field: string, template: unknown) => {
+          const arr = [...((nationWarData as Record<string, unknown[]>)[field] || [])];
+          arr.push(JSON.parse(JSON.stringify(template)));
+          setEditingData({ ...nationWarData, [field]: arr } as unknown as unknown[]);
+        };
+
+        const removeNationWarArrayItem = (field: string, index: number) => {
+          const arr = [...(nationWarData as Record<string, unknown[]>)[field]];
+          arr.splice(index, 1);
+          setEditingData({ ...nationWarData, [field]: arr } as unknown as unknown[]);
+        };
+
+        const handleFactionsImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
           const file = e.target.files?.[0];
           if (!file) return;
-
           const formData = new FormData();
           formData.append("file", file);
-
           try {
-            const res = await fetch("/api/upload", {
-              method: "POST",
-              body: formData,
-            });
+            const res = await fetch("/api/upload", { method: "POST", body: formData });
             const result = await res.json();
             if (result.url) {
-              if (editingData.length === 0) {
-                setEditingData([{ image: result.url }]);
-              } else {
-                updateItem(0, "image", result.url);
-              }
+              updateNationWarField("factionsImage", result.url);
             } else {
               setError("圖片上傳失敗");
             }
@@ -975,44 +956,195 @@ export default function AdminContentPage() {
         };
 
         return (
-          <div className="card p-4 space-y-3">
-            <div className="flex items-center gap-2 mb-2">
-              <Flag className="w-5 h-5 text-[var(--color-primary)]" />
-              <span className="text-[var(--color-text)] font-medium">三國陣營區塊圖片</span>
-            </div>
-            <p className="text-[var(--color-text-muted)] text-sm">
-              此圖片將顯示在三國陣營區塊的標題與陣營卡片之間。
-            </p>
-            <div className="flex gap-2">
-              <label className="btn btn-secondary cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                選擇圖片
-              </label>
-              {imageData.image && (
-                <button
-                  onClick={() => {
-                    if (editingData.length === 0) {
-                      setEditingData([{ image: "" }]);
-                    } else {
-                      updateItem(0, "image", "");
-                    }
-                  }}
-                  className="btn btn-secondary text-red-400"
-                >
-                  移除圖片
+          <div className="space-y-6">
+            {/* 國戰時間表 */}
+            <div className="card p-4">
+              <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2">
+                <Swords className="w-5 h-5 text-violet-400" />
+                每週時間表
+              </h3>
+              <div className="space-y-3">
+                {(nationWarData.warSchedule || []).map((schedule, index) => (
+                  <div key={index} className="bg-[var(--color-bg-dark)] p-3 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[var(--color-text-muted)] text-sm">時段 #{index + 1}</span>
+                      <button onClick={() => removeNationWarArrayItem("warSchedule", index)} className="text-red-400 hover:text-red-300 p-1">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <input type="text" value={schedule.day} onChange={(e) => updateNationWarArrayItem("warSchedule", index, "day", e.target.value)} placeholder="週六" className="input" />
+                      <input type="text" value={schedule.time} onChange={(e) => updateNationWarArrayItem("warSchedule", index, "time", e.target.value)} placeholder="19:00-22:00" className="input" />
+                      <input type="text" value={schedule.type} onChange={(e) => updateNationWarArrayItem("warSchedule", index, "type", e.target.value)} placeholder="國戰" className="input" />
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="checkbox" checked={schedule.highlight} onChange={(e) => updateNationWarArrayItem("warSchedule", index, "highlight", e.target.checked)} className="w-4 h-4" />
+                      <span className="text-[var(--color-text)] text-sm">重點活動</span>
+                    </label>
+                  </div>
+                ))}
+                <button onClick={() => addNationWarArrayItem("warSchedule", { day: "", time: "", type: "", highlight: false })} className="text-violet-400 text-sm hover:underline flex items-center gap-1">
+                  <Plus className="w-4 h-4" /> 新增時段
                 </button>
+              </div>
+            </div>
+
+            {/* 國戰規則 */}
+            <div className="card p-4">
+              <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2">
+                <Flag className="w-5 h-5 text-blue-400" />
+                國戰規則
+              </h3>
+              <div className="space-y-3">
+                {(nationWarData.rules || []).map((rule, index) => (
+                  <div key={index} className="bg-[var(--color-bg-dark)] p-3 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[var(--color-text-muted)] text-sm">規則 #{index + 1}</span>
+                      <button onClick={() => removeNationWarArrayItem("rules", index)} className="text-red-400 hover:text-red-300 p-1">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <input type="text" value={rule.title} onChange={(e) => updateNationWarArrayItem("rules", index, "title", e.target.value)} placeholder="規則標題 (如: 參戰資格)" className="input w-full" />
+                    <textarea
+                      value={(rule.items || []).join("\n")}
+                      onChange={(e) => updateNationWarArrayItem("rules", index, "items", e.target.value.split("\n").filter(Boolean))}
+                      placeholder="規則內容 (每行一條)"
+                      className="input w-full min-h-[80px]"
+                    />
+                  </div>
+                ))}
+                <button onClick={() => addNationWarArrayItem("rules", { title: "", items: [] })} className="text-blue-400 text-sm hover:underline flex items-center gap-1">
+                  <Plus className="w-4 h-4" /> 新增規則
+                </button>
+              </div>
+            </div>
+
+            {/* 戰爭獎勵 */}
+            <div className="card p-4">
+              <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-yellow-400" />
+                戰爭獎勵
+              </h3>
+              <div className="space-y-3">
+                {(nationWarData.rewards || []).map((reward, index) => {
+                  const handleRewardImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    const formData = new FormData();
+                    formData.append("file", file);
+                    try {
+                      const res = await fetch("/api/upload", { method: "POST", body: formData });
+                      const result = await res.json();
+                      if (result.url) {
+                        updateNationWarArrayItem("rewards", index, "image", result.url);
+                      } else {
+                        setError("圖片上傳失敗");
+                      }
+                    } catch {
+                      setError("圖片上傳失敗");
+                    }
+                  };
+
+                  return (
+                    <div key={index} className="bg-[var(--color-bg-dark)] p-3 rounded-lg space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[var(--color-text-muted)] text-sm">獎勵 #{index + 1}</span>
+                        <button onClick={() => removeNationWarArrayItem("rewards", index)} className="text-red-400 hover:text-red-300 p-1">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <input type="text" value={reward.rank} onChange={(e) => updateNationWarArrayItem("rewards", index, "rank", e.target.value)} placeholder="名次 (如: 冠軍陣營)" className="input w-full" />
+                      <textarea
+                        value={(reward.items || []).join("\n")}
+                        onChange={(e) => updateNationWarArrayItem("rewards", index, "items", e.target.value.split("\n").filter(Boolean))}
+                        placeholder="獎勵內容 (每行一項)"
+                        className="input w-full min-h-[80px]"
+                      />
+                      <div>
+                        <label className="text-[var(--color-text-muted)] text-xs mb-1 block">獎勵圖片</label>
+                        <div className="flex gap-2">
+                          <label className="btn btn-secondary cursor-pointer text-sm py-1 px-2">
+                            <input type="file" accept="image/*" onChange={handleRewardImageUpload} className="hidden" />
+                            選擇圖片
+                          </label>
+                          {reward.image && (
+                            <button onClick={() => updateNationWarArrayItem("rewards", index, "image", "")} className="btn btn-secondary text-red-400 text-sm py-1 px-2">
+                              移除
+                            </button>
+                          )}
+                        </div>
+                        {reward.image && (
+                          <div className="mt-2 relative rounded-lg overflow-hidden border border-[var(--color-border)]">
+                            <img src={reward.image} alt="預覽" className="w-full h-24 object-cover" />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                <button onClick={() => addNationWarArrayItem("rewards", { rank: "", items: [], image: "" })} className="text-yellow-400 text-sm hover:underline flex items-center gap-1">
+                  <Plus className="w-4 h-4" /> 新增獎勵
+                </button>
+              </div>
+            </div>
+
+            {/* 三國陣營 */}
+            <div className="card p-4">
+              <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2">
+                <Flag className="w-5 h-5 text-indigo-400" />
+                三國陣營
+              </h3>
+              <div className="space-y-3">
+                {(nationWarData.factions || []).map((faction, index) => (
+                  <div key={index} className="bg-[var(--color-bg-dark)] p-3 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[var(--color-text-muted)] text-sm">陣營 #{index + 1}</span>
+                      <button onClick={() => removeNationWarArrayItem("factions", index)} className="text-red-400 hover:text-red-300 p-1">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2">
+                      <input type="text" value={faction.name} onChange={(e) => updateNationWarArrayItem("factions", index, "name", e.target.value)} placeholder="陣營名稱" className="input" />
+                      <input type="text" value={faction.leader} onChange={(e) => updateNationWarArrayItem("factions", index, "leader", e.target.value)} placeholder="首領" className="input" />
+                      <div className="flex items-center gap-2">
+                        <span className="text-[var(--color-text-muted)] text-sm">顏色</span>
+                        <input type="color" value={faction.color} onChange={(e) => updateNationWarArrayItem("factions", index, "color", e.target.value)} className="w-10 h-10 rounded cursor-pointer" />
+                      </div>
+                    </div>
+                    <input type="text" value={faction.description} onChange={(e) => updateNationWarArrayItem("factions", index, "description", e.target.value)} placeholder="陣營描述" className="input w-full" />
+                    <input type="text" value={faction.bonus} onChange={(e) => updateNationWarArrayItem("factions", index, "bonus", e.target.value)} placeholder="陣營加成 (如: 攻擊力 +5%)" className="input w-full" />
+                  </div>
+                ))}
+                <button onClick={() => addNationWarArrayItem("factions", { name: "", color: "#3b82f6", leader: "", description: "", bonus: "" })} className="text-indigo-400 text-sm hover:underline flex items-center gap-1">
+                  <Plus className="w-4 h-4" /> 新增陣營
+                </button>
+              </div>
+            </div>
+
+            {/* 三國陣營圖片 */}
+            <div className="card p-4">
+              <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2">
+                <Flag className="w-5 h-5 text-purple-400" />
+                三國陣營圖片
+              </h3>
+              <p className="text-[var(--color-text-muted)] text-sm mb-3">此圖片將顯示在三國陣營區塊的標題與陣營卡片之間。</p>
+              <div className="flex gap-2">
+                <label className="btn btn-secondary cursor-pointer">
+                  <input type="file" accept="image/*" onChange={handleFactionsImageUpload} className="hidden" />
+                  選擇圖片
+                </label>
+                {nationWarData.factionsImage && (
+                  <button onClick={() => updateNationWarField("factionsImage", "")} className="btn btn-secondary text-red-400">
+                    移除圖片
+                  </button>
+                )}
+              </div>
+              {nationWarData.factionsImage && (
+                <div className="mt-3 relative rounded-lg overflow-hidden border border-[var(--color-border)]">
+                  <img src={nationWarData.factionsImage} alt="預覽" className="w-full h-48 object-cover" />
+                </div>
               )}
             </div>
-            {imageData.image && (
-              <div className="mt-2 relative rounded-lg overflow-hidden border border-[var(--color-border)]">
-                <img src={imageData.image} alt="預覽" className="w-full h-48 object-cover" />
-              </div>
-            )}
           </div>
         );
       }
@@ -1373,8 +1505,8 @@ export default function AdminContentPage() {
                   {renderForm()}
                 </div>
 
-                {/* 三國排行有自己的邏輯，不顯示通用新增按鈕 */}
-                {activeSection !== "arenaRanking" && (
+                {/* 三國排行和國戰有自己的邏輯，不顯示通用新增按鈕 */}
+                {activeSection !== "arenaRanking" && activeSection !== "nationWar" && (
                   <button
                     onClick={addItem}
                     className="mt-4 w-full card p-4 flex items-center justify-center gap-2 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors border-dashed"

@@ -254,7 +254,6 @@ export default function AdminAnnouncementsPage() {
                     className="input"
                   >
                     <option value="general">一般公告</option>
-                    <option value="update">版本更新</option>
                     <option value="event">活動公告</option>
                     <option value="maintenance">維護公告</option>
                   </select>

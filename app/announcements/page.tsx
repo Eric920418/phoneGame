@@ -50,8 +50,6 @@ async function getAnnouncements(type?: string, page = 1) {
 
 function getTypeStyle(type: string) {
   switch (type) {
-    case "update":
-      return "bg-blue-500/10 text-blue-400 border-blue-500/20";
     case "event":
       return "bg-purple-500/10 text-purple-400 border-purple-500/20";
     case "maintenance":
@@ -63,8 +61,6 @@ function getTypeStyle(type: string) {
 
 function getTypeLabel(type: string) {
   switch (type) {
-    case "update":
-      return "版本更新";
     case "event":
       return "活動公告";
     case "maintenance":
@@ -86,7 +82,6 @@ function formatDate(dateString: string) {
 const typeOptions = [
   { value: "", label: "全部" },
   { value: "general", label: "一般公告" },
-  { value: "update", label: "版本更新" },
   { value: "event", label: "活動公告" },
   { value: "maintenance", label: "維護公告" },
 ];

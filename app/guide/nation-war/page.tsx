@@ -14,7 +14,8 @@ interface WarScheduleItem {
   day: string;
   time: string;
   type: string;
-  description: string;
+  description?: string;
+  highlight?: boolean;
 }
 
 interface RuleItem {
@@ -25,6 +26,7 @@ interface RuleItem {
 interface RewardItem {
   rank: string;
   items: string[];
+  image?: string;
 }
 
 interface FactionItem {
@@ -49,19 +51,35 @@ interface ContentBlock {
 
 async function getNationWarData(): Promise<NationWarData> {
   try {
-    const data = await graphqlFetch<{ contentBlock: ContentBlock | null }>(`
-      query {
-        contentBlock(key: "nationWar") {
-          key
-          payload
+    // 分別獲取 nationWar (rules, rewards) 和 warSchedule (時間表)
+    const [nationWarResult, warScheduleResult] = await Promise.all([
+      graphqlFetch<{ contentBlock: ContentBlock | null }>(`
+        query {
+          contentBlock(key: "nationWar") {
+            key
+            payload
+          }
         }
-      }
-    `, undefined, { skipCache: true });
+      `, undefined, { skipCache: true }),
+      graphqlFetch<{ contentBlock: { payload: WarScheduleItem[] } | null }>(`
+        query {
+          contentBlock(key: "warSchedule") {
+            key
+            payload
+          }
+        }
+      `, undefined, { skipCache: true })
+    ]);
 
-    if (data.contentBlock?.payload) {
-      return data.contentBlock.payload;
-    }
-    return { warSchedule: [], rules: [], rewards: [], factions: [] };
+    const nationWarPayload = nationWarResult.contentBlock?.payload || { rules: [], rewards: [], factions: [] };
+    const warSchedule = warScheduleResult.contentBlock?.payload || [];
+
+    return {
+      warSchedule,
+      rules: nationWarPayload.rules || [],
+      rewards: nationWarPayload.rewards || [],
+      factions: nationWarPayload.factions || []
+    };
   } catch (error) {
     console.error("獲取國戰資料失敗:", error);
     return { warSchedule: [], rules: [], rewards: [], factions: [] };
@@ -169,9 +187,6 @@ export default async function NationWarPage() {
                   <th className="px-4 py-3 text-left text-sm font-medium text-[var(--color-text)]">
                     類型
                   </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-[var(--color-text)]">
-                    說明
-                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[var(--color-border)]">
@@ -179,7 +194,7 @@ export default async function NationWarPage() {
                   <tr
                     key={index}
                     className={`hover:bg-[var(--color-bg-card-hover)] transition-colors ${
-                      schedule.type === "國戰" ? "bg-violet-500/5" : ""
+                      schedule.highlight ? "bg-violet-500/5" : ""
                     }`}
                   >
                     <td className="px-4 py-4 text-sm text-[var(--color-text)]">
@@ -196,16 +211,13 @@ export default async function NationWarPage() {
                         className={`text-sm px-2 py-1 rounded ${
                           schedule.type === "國戰"
                             ? "bg-violet-500/20 text-violet-400"
-                            : schedule.type === "練習賽"
-                            ? "bg-gray-500/20 text-gray-400"
+                            : schedule.type === "赤壁戰場"
+                            ? "bg-orange-500/20 text-orange-400"
                             : "bg-blue-500/20 text-blue-400"
                         }`}
                       >
                         {schedule.type}
                       </span>
-                    </td>
-                    <td className="px-4 py-4 text-sm text-[var(--color-text-muted)]">
-                      {schedule.description}
                     </td>
                   </tr>
                 ))}
@@ -257,35 +269,46 @@ export default async function NationWarPage() {
             {rewards.map((reward, index) => (
               <div
                 key={index}
-                className={`card p-5 ${
+                className={`card overflow-hidden ${
                   index === 0 ? "border-yellow-500/30 bg-yellow-500/5" : ""
                 }`}
               >
-                <div className="flex items-center gap-3 mb-3">
-                  <Star
-                    className={`w-5 h-5 ${
-                      index === 0
-                        ? "text-yellow-400"
-                        : index === 1
-                        ? "text-gray-400"
-                        : index === 2
-                        ? "text-orange-400"
-                        : "text-violet-400"
-                    }`}
-                  />
-                  <h3 className="text-lg font-semibold text-[var(--color-text)]">
-                    {reward.rank}
-                  </h3>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {(reward.items || []).map((item, i) => (
-                    <span
-                      key={i}
-                      className="px-3 py-1.5 rounded-lg bg-[var(--color-bg-darker)] text-[var(--color-text-muted)] text-sm"
-                    >
-                      {item}
-                    </span>
-                  ))}
+                {reward.image && (
+                  <div className="w-full h-32 overflow-hidden">
+                    <img
+                      src={reward.image}
+                      alt={reward.rank}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                )}
+                <div className="p-5">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Star
+                      className={`w-5 h-5 ${
+                        index === 0
+                          ? "text-yellow-400"
+                          : index === 1
+                          ? "text-gray-400"
+                          : index === 2
+                          ? "text-orange-400"
+                          : "text-violet-400"
+                      }`}
+                    />
+                    <h3 className="text-lg font-semibold text-[var(--color-text)]">
+                      {reward.rank}
+                    </h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {(reward.items || []).map((item, i) => (
+                      <span
+                        key={i}
+                        className="px-3 py-1.5 rounded-lg bg-[var(--color-bg-darker)] text-[var(--color-text-muted)] text-sm"
+                      >
+                        {item}
+                      </span>
+                    ))}
+                  </div>
                 </div>
               </div>
             ))}
