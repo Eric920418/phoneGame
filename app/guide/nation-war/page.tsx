@@ -301,10 +301,6 @@ export default async function NationWarPage() {
                       alt={faction.name}
                       className="w-full h-full object-cover"
                     />
-                    <div
-                      className="absolute inset-0"
-                      style={{ background: `linear-gradient(to top, var(--color-bg-card) 0%, transparent 100%)` }}
-                    />
                   </div>
                 )}
                 <h3
