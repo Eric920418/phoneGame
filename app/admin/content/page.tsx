@@ -7,7 +7,7 @@ import Link from "next/link";
 import {
   ArrowLeft, Save, AlertCircle, Check, Plus, Trash2,
   Megaphone, Heart, Download, Settings, BookOpen, Search,
-  Map, Gift, Skull, Swords, Trophy, Quote
+  Map, Gift, Skull, Swords, Trophy, Quote, Flag
 } from "lucide-react";
 import { graphqlFetch } from "@/lib/apolloClient";
 
@@ -22,6 +22,7 @@ const contentSections = [
   { key: "dungeons", title: "副本介紹", icon: Map, color: "#1abc9c" },
   { key: "treasureBoxes", title: "寶箱福袋內容", icon: Gift, color: "#f1c40f" },
   { key: "warSchedule", title: "國戰時間", icon: Swords, color: "#8e44ad" },
+  { key: "factions", title: "三國陣營", icon: Flag, color: "#6366f1" },
   { key: "arenaRanking", title: "三國排行", icon: Trophy, color: "#c9a227" },
   { key: "playerReviews", title: "玩家評價", icon: Quote, color: "#10b981" },
 ];
@@ -53,6 +54,9 @@ const defaultData: Record<string, unknown[]> = {
   ],
   warSchedule: [
     { day: "週六", time: "19:00-22:00", type: "國戰", highlight: true },
+  ],
+  factions: [
+    { name: "", color: "#3b82f6", leader: "", description: "", bonus: "", image: "" },
   ],
   arenaRanking: {
     levelRanking: [],
@@ -849,6 +853,111 @@ export default function AdminContentPage() {
                 />
                 <span className="text-[var(--color-text)] text-sm">重點活動 (特別標示)</span>
               </label>
+            </div>
+          );
+        });
+
+      case "factions":
+        return editingData.map((item: unknown, index: number) => {
+          const data = item as { name: string; color: string; leader: string; description: string; bonus: string; image?: string };
+
+          const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+              const res = await fetch("/api/upload", {
+                method: "POST",
+                body: formData,
+              });
+              const result = await res.json();
+              if (result.url) {
+                updateItem(index, "image", result.url);
+              } else {
+                setError("圖片上傳失敗");
+              }
+            } catch {
+              setError("圖片上傳失敗");
+            }
+          };
+
+          return (
+            <div key={index} className="card p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-[var(--color-primary)] font-medium">陣營 #{index + 1}</span>
+                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  value={data.name}
+                  onChange={(e) => updateItem(index, "name", e.target.value)}
+                  placeholder="陣營名稱"
+                  className="input"
+                />
+                <input
+                  type="text"
+                  value={data.leader}
+                  onChange={(e) => updateItem(index, "leader", e.target.value)}
+                  placeholder="陣營首領"
+                  className="input"
+                />
+                <div className="flex items-center gap-2">
+                  <span className="text-[var(--color-text-muted)] text-sm">顏色</span>
+                  <input
+                    type="color"
+                    value={data.color}
+                    onChange={(e) => updateItem(index, "color", e.target.value)}
+                    className="w-10 h-10 rounded cursor-pointer"
+                  />
+                </div>
+              </div>
+              <input
+                type="text"
+                value={data.description}
+                onChange={(e) => updateItem(index, "description", e.target.value)}
+                placeholder="陣營描述"
+                className="input w-full"
+              />
+              <input
+                type="text"
+                value={data.bonus}
+                onChange={(e) => updateItem(index, "bonus", e.target.value)}
+                placeholder="陣營加成 (如: 攻擊力加成 5%)"
+                className="input w-full"
+              />
+              <div>
+                <label className="text-[var(--color-text)] text-sm mb-2 block">陣營圖片</label>
+                <div className="flex gap-2">
+                  <label className="btn btn-secondary cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    選擇圖片
+                  </label>
+                  {data.image && (
+                    <button
+                      onClick={() => updateItem(index, "image", "")}
+                      className="btn btn-secondary text-red-400"
+                    >
+                      移除圖片
+                    </button>
+                  )}
+                </div>
+                {data.image && (
+                  <div className="mt-2 relative rounded-lg overflow-hidden border border-[var(--color-border)]">
+                    <img src={data.image} alt="預覽" className="w-full h-32 object-cover" />
+                  </div>
+                )}
+              </div>
             </div>
           );
         });

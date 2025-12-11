@@ -27,10 +27,20 @@ interface RewardItem {
   items: string[];
 }
 
+interface FactionItem {
+  name: string;
+  color: string;
+  leader: string;
+  description: string;
+  bonus: string;
+  image?: string;
+}
+
 interface NationWarData {
   warSchedule: WarScheduleItem[];
   rules: RuleItem[];
   rewards: RewardItem[];
+  factions: FactionItem[];
 }
 
 interface ContentBlock {
@@ -52,15 +62,41 @@ async function getNationWarData(): Promise<NationWarData> {
     if (data.contentBlock?.payload) {
       return data.contentBlock.payload;
     }
-    return { warSchedule: [], rules: [], rewards: [] };
+    return { warSchedule: [], rules: [], rewards: [], factions: [] };
   } catch (error) {
     console.error("獲取國戰資料失敗:", error);
-    return { warSchedule: [], rules: [], rewards: [] };
+    return { warSchedule: [], rules: [], rewards: [], factions: [] };
+  }
+}
+
+async function getFactionsData(): Promise<FactionItem[]> {
+  try {
+    const data = await graphqlFetch<{ contentBlock: { payload: FactionItem[] } | null }>(`
+      query {
+        contentBlock(key: "factions") {
+          key
+          payload
+        }
+      }
+    `, undefined, { skipCache: true });
+
+    if (data.contentBlock?.payload) {
+      return data.contentBlock.payload;
+    }
+    return [];
+  } catch (error) {
+    console.error("獲取陣營資料失敗:", error);
+    return [];
   }
 }
 
 export default async function NationWarPage() {
-  const { warSchedule, rules, rewards } = await getNationWarData();
+  const [nationWarData, factionsData] = await Promise.all([
+    getNationWarData(),
+    getFactionsData()
+  ]);
+  const { warSchedule, rules, rewards } = nationWarData;
+  const factions = factionsData.length > 0 ? factionsData : [];
 
   return (
     <div className="space-y-8">
@@ -245,41 +281,51 @@ export default async function NationWarPage() {
       )}
 
       {/* 陣營介紹 */}
-      <div>
-        <h2 className="text-xl font-bold text-[var(--color-text)] mb-4 flex items-center gap-2">
-          <Users className="w-5 h-5 text-[var(--color-primary)]" />
-          三國陣營
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="card p-5 border-blue-500/30">
-            <h3 className="text-xl font-bold text-blue-400 mb-2">魏國</h3>
-            <p className="text-sm text-[var(--color-text-muted)] mb-3">
-              以曹操為首，佔據中原，兵強馬壯。
-            </p>
-            <div className="text-xs text-[var(--color-text-dark)]">
-              特色：攻擊力加成 5%
-            </div>
-          </div>
-          <div className="card p-5 border-green-500/30">
-            <h3 className="text-xl font-bold text-green-400 mb-2">蜀國</h3>
-            <p className="text-sm text-[var(--color-text-muted)] mb-3">
-              以劉備為首，仁義之師，團結一心。
-            </p>
-            <div className="text-xs text-[var(--color-text-dark)]">
-              特色：防禦力加成 5%
-            </div>
-          </div>
-          <div className="card p-5 border-red-500/30">
-            <h3 className="text-xl font-bold text-red-400 mb-2">吳國</h3>
-            <p className="text-sm text-[var(--color-text-muted)] mb-3">
-              以孫權為首，據守江東，水師無敵。
-            </p>
-            <div className="text-xs text-[var(--color-text-dark)]">
-              特色：移動速度加成 5%
-            </div>
+      {factions.length > 0 && (
+        <div>
+          <h2 className="text-xl font-bold text-[var(--color-text)] mb-4 flex items-center gap-2">
+            <Users className="w-5 h-5 text-[var(--color-primary)]" />
+            三國陣營
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {factions.map((faction, index) => (
+              <div
+                key={index}
+                className="card p-5 overflow-hidden"
+                style={{ borderColor: `${faction.color}50` }}
+              >
+                {faction.image && (
+                  <div className="relative -mx-5 -mt-5 mb-4 h-32 overflow-hidden">
+                    <img
+                      src={faction.image}
+                      alt={faction.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <div
+                      className="absolute inset-0"
+                      style={{ background: `linear-gradient(to top, var(--color-bg-card) 0%, transparent 100%)` }}
+                    />
+                  </div>
+                )}
+                <h3
+                  className="text-xl font-bold mb-2"
+                  style={{ color: faction.color }}
+                >
+                  {faction.name}
+                </h3>
+                <p className="text-sm text-[var(--color-text-muted)] mb-3">
+                  {faction.leader && `以${faction.leader}為首，`}{faction.description}
+                </p>
+                {faction.bonus && (
+                  <div className="text-xs text-[var(--color-text-dark)]">
+                    特色：{faction.bonus}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

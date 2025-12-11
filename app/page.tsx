@@ -202,6 +202,7 @@ interface ContentBlocks {
   treasureBoxes?: typeof treasureBoxes;
   bossList?: typeof bossList;
   warSchedule?: typeof warSchedule;
+  factions?: { name: string; color: string; leader: string; description: string; bonus: string; image?: string }[];
   arenaRanking?: typeof arenaRanking;
   playerReviews?: typeof playerReviews;
 }
@@ -381,6 +382,7 @@ export default async function HomePage() {
   const displayTreasureBoxes = contentBlocks.treasureBoxes || treasureBoxes;
   const displayBossList = contentBlocks.bossList || bossList;
   const displayWarSchedule = contentBlocks.warSchedule || warSchedule;
+  const displayFactions = contentBlocks.factions || [];
   const displayArenaRanking = (contentBlocks.arenaRanking || arenaRanking) as {
     levelRanking?: { rank: number; name: string; guild: string; score: number }[];
     nationWarRanking?: { rank: number; name: string; guild: string; score: number }[];
@@ -699,25 +701,34 @@ export default async function HomePage() {
               color="#9b59b6"
               href="/guide/settings"
             />
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
-              {displayGameSettings.map((group, index) => (
-                <Link key={index} href="/guide/settings" className="card p-4 hover:border-purple-500/30 transition-all group">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center shrink-0">
-                      <Shield className="w-5 h-5 text-purple-400" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {displayGameSettings.map((group: { id?: string; name?: string; category?: string; color?: string; settings: { name: string }[] }, index: number) => {
+                // 優先使用 category（後台設定的組名稱），其次用 name
+                const displayName = group.category || group.name || `設定組 #${index + 1}`;
+                const defaultColors = ['#3498db', '#2ecc71', '#9b59b6', '#e74c3c', '#f39c12', '#1abc9c'];
+                const displayColor = group.color || defaultColors[index % defaultColors.length];
+                return (
+                  <Link key={group.id || index} href="/guide/settings" className="card p-4 hover:border-purple-500/30 transition-all group">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: `${displayColor}20` }}
+                      >
+                        <Shield className="w-5 h-5" style={{ color: displayColor }} />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-semibold text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors text-sm sm:text-base line-clamp-1">
+                          {displayName}
+                        </h3>
+                        <p className="text-xs text-[var(--color-text-muted)]">
+                          {group.settings.length} 項設定
+                        </p>
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-[var(--color-text-dark)] group-hover:text-[var(--color-primary)] transition-colors shrink-0" />
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="font-semibold text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors text-sm sm:text-base">
-                        {group.category}設定
-                      </h3>
-                      <p className="text-xs text-[var(--color-text-muted)]">
-                        {group.settings.length} 項設定建議
-                      </p>
-                    </div>
-                    <ChevronRight className="w-5 h-5 text-[var(--color-text-dark)] group-hover:text-[var(--color-primary)] transition-colors ml-auto shrink-0" />
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                );
+              })}
             </div>
           </FramedSection>
 
@@ -972,53 +983,49 @@ export default async function HomePage() {
                   三國陣營
                 </h3>
                 <div className="space-y-2 sm:space-y-3 overflow-y-auto flex-1">
-                  {[
-                    {
-                      name: "魏國",
-                      color: "#3b82f6",
-                      bonus: "攻+5%",
-                      desc: "曹操為首",
-                    },
-                    {
-                      name: "蜀國",
-                      color: "#22c55e",
-                      bonus: "防+5%",
-                      desc: "劉備為首",
-                    },
-                    {
-                      name: "吳國",
-                      color: "#ef4444",
-                      bonus: "速+5%",
-                      desc: "孫權為首",
-                    },
-                  ].map((faction, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]"
-                      style={{ borderLeft: `3px solid ${faction.color}` }}
-                    >
-                      <div className="min-w-0">
-                        <span
-                          className="font-bold text-sm"
-                          style={{ color: faction.color }}
-                        >
-                          {faction.name}
-                        </span>
-                        <p className="text-xs text-[var(--color-text-muted)] truncate">
-                          {faction.desc}
-                        </p>
-                      </div>
-                      <span
-                        className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 rounded shrink-0 ml-2"
-                        style={{
-                          backgroundColor: `${faction.color}20`,
-                          color: faction.color,
-                        }}
+                  {displayFactions.length > 0 ? (
+                    displayFactions.map((faction, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-3 p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]"
+                        style={{ borderLeft: `3px solid ${faction.color}` }}
                       >
-                        {faction.bonus}
-                      </span>
+                        {faction.image && (
+                          <img
+                            src={faction.image}
+                            alt={faction.name}
+                            className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover shrink-0"
+                          />
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <span
+                            className="font-bold text-sm"
+                            style={{ color: faction.color }}
+                          >
+                            {faction.name}
+                          </span>
+                          <p className="text-xs text-[var(--color-text-muted)] truncate">
+                            {faction.leader && `${faction.leader}為首`}
+                          </p>
+                        </div>
+                        {faction.bonus && (
+                          <span
+                            className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 rounded shrink-0"
+                            style={{
+                              backgroundColor: `${faction.color}20`,
+                              color: faction.color,
+                            }}
+                          >
+                            {faction.bonus}
+                          </span>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-[var(--color-text-muted)] text-sm">
+                      暫無陣營資料
                     </div>
-                  ))}
+                  )}
                 </div>
               </Link>
             </div>
