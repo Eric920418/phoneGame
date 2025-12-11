@@ -2,15 +2,51 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, Crown, MessageSquare, Bell, Star } from "lucide-react";
+import { Menu, X, Crown, MessageSquare, Bell, Star, ChevronDown, Settings, BookOpen, Search, Gift, Download, Megaphone } from "lucide-react";
 import UserMenu from "./UserMenu";
+
+// 下拉選單項目介面
+interface DropdownItem {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+}
+
+// 導航項目介面
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ElementType;
+  dropdown?: DropdownItem[];
+}
 
 export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [mobileOpenDropdown, setMobileOpenDropdown] = useState<string | null>(null);
 
-  const navItems = [
-    { href: "/", label: "首頁", icon: Crown },
-    { href: "/announcements", label: "公告", icon: Bell },
+  const navItems: NavItem[] = [
+    {
+      href: "/",
+      label: "首頁",
+      icon: Crown,
+      dropdown: [
+        { href: "/#settings", label: "遊戲設定", icon: Settings },
+        { href: "/#beginner", label: "新手攻略", icon: BookOpen },
+        { href: "/#drops", label: "掉落查詢", icon: Search },
+        { href: "/#treasure", label: "寶相福袋內容", icon: Gift },
+        { href: "/#download", label: "下載專區", icon: Download },
+      ]
+    },
+    {
+      href: "/announcements",
+      label: "公告",
+      icon: Bell,
+      dropdown: [
+        { href: "/#announcements", label: "活動公告", icon: Megaphone },
+        { href: "/announcements", label: "最新公告", icon: Bell },
+      ]
+    },
     { href: "/forum", label: "論壇", icon: MessageSquare },
     { href: "/#reviews", label: "玩家評價", icon: Star },
   ];
@@ -25,14 +61,51 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className="flex items-center gap-2 px-4 py-2 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-card)] transition-all"
+              <div
+                key={item.label}
+                className="relative"
+                onMouseEnter={() => item.dropdown && setOpenDropdown(item.label)}
+                onMouseLeave={() => setOpenDropdown(null)}
               >
-                <item.icon className="w-4 h-4" />
-                <span>{item.label}</span>
-              </Link>
+                {item.dropdown ? (
+                  // 有下拉選單的項目
+                  <button
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-card)] transition-all"
+                  >
+                    <item.icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                    <ChevronDown className={`w-3 h-3 transition-transform ${openDropdown === item.label ? 'rotate-180' : ''}`} />
+                  </button>
+                ) : (
+                  // 無下拉選單的項目 - 直接跳轉
+                  <Link
+                    href={item.href}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-card)] transition-all"
+                  >
+                    <item.icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </Link>
+                )}
+
+                {/* 下拉選單 */}
+                {item.dropdown && openDropdown === item.label && (
+                  <div className="absolute top-full left-0 pt-2 min-w-[180px]">
+                    <div className="py-2 bg-[var(--color-bg-darker)] border border-[var(--color-border)] rounded-lg shadow-xl animate-fadeIn">
+                      {item.dropdown.map((dropItem) => (
+                        <Link
+                          key={dropItem.href}
+                          href={dropItem.href}
+                          className="flex items-center gap-3 px-4 py-2.5 text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-card)] transition-all"
+                          onClick={() => setOpenDropdown(null)}
+                        >
+                          <dropItem.icon className="w-4 h-4" />
+                          <span className="text-sm">{dropItem.label}</span>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
 
@@ -60,17 +133,54 @@ export default function Header() {
               <UserMenu />
             </div>
 
-            <nav className="flex flex-col gap-2">
+            <nav className="flex flex-col gap-1">
               {navItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-card)] transition-all"
-                >
-                  <item.icon className="w-5 h-5" />
-                  <span>{item.label}</span>
-                </Link>
+                <div key={item.label}>
+                  {item.dropdown ? (
+                    // 有下拉選單的項目
+                    <>
+                      <button
+                        onClick={() => setMobileOpenDropdown(mobileOpenDropdown === item.label ? null : item.label)}
+                        className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-card)] transition-all"
+                      >
+                        <div className="flex items-center gap-3">
+                          <item.icon className="w-5 h-5" />
+                          <span>{item.label}</span>
+                        </div>
+                        <ChevronDown className={`w-4 h-4 transition-transform ${mobileOpenDropdown === item.label ? 'rotate-180' : ''}`} />
+                      </button>
+                      {/* 手機版下拉選單內容 */}
+                      {mobileOpenDropdown === item.label && (
+                        <div className="ml-4 pl-4 border-l border-[var(--color-border)] animate-fadeIn">
+                          {item.dropdown.map((dropItem) => (
+                            <Link
+                              key={dropItem.href}
+                              href={dropItem.href}
+                              onClick={() => {
+                                setIsMenuOpen(false);
+                                setMobileOpenDropdown(null);
+                              }}
+                              className="flex items-center gap-3 px-4 py-2.5 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-card)] transition-all"
+                            >
+                              <dropItem.icon className="w-4 h-4" />
+                              <span className="text-sm">{dropItem.label}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    // 無下拉選單的項目 - 直接跳轉
+                    <Link
+                      href={item.href}
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center gap-3 px-4 py-3 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-card)] transition-all"
+                    >
+                      <item.icon className="w-5 h-5" />
+                      <span>{item.label}</span>
+                    </Link>
+                  )}
+                </div>
               ))}
             </nav>
           </div>

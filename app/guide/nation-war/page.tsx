@@ -33,7 +33,6 @@ interface FactionItem {
   leader: string;
   description: string;
   bonus: string;
-  image?: string;
 }
 
 interface NationWarData {
@@ -90,10 +89,32 @@ async function getFactionsData(): Promise<FactionItem[]> {
   }
 }
 
+async function getFactionsImage(): Promise<string> {
+  try {
+    const data = await graphqlFetch<{ contentBlock: { payload: { image?: string }[] } | null }>(`
+      query {
+        contentBlock(key: "factionsImage") {
+          key
+          payload
+        }
+      }
+    `, undefined, { skipCache: true });
+
+    if (data.contentBlock?.payload?.[0]?.image) {
+      return data.contentBlock.payload[0].image;
+    }
+    return "";
+  } catch (error) {
+    console.error("獲取陣營圖片失敗:", error);
+    return "";
+  }
+}
+
 export default async function NationWarPage() {
-  const [nationWarData, factionsData] = await Promise.all([
+  const [nationWarData, factionsData, factionsImage] = await Promise.all([
     getNationWarData(),
-    getFactionsData()
+    getFactionsData(),
+    getFactionsImage()
   ]);
   const { warSchedule, rules, rewards } = nationWarData;
   const factions = factionsData.length > 0 ? factionsData : [];
@@ -287,22 +308,22 @@ export default async function NationWarPage() {
             <Users className="w-5 h-5 text-[var(--color-primary)]" />
             三國陣營
           </h2>
+          {factionsImage && (
+            <div className="mb-4 rounded-xl overflow-hidden">
+              <img
+                src={factionsImage}
+                alt="三國陣營"
+                className="w-full h-auto object-cover"
+              />
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {factions.map((faction, index) => (
               <div
                 key={index}
-                className="card p-5 overflow-hidden"
+                className="card p-5"
                 style={{ borderColor: `${faction.color}50` }}
               >
-                {faction.image && (
-                  <div className="relative -mx-5 -mt-5 mb-4 h-32 overflow-hidden">
-                    <img
-                      src={faction.image}
-                      alt={faction.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                )}
                 <h3
                   className="text-xl font-bold mb-2"
                   style={{ color: faction.color }}

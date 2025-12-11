@@ -202,7 +202,8 @@ interface ContentBlocks {
   treasureBoxes?: typeof treasureBoxes;
   bossList?: typeof bossList;
   warSchedule?: typeof warSchedule;
-  factions?: { name: string; color: string; leader: string; description: string; bonus: string; image?: string }[];
+  factions?: { name: string; color: string; leader: string; description: string; bonus: string }[];
+  factionsImage?: { image?: string }[];
   arenaRanking?: typeof arenaRanking;
   playerReviews?: typeof playerReviews;
 }
@@ -383,6 +384,7 @@ export default async function HomePage() {
   const displayBossList = contentBlocks.bossList || bossList;
   const displayWarSchedule = contentBlocks.warSchedule || warSchedule;
   const displayFactions = contentBlocks.factions || [];
+  const displayFactionsImage = contentBlocks.factionsImage?.[0]?.image || "";
   const displayArenaRanking = (contentBlocks.arenaRanking || arenaRanking) as {
     levelRanking?: { rank: number; name: string; guild: string; score: number }[];
     nationWarRanking?: { rank: number; name: string; guild: string; score: number }[];
@@ -977,26 +979,28 @@ export default async function HomePage() {
               </Link>
 
               {/* 三國陣營 */}
-              <Link href="/guide/nation-war" className="card p-4 h-[300px] flex flex-col hover:border-violet-500/30 transition-all">
-                <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
+              <Link href="/guide/nation-war" className="card p-4 h-[300px] flex flex-col hover:border-violet-500/30 transition-all overflow-hidden">
+                <h3 className="font-semibold text-[var(--color-text)] mb-3 flex items-center gap-2 text-sm sm:text-base shrink-0">
                   <Flag className="w-4 h-4 text-violet-400" />
                   三國陣營
                 </h3>
+                {displayFactionsImage && (
+                  <div className="mb-3 -mx-4 shrink-0">
+                    <img
+                      src={displayFactionsImage}
+                      alt="三國陣營"
+                      className="w-full h-24 object-cover"
+                    />
+                  </div>
+                )}
                 <div className="space-y-2 sm:space-y-3 overflow-y-auto flex-1">
                   {displayFactions.length > 0 ? (
                     displayFactions.map((faction, index) => (
                       <div
                         key={index}
-                        className="flex items-center gap-3 p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]"
+                        className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]"
                         style={{ borderLeft: `3px solid ${faction.color}` }}
                       >
-                        {faction.image && (
-                          <img
-                            src={faction.image}
-                            alt={faction.name}
-                            className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg object-cover shrink-0"
-                          />
-                        )}
                         <div className="min-w-0 flex-1">
                           <span
                             className="font-bold text-sm"
@@ -1010,7 +1014,7 @@ export default async function HomePage() {
                         </div>
                         {faction.bonus && (
                           <span
-                            className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 rounded shrink-0"
+                            className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-1 rounded shrink-0 ml-2"
                             style={{
                               backgroundColor: `${faction.color}20`,
                               color: faction.color,
