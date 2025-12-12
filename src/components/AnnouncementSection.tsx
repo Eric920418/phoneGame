@@ -35,7 +35,7 @@ interface AnnouncementSectionProps {
 const filterButtons: { type: FilterType; label: string; icon: React.ElementType; color: string }[] = [
   { type: "all", label: "最新", icon: Bell, color: "var(--color-primary)" },
   { type: "event", label: "活動", icon: Megaphone, color: "#e74c3c" },
-  { type: "war", label: "團戰", icon: Swords, color: "#8e44ad" },
+  { type: "general", label: "一般", icon: Bell, color: "#8e44ad" },
   { type: "update", label: "更新", icon: RefreshCw, color: "#3498db" },
 ];
 

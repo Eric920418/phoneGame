@@ -70,11 +70,11 @@ export default function Header() {
                 onMouseLeave={() => setOpenDropdown(null)}
               >
                 {item.dropdown ? (
-                  // 有下拉選單的項目 - 文字可點擊跳轉
+                  // 有下拉選單的項目 - icon 和文字可點擊跳轉
                   <div className="flex items-center gap-2 px-4 py-2 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-card)] transition-all">
-                    <item.icon className="w-4 h-4" />
-                    <Link href={item.href} className="hover:text-[var(--color-primary)]">
-                      {item.label}
+                    <Link href={item.href} className="flex items-center gap-2 hover:text-[var(--color-primary)]">
+                      <item.icon className="w-4 h-4" />
+                      <span>{item.label}</span>
                     </Link>
                     <ChevronDown className={`w-3 h-3 transition-transform ${openDropdown === item.label ? 'rotate-180' : ''}`} />
                   </div>
@@ -139,19 +139,17 @@ export default function Header() {
               {navItems.map((item) => (
                 <div key={item.label}>
                   {item.dropdown ? (
-                    // 有下拉選單的項目
+                    // 有下拉選單的項目 - icon 和文字可點擊跳轉
                     <>
                       <div className="w-full flex items-center justify-between px-4 py-3 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-card)] transition-all">
-                        <div className="flex items-center gap-3">
+                        <Link
+                          href={item.href}
+                          onClick={() => setIsMenuOpen(false)}
+                          className="flex items-center gap-3 hover:text-[var(--color-primary)]"
+                        >
                           <item.icon className="w-5 h-5" />
-                          <Link
-                            href={item.href}
-                            onClick={() => setIsMenuOpen(false)}
-                            className="hover:text-[var(--color-primary)]"
-                          >
-                            {item.label}
-                          </Link>
-                        </div>
+                          <span>{item.label}</span>
+                        </Link>
                         <button onClick={() => setMobileOpenDropdown(mobileOpenDropdown === item.label ? null : item.label)}>
                           <ChevronDown className={`w-4 h-4 transition-transform ${mobileOpenDropdown === item.label ? 'rotate-180' : ''}`} />
                         </button>
