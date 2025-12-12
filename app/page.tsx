@@ -48,7 +48,9 @@ interface Announcement {
   title: string;
   slug: string;
   excerpt: string;
+  coverImage: string | null;
   type: string;
+  isHot: boolean;
   publishedAt: string;
 }
 
@@ -182,18 +184,7 @@ const playerReviews = [
 ];
 
 // ==================== 內容區塊介面 ====================
-interface EventAnnouncementItem {
-  id: number;
-  title: string;
-  date: string;
-  type: string;
-  isHot: boolean;
-  image?: string;
-  content?: string;
-}
-
 interface ContentBlocks {
-  eventAnnouncements?: EventAnnouncementItem[];
   sponsorPlans?: typeof sponsorPlans;
   downloadItems?: typeof downloadItems;
   gameSettings?: typeof gameSettings;
@@ -217,12 +208,14 @@ async function getHomeData() {
       categories: Category[];
     }>(`
       query {
-        latestAnnouncements(limit: 5) {
+        latestAnnouncements(limit: 20) {
           id
           title
           slug
           excerpt
+          coverImage
           type
+          isHot
           publishedAt
         }
         categories {
@@ -373,7 +366,6 @@ export default async function HomePage() {
   ]);
 
   // 使用数据库数据
-  const displayEventAnnouncements = contentBlocks.eventAnnouncements || [];
   const displaySponsorPlans = contentBlocks.sponsorPlans || sponsorPlans;
   const displayDownloadItems = contentBlocks.downloadItems || downloadItems;
   const displayGameSettings = contentBlocks.gameSettings || gameSettings;
@@ -452,12 +444,9 @@ export default async function HomePage() {
 
         {/* 內容容器 - 手機版減少左右 padding 讓金屬框有更多空間 */}
         <div className="relative z-10 max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-12 space-y-6 sm:space-y-8 md:space-y-12">
-          {/* ==================== 1. 公告 Section (合併最新+活動) ==================== */}
+          {/* ==================== 1. 公告 Section ==================== */}
           <FramedSection id="announcements" compact={false}>
-            <AnnouncementSection
-              latestAnnouncements={latestAnnouncements}
-              eventAnnouncements={displayEventAnnouncements}
-            />
+            <AnnouncementSection announcements={latestAnnouncements} />
           </FramedSection>
 
           {/* ==================== 討論區 Section ==================== */}

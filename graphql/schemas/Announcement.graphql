@@ -7,6 +7,7 @@ type Announcement {
   coverImage: String
   type: String!
   isPinned: Boolean!
+  isHot: Boolean!
   isPublished: Boolean!
   publishedAt: String!
   createdAt: String!
@@ -36,6 +37,7 @@ input CreateAnnouncementInput {
   coverImage: String
   type: String
   isPinned: Boolean
+  isHot: Boolean
   isPublished: Boolean
 }
 
@@ -47,6 +49,7 @@ input UpdateAnnouncementInput {
   coverImage: String
   type: String
   isPinned: Boolean
+  isHot: Boolean
   isPublished: Boolean
 }
 

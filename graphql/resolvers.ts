@@ -379,7 +379,7 @@ const AnnouncementResolvers = {
     },
   },
   Mutation: {
-    createAnnouncement: async (_: unknown, { input }: { input: { title: string; slug: string; content: string; excerpt?: string; coverImage?: string; type?: string; isPinned?: boolean; isPublished?: boolean } }) => {
+    createAnnouncement: async (_: unknown, { input }: { input: { title: string; slug: string; content: string; excerpt?: string; coverImage?: string; type?: string; isPinned?: boolean; isHot?: boolean; isPublished?: boolean } }) => {
       try {
         return await prisma.announcement.create({
           data: {
@@ -392,7 +392,7 @@ const AnnouncementResolvers = {
         throw error;
       }
     },
-    updateAnnouncement: async (_: unknown, { id, input }: { id: number; input: { title?: string; slug?: string; content?: string; excerpt?: string; coverImage?: string; type?: string; isPinned?: boolean; isPublished?: boolean } }) => {
+    updateAnnouncement: async (_: unknown, { id, input }: { id: number; input: { title?: string; slug?: string; content?: string; excerpt?: string; coverImage?: string; type?: string; isPinned?: boolean; isHot?: boolean; isPublished?: boolean } }) => {
       return await prisma.announcement.update({
         where: { id },
         data: input,

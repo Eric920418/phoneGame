@@ -21,23 +21,14 @@ interface Announcement {
   title: string;
   slug: string;
   excerpt?: string;
+  coverImage?: string | null;
   type: string;
+  isHot: boolean;
   publishedAt: string;
 }
 
-interface EventAnnouncement {
-  id: number;
-  title: string;
-  date: string;
-  type: string;
-  isHot: boolean;
-  image?: string;
-  content?: string;
-}
-
 interface AnnouncementSectionProps {
-  latestAnnouncements: Announcement[];
-  eventAnnouncements: EventAnnouncement[];
+  announcements: Announcement[];
 }
 
 // 篩選按鈕配置
@@ -56,8 +47,8 @@ function formatDate(dateString: string) {
 function getTypeStyle(type: string) {
   switch (type) {
     case "update": return "bg-blue-500/10 text-blue-400 border-blue-500/20";
-    case "event": return "bg-purple-500/10 text-purple-400 border-purple-500/20";
-    case "maintenance": return "bg-red-500/10 text-red-400 border-red-500/20";
+    case "event": return "bg-red-500/10 text-red-400 border-red-500/20";
+    case "maintenance": return "bg-orange-500/10 text-orange-400 border-orange-500/20";
     case "war": return "bg-violet-500/10 text-violet-400 border-violet-500/20";
     default: return "bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/20";
   }
@@ -74,62 +65,20 @@ function getTypeLabel(type: string) {
 }
 
 export default function AnnouncementSection({
-  latestAnnouncements,
-  eventAnnouncements,
+  announcements,
 }: AnnouncementSectionProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
 
-  // 合併所有公告並根據篩選類型過濾
+  // 根據篩選類型過濾
   const getFilteredAnnouncements = () => {
-    // 將活動公告轉換成統一格式
-    const convertedEventAnnouncements = eventAnnouncements.map((ea) => ({
-      id: ea.id,
-      title: ea.title,
-      slug: String(ea.id),
-      excerpt: ea.content || "",
-      type: ea.type?.toLowerCase().includes("團戰") || ea.type?.toLowerCase().includes("war") ? "war" : "event",
-      publishedAt: ea.date,
-      isHot: ea.isHot,
-      image: ea.image,
-      isEvent: true,
-    }));
-
-    // 將最新公告轉換成統一格式
-    const convertedLatestAnnouncements = latestAnnouncements.map((la) => ({
-      id: la.id,
-      title: la.title,
-      slug: la.slug,
-      excerpt: la.excerpt || "",
-      type: la.type,
-      publishedAt: la.publishedAt,
-      isHot: false,
-      image: undefined,
-      isEvent: false,
-    }));
-
-    // 合併所有公告
-    const allAnnouncements = [...convertedEventAnnouncements, ...convertedLatestAnnouncements];
-
-    // 根據篩選類型過濾
     if (activeFilter === "all") {
       // 按日期排序，顯示最新的
-      return allAnnouncements.sort((a, b) =>
+      return [...announcements].sort((a, b) =>
         new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
       );
     }
 
-    return allAnnouncements.filter((a) => {
-      if (activeFilter === "event") {
-        return a.type === "event" || a.isEvent;
-      }
-      if (activeFilter === "war") {
-        return a.type === "war";
-      }
-      if (activeFilter === "update") {
-        return a.type === "update";
-      }
-      return true;
-    });
+    return announcements.filter((a) => a.type === activeFilter);
   };
 
   const filteredAnnouncements = getFilteredAnnouncements();
@@ -178,15 +127,15 @@ export default function AnnouncementSection({
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           {filteredAnnouncements.slice(0, 8).map((announcement) => (
             <Link
-              key={`${announcement.isEvent ? 'event' : 'latest'}-${announcement.id}`}
-              href={announcement.isEvent ? `/guide/announcements/${announcement.id}` : `/announcements/${announcement.slug}`}
+              key={announcement.id}
+              href={`/announcements/${announcement.slug}`}
               className="card p-3 sm:p-4 hover:border-[var(--color-primary)]/30 transition-all group"
             >
               {/* 圖片 (如果有) */}
-              {announcement.image && (
+              {announcement.coverImage && (
                 <div className="relative w-full h-20 sm:h-24 rounded-lg overflow-hidden mb-2 border border-[var(--color-border)]">
                   <Image
-                    src={announcement.image}
+                    src={announcement.coverImage}
                     alt={announcement.title}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform"
@@ -213,7 +162,7 @@ export default function AnnouncementSection({
               </h3>
 
               {/* 摘要 */}
-              {announcement.excerpt && !announcement.image && (
+              {announcement.excerpt && !announcement.coverImage && (
                 <p className="text-[var(--color-text-muted)] text-xs sm:text-sm mb-2 line-clamp-2">
                   {announcement.excerpt}
                 </p>

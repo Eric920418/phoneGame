@@ -4,7 +4,8 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Plus, Edit, Trash2, Pin, Eye, EyeOff, AlertCircle } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft, Plus, Edit, Trash2, Pin, Eye, EyeOff, AlertCircle, Flame, ImageIcon, X } from "lucide-react";
 import { graphqlFetch } from "@/lib/apolloClient";
 
 interface Announcement {
@@ -13,10 +14,36 @@ interface Announcement {
   slug: string;
   content: string;
   excerpt: string;
+  coverImage: string | null;
   type: string;
   isPinned: boolean;
+  isHot: boolean;
   isPublished: boolean;
   publishedAt: string;
+}
+
+// 類型配置
+const typeOptions = [
+  { value: "general", label: "一般公告", color: "var(--color-primary)" },
+  { value: "event", label: "活動公告", color: "#e74c3c" },
+  { value: "war", label: "團戰公告", color: "#8e44ad" },
+  { value: "update", label: "更新公告", color: "#3498db" },
+  { value: "maintenance", label: "維護公告", color: "#e67e22" },
+];
+
+function getTypeStyle(type: string) {
+  const option = typeOptions.find(o => o.value === type);
+  const color = option?.color || "var(--color-primary)";
+  return {
+    backgroundColor: `${color}20`,
+    color: color,
+    borderColor: `${color}40`,
+  };
+}
+
+function getTypeLabel(type: string) {
+  const option = typeOptions.find(o => o.value === type);
+  return option?.label || "公告";
 }
 
 export default function AdminAnnouncementsPage() {
@@ -34,11 +61,17 @@ export default function AdminAnnouncementsPage() {
     title: "",
     content: "",
     excerpt: "",
+    coverImage: "",
     type: "general",
     isPinned: false,
+    isHot: false,
     isPublished: true,
   });
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+
+  // 篩選狀態
+  const [filterType, setFilterType] = useState<string>("all");
 
   useEffect(() => {
     if (!isLoading && (!user || !user.isAdmin)) {
@@ -57,8 +90,10 @@ export default function AdminAnnouncementsPage() {
               slug
               content
               excerpt
+              coverImage
               type
               isPinned
+              isHot
               isPublished
               publishedAt
             }
@@ -74,7 +109,6 @@ export default function AdminAnnouncementsPage() {
   }, []);
 
   useEffect(() => {
-    // 使用 user?.id 而非整個 user 對象，防止重複觸發
     if (!user?.id || fetchedRef.current) return;
     fetchedRef.current = true;
     fetchAnnouncements();
@@ -86,6 +120,32 @@ export default function AdminAnnouncementsPage() {
       .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-")
       .replace(/^-|-$/g, "")
       + "-" + Date.now();
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const uploadFormData = new FormData();
+    uploadFormData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: uploadFormData,
+      });
+      const result = await res.json();
+      if (result.url) {
+        setFormData({ ...formData, coverImage: result.url });
+      } else {
+        setError("圖片上傳失敗");
+      }
+    } catch {
+      setError("圖片上傳失敗");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -109,8 +169,10 @@ export default function AdminAnnouncementsPage() {
             title: formData.title,
             content: formData.content,
             excerpt: formData.excerpt,
+            coverImage: formData.coverImage || null,
             type: formData.type,
             isPinned: formData.isPinned,
+            isHot: formData.isHot,
             isPublished: formData.isPublished,
           },
         });
@@ -127,8 +189,10 @@ export default function AdminAnnouncementsPage() {
             slug,
             content: formData.content,
             excerpt: formData.excerpt,
+            coverImage: formData.coverImage || null,
             type: formData.type,
             isPinned: formData.isPinned,
+            isHot: formData.isHot,
             isPublished: formData.isPublished,
           },
         });
@@ -140,11 +204,13 @@ export default function AdminAnnouncementsPage() {
         title: "",
         content: "",
         excerpt: "",
+        coverImage: "",
         type: "general",
         isPinned: false,
+        isHot: false,
         isPublished: true,
       });
-      fetchedRef.current = false; // 允許重新請求
+      fetchedRef.current = false;
       fetchAnnouncements();
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失敗");
@@ -162,13 +228,17 @@ export default function AdminAnnouncementsPage() {
           deleteAnnouncement(id: $id)
         }
       `, { id });
-      // 直接從本地狀態移除
       setAnnouncements(prev => prev.filter(a => a.id !== id));
     } catch (err) {
       console.error("刪除失敗:", err);
       alert("刪除失敗：" + (err instanceof Error ? err.message : "未知錯誤"));
     }
   };
+
+  // 篩選公告
+  const filteredAnnouncements = filterType === "all"
+    ? announcements
+    : announcements.filter(a => a.type === filterType);
 
   if (isLoading || loading) {
     return (
@@ -192,7 +262,7 @@ export default function AdminAnnouncementsPage() {
             </Link>
             <div>
               <h1 className="text-2xl font-bold text-[var(--color-text)]">公告管理</h1>
-              <p className="text-[var(--color-text-muted)] text-sm">管理官方公告</p>
+              <p className="text-[var(--color-text-muted)] text-sm">管理官方公告（包含活動、團戰、更新等）</p>
             </div>
           </div>
           <button
@@ -203,8 +273,10 @@ export default function AdminAnnouncementsPage() {
                 title: "",
                 content: "",
                 excerpt: "",
+                coverImage: "",
                 type: "general",
                 isPinned: false,
+                isHot: false,
                 isPublished: true,
               });
             }}
@@ -213,6 +285,37 @@ export default function AdminAnnouncementsPage() {
             <Plus className="w-4 h-4" />
             新增公告
           </button>
+        </div>
+
+        {/* 篩選器 */}
+        <div className="mb-6 flex flex-wrap gap-2">
+          <button
+            onClick={() => setFilterType("all")}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+              filterType === "all"
+                ? "bg-[var(--color-primary)] text-white"
+                : "bg-[var(--color-bg-card)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+            }`}
+          >
+            全部 ({announcements.length})
+          </button>
+          {typeOptions.map(option => {
+            const count = announcements.filter(a => a.type === option.value).length;
+            return (
+              <button
+                key={option.value}
+                onClick={() => setFilterType(option.value)}
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  filterType === option.value
+                    ? "text-white"
+                    : "bg-[var(--color-bg-card)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
+                }`}
+                style={filterType === option.value ? { backgroundColor: option.color } : undefined}
+              >
+                {option.label} ({count})
+              </button>
+            );
+          })}
         </div>
 
         {/* Form Modal */}
@@ -253,9 +356,11 @@ export default function AdminAnnouncementsPage() {
                     onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                     className="input"
                   >
-                    <option value="general">一般公告</option>
-                    <option value="event">活動公告</option>
-                    <option value="maintenance">維護公告</option>
+                    {typeOptions.map(option => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -272,19 +377,60 @@ export default function AdminAnnouncementsPage() {
                   />
                 </div>
 
+                {/* 圖片上傳 */}
                 <div>
                   <label className="block text-[var(--color-text)] text-sm font-medium mb-2">
-                    內容
+                    封面圖片
+                  </label>
+                  <div className="flex gap-2 mb-2">
+                    <label className="btn btn-secondary cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        disabled={uploading}
+                      />
+                      <ImageIcon className="w-4 h-4 mr-1" />
+                      {uploading ? "上傳中..." : "選擇圖片"}
+                    </label>
+                    {formData.coverImage && (
+                      <button
+                        type="button"
+                        onClick={() => setFormData({ ...formData, coverImage: "" })}
+                        className="btn btn-secondary text-red-400"
+                      >
+                        <X className="w-4 h-4 mr-1" />
+                        移除圖片
+                      </button>
+                    )}
+                  </div>
+                  {formData.coverImage && (
+                    <div className="relative rounded-lg overflow-hidden border border-[var(--color-border)]">
+                      <Image
+                        src={formData.coverImage}
+                        alt="預覽"
+                        width={400}
+                        height={200}
+                        className="w-full h-40 object-cover"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-[var(--color-text)] text-sm font-medium mb-2">
+                    內容 (支援 HTML)
                   </label>
                   <textarea
                     value={formData.content}
                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    className="input min-h-[200px] resize-y"
+                    className="input min-h-[200px] resize-y font-mono text-sm"
                     required
                   />
                 </div>
 
-                <div className="flex items-center gap-6">
+                <div className="flex items-center gap-6 flex-wrap">
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
                       type="checkbox"
@@ -292,7 +438,22 @@ export default function AdminAnnouncementsPage() {
                       onChange={(e) => setFormData({ ...formData, isPinned: e.target.checked })}
                       className="w-4 h-4"
                     />
-                    <span className="text-[var(--color-text)] text-sm">置頂</span>
+                    <span className="text-[var(--color-text)] text-sm flex items-center gap-1">
+                      <Pin className="w-4 h-4" />
+                      置頂
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.isHot}
+                      onChange={(e) => setFormData({ ...formData, isHot: e.target.checked })}
+                      className="w-4 h-4"
+                    />
+                    <span className="text-[var(--color-text)] text-sm flex items-center gap-1">
+                      <Flame className="w-4 h-4 text-red-400" />
+                      熱門
+                    </span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input
@@ -301,7 +462,10 @@ export default function AdminAnnouncementsPage() {
                       onChange={(e) => setFormData({ ...formData, isPublished: e.target.checked })}
                       className="w-4 h-4"
                     />
-                    <span className="text-[var(--color-text)] text-sm">發布</span>
+                    <span className="text-[var(--color-text)] text-sm flex items-center gap-1">
+                      <Eye className="w-4 h-4" />
+                      發布
+                    </span>
                   </label>
                 </div>
 
@@ -328,27 +492,49 @@ export default function AdminAnnouncementsPage() {
 
         {/* List */}
         <div className="space-y-3">
-          {announcements.map((announcement) => (
+          {filteredAnnouncements.map((announcement) => (
             <div key={announcement.id} className="card p-4 flex items-center gap-4">
+              {/* 封面圖片縮圖 */}
+              {announcement.coverImage && (
+                <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-[var(--color-border)] shrink-0">
+                  <Image
+                    src={announcement.coverImage}
+                    alt={announcement.title}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   {announcement.isPinned && (
                     <Pin className="w-4 h-4 text-[var(--color-primary)]" />
+                  )}
+                  {announcement.isHot && (
+                    <Flame className="w-4 h-4 text-red-400" />
                   )}
                   {announcement.isPublished ? (
                     <Eye className="w-4 h-4 text-green-400" />
                   ) : (
                     <EyeOff className="w-4 h-4 text-[var(--color-text-dark)]" />
                   )}
-                  <span className="text-xs text-[var(--color-text-muted)]">
-                    {announcement.type}
+                  <span
+                    className="text-xs px-2 py-0.5 rounded border"
+                    style={getTypeStyle(announcement.type)}
+                  >
+                    {getTypeLabel(announcement.type)}
                   </span>
                 </div>
                 <h3 className="text-[var(--color-text)] font-medium truncate">
                   {announcement.title}
                 </h3>
+                {announcement.excerpt && (
+                  <p className="text-[var(--color-text-muted)] text-sm truncate">
+                    {announcement.excerpt}
+                  </p>
+                )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   onClick={() => {
                     setEditingId(announcement.id);
@@ -356,8 +542,10 @@ export default function AdminAnnouncementsPage() {
                       title: announcement.title,
                       content: announcement.content || "",
                       excerpt: announcement.excerpt || "",
+                      coverImage: announcement.coverImage || "",
                       type: announcement.type,
                       isPinned: announcement.isPinned,
+                      isHot: announcement.isHot,
                       isPublished: announcement.isPublished,
                     });
                     setShowForm(true);
@@ -376,7 +564,7 @@ export default function AdminAnnouncementsPage() {
             </div>
           ))}
 
-          {announcements.length === 0 && (
+          {filteredAnnouncements.length === 0 && (
             <div className="card p-8 text-center">
               <p className="text-[var(--color-text-muted)]">暫無公告</p>
             </div>

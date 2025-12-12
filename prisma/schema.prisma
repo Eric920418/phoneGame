@@ -95,8 +95,9 @@ model Announcement {
   content     String
   excerpt     String?
   coverImage  String?
-  type        String    @default("general") // general, update, event, maintenance
+  type        String    @default("general") // general, update, event, maintenance, war
   isPinned    Boolean   @default(false)
+  isHot       Boolean   @default(false)
   isPublished Boolean   @default(true)
   publishedAt DateTime  @default(now())
   createdAt   DateTime  @default(now())

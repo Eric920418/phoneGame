@@ -6,14 +6,13 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft, Save, AlertCircle, Check, Plus, Trash2,
-  Megaphone, Heart, Download, Settings, BookOpen, Search,
+  Heart, Download, Settings, BookOpen, Search,
   Map, Gift, Skull, Swords, Trophy, Quote, Flag, ChevronUp, ChevronDown
 } from "lucide-react";
 import { graphqlFetch } from "@/lib/apolloClient";
 
 // 首页内容区块配置
 const contentSections = [
-  { key: "eventAnnouncements", title: "活動公告", icon: Megaphone, color: "#e74c3c" },
   { key: "sponsorPlans", title: "贊助方案", icon: Heart, color: "#e91e63" },
   { key: "downloadItems", title: "下載專區", icon: Download, color: "#3498db" },
   { key: "gameSettings", title: "遊戲設定", icon: Settings, color: "#9b59b6" },
@@ -28,9 +27,6 @@ const contentSections = [
 
 // 默认数据
 const defaultData: Record<string, unknown[]> = {
-  eventAnnouncements: [
-    { id: 1, title: "雙十二狂歡活動", date: "12/12-12/15", type: "限時", isHot: true, image: "", content: "活動詳細內容..." },
-  ],
   sponsorPlans: [
     { name: "青銅", price: 100, color: "#cd7f32", benefits: ["500 元寶", "專屬稱號"], popular: false, link: "" },
   ],
@@ -306,133 +302,6 @@ export default function AdminContentPage() {
     if (!activeSection || !editingData) return null;
 
     switch (activeSection) {
-      case "eventAnnouncements":
-        return editingData.map((item: unknown, index: number) => {
-          const data = item as { title: string; date: string; type: string; isHot: boolean; image: string; content: string };
-
-          const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-
-            const formData = new FormData();
-            formData.append("file", file);
-
-            try {
-              const res = await fetch("/api/upload", {
-                method: "POST",
-                body: formData,
-              });
-              const result = await res.json();
-              if (result.url) {
-                updateItem(index, "image", result.url);
-              } else {
-                setError("圖片上傳失敗");
-              }
-            } catch {
-              setError("圖片上傳失敗");
-            }
-          };
-
-          return (
-            <div key={index} className="card p-4 space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="text-[var(--color-primary)] font-medium">活動 #{index + 1}</span>
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => moveItem(index, "up")}
-                      disabled={index === 0}
-                      className="p-1 rounded hover:bg-[var(--color-bg-dark)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-                      title="往上移動"
-                    >
-                      <ChevronUp className="w-4 h-4" />
-                    </button>
-                    <button
-                      onClick={() => moveItem(index, "down")}
-                      disabled={index === editingData.length - 1}
-                      className="p-1 rounded hover:bg-[var(--color-bg-dark)] disabled:opacity-30 disabled:cursor-not-allowed text-[var(--color-text-muted)] hover:text-[var(--color-text)]"
-                      title="往下移動"
-                    >
-                      <ChevronDown className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-                <button onClick={() => removeItem(index)} className="text-red-400 hover:text-red-300 p-1">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-              <input
-                type="text"
-                value={data.title}
-                onChange={(e) => updateItem(index, "title", e.target.value)}
-                placeholder="活動標題"
-                className="input w-full"
-              />
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  value={data.date}
-                  onChange={(e) => updateItem(index, "date", e.target.value)}
-                  placeholder="日期 (如: 12/12-12/15)"
-                  className="input"
-                />
-                <input
-                  type="text"
-                  value={data.type}
-                  onChange={(e) => updateItem(index, "type", e.target.value)}
-                  placeholder="類型 (如: 限時)"
-                  className="input"
-                />
-              </div>
-              <div>
-                <label className="text-[var(--color-text)] text-sm mb-2 block">活動圖片</label>
-                <div className="flex gap-2">
-                  <label className="btn btn-secondary cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                    選擇圖片
-                  </label>
-                  {data.image && (
-                    <button
-                      onClick={() => updateItem(index, "image", "")}
-                      className="btn btn-secondary text-red-400"
-                    >
-                      移除圖片
-                    </button>
-                  )}
-                </div>
-                {data.image && (
-                  <div className="mt-2 relative rounded-lg overflow-hidden border border-[var(--color-border)]">
-                    <img src={data.image} alt="預覽" className="w-full h-32 object-cover" />
-                  </div>
-                )}
-              </div>
-              <div>
-                <label className="text-[var(--color-text)] text-sm mb-2 block">活動詳細內容 (支援 HTML)</label>
-                <textarea
-                  value={data.content || ""}
-                  onChange={(e) => updateItem(index, "content", e.target.value)}
-                  placeholder="<p>活動詳細內容...</p>"
-                  className="input w-full min-h-[150px] font-mono text-sm"
-                />
-              </div>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={data.isHot}
-                  onChange={(e) => updateItem(index, "isHot", e.target.checked)}
-                  className="w-4 h-4"
-                />
-                <span className="text-[var(--color-text)] text-sm">熱門活動 🔥</span>
-              </label>
-            </div>
-          );
-        });
-
       case "sponsorPlans":
         return editingData.map((item: unknown, index: number) => {
           const data = item as { name: string; price: number; color: string; benefits: string[]; popular?: boolean; link?: string };
