@@ -1,7 +1,6 @@
 import Link from "next/link";
 import {
   ChevronLeft,
-  Megaphone,
   Heart,
   Download,
   Settings,
@@ -9,14 +8,12 @@ import {
   Search,
   Map,
   Gift,
-  Skull,
   Swords,
   Trophy,
 } from "lucide-react";
 
 // 側邊欄導航項目配置
 const sidebarItems = [
-  { id: "announcements", name: "活動公告", icon: Megaphone, href: "/guide/announcements" },
   { id: "sponsor", name: "贊助活動", icon: Heart, href: "/guide/sponsor" },
   { id: "download", name: "下載專區", icon: Download, href: "/guide/download" },
   { id: "settings", name: "遊戲設定", icon: Settings, href: "/guide/settings" },

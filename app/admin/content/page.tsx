@@ -14,7 +14,7 @@ import { graphqlFetch } from "@/lib/apolloClient";
 // 首页内容区块配置
 const contentSections = [
   { key: "sponsorPlans", title: "贊助方案", icon: Heart, color: "#e91e63" },
-  { key: "downloadItems", title: "下載專區", icon: Download, color: "#3498db" },
+  { key: "downloadCenter", title: "下載專區", icon: Download, color: "#3498db" },
   { key: "gameSettings", title: "遊戲設定", icon: Settings, color: "#9b59b6" },
   { key: "beginnerGuides", title: "新手攻略", icon: BookOpen, color: "#2ecc71" },
   { key: "dropItems", title: "掉落查詢", icon: Search, color: "#f39c12" },
@@ -30,9 +30,13 @@ const defaultData: Record<string, unknown[]> = {
   sponsorPlans: [
     { name: "青銅", price: 100, color: "#cd7f32", benefits: ["500 元寶", "專屬稱號"], popular: false, link: "" },
   ],
-  downloadItems: [
-    { link: "" },
-  ],
+  downloadCenter: {
+    downloads: [
+      { id: "windows", name: "Windows 客戶端", icon: "Monitor", version: "v1.0.0", size: "3.2 GB", description: "適用於 Windows 10/11 64位元系統", downloadUrl: "", color: "#0078d4" },
+      { id: "mac", name: "macOS 客戶端", icon: "Apple", version: "v1.0.0", size: "3.5 GB", description: "適用於 macOS 12.0 或更高版本", downloadUrl: "", color: "#555555" },
+    ],
+    patches: [],
+  } as unknown as unknown[],
   gameSettings: [
     { category: "畫面", settings: [{ name: "解析度", value: "1920x1080" }] },
   ],
@@ -131,6 +135,13 @@ export default function AdminContentPage() {
     if (key === "arenaRanking") {
       const data = blocks[key] || defaultData[key] || { levelRanking: [], nationWarRanking: [], chibiRanking: [] };
       setEditingData(JSON.parse(JSON.stringify(data)) as unknown as unknown[]);
+    } else if (key === "downloadCenter") {
+      // downloadCenter 使用對象格式：{ downloads: [], patches: [] }
+      // 只保留 Windows 和 Mac
+      const rawData = blocks[key] || defaultData[key] || { downloads: [], patches: [] };
+      const data = JSON.parse(JSON.stringify(rawData)) as { downloads: { id: string }[]; patches: unknown[] };
+      data.downloads = data.downloads.filter((d) => d.id === "windows" || d.id === "mac");
+      setEditingData(data as unknown as unknown[]);
     } else if (key === "nationWar") {
       // nationWar 整合多個區塊：warSchedule, nationWar(rules/rewards), factions, factionsImage
       const warSchedule = blocks["warSchedule"] || [];
@@ -360,31 +371,178 @@ export default function AdminContentPage() {
           );
         });
 
-      case "downloadItems": {
-        // 下載專區只需要一個連結
-        const downloadData = (editingData[0] as { link?: string }) || { link: "" };
+      case "downloadCenter": {
+        // 下載專區：管理 Windows/Mac 下載連結和補丁
+        const downloadCenterData = editingData as unknown as {
+          downloads: { id: string; name: string; icon: string; version: string; size: string; description: string; downloadUrl: string; color: string }[];
+          patches: { id: string; name: string; date: string; size: string; description: string; downloadUrl: string }[];
+        };
+
+        const updateDownloadField = (field: string, value: unknown) => {
+          setEditingData({ ...downloadCenterData, [field]: value } as unknown as unknown[]);
+        };
+
+        const updateDownloadItem = (index: number, field: string, value: unknown) => {
+          const newDownloads = [...downloadCenterData.downloads];
+          (newDownloads[index] as Record<string, unknown>)[field] = value;
+          updateDownloadField("downloads", newDownloads);
+        };
+
+        const updatePatchItem = (index: number, field: string, value: unknown) => {
+          const newPatches = [...downloadCenterData.patches];
+          (newPatches[index] as Record<string, unknown>)[field] = value;
+          updateDownloadField("patches", newPatches);
+        };
+
+        const addPatch = () => {
+          const newPatches = [...(downloadCenterData.patches || [])];
+          newPatches.push({
+            id: `patch-${Date.now()}`,
+            name: "",
+            date: new Date().toISOString().split("T")[0],
+            size: "",
+            description: "",
+            downloadUrl: "",
+          });
+          updateDownloadField("patches", newPatches);
+        };
+
+        const removePatch = (index: number) => {
+          const newPatches = downloadCenterData.patches.filter((_, i) => i !== index);
+          updateDownloadField("patches", newPatches);
+        };
+
         return (
-          <div className="card p-4 space-y-3">
-            <div className="flex items-center gap-2 mb-2">
-              <Download className="w-5 h-5 text-[var(--color-primary)]" />
-              <span className="text-[var(--color-text)] font-medium">下載連結設定</span>
+          <div className="space-y-6">
+            {/* 遊戲客戶端下載 */}
+            <div className="card p-4">
+              <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2">
+                <Download className="w-5 h-5 text-blue-400" />
+                遊戲客戶端下載連結
+              </h3>
+              <p className="text-[var(--color-text-muted)] text-sm mb-4">
+                設定 Windows 和 macOS 客戶端的下載連結（僅支援桌機版本）
+              </p>
+              <div className="space-y-4">
+                {(downloadCenterData.downloads || []).map((download, index) => (
+                  <div key={download.id} className="bg-[var(--color-bg-dark)] p-4 rounded-lg space-y-3">
+                    <div className="flex items-center gap-2">
+                      <div
+                        className="w-8 h-8 rounded flex items-center justify-center"
+                        style={{ backgroundColor: `${download.color}20` }}
+                      >
+                        <span style={{ color: download.color }}>
+                          {download.id === "windows" ? "🖥️" : "🍎"}
+                        </span>
+                      </div>
+                      <span className="text-[var(--color-text)] font-medium">{download.name}</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="text"
+                        value={download.version}
+                        onChange={(e) => updateDownloadItem(index, "version", e.target.value)}
+                        placeholder="版本號 (如: v2.5.3)"
+                        className="input"
+                      />
+                      <input
+                        type="text"
+                        value={download.size}
+                        onChange={(e) => updateDownloadItem(index, "size", e.target.value)}
+                        placeholder="檔案大小 (如: 3.2 GB)"
+                        className="input"
+                      />
+                    </div>
+                    <input
+                      type="text"
+                      value={download.description}
+                      onChange={(e) => updateDownloadItem(index, "description", e.target.value)}
+                      placeholder="描述 (如: 適用於 Windows 10/11)"
+                      className="input w-full"
+                    />
+                    <input
+                      type="url"
+                      value={download.downloadUrl}
+                      onChange={(e) => updateDownloadItem(index, "downloadUrl", e.target.value)}
+                      placeholder="下載連結 (如: https://drive.google.com/...)"
+                      className="input w-full"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
-            <p className="text-[var(--color-text-muted)] text-sm">
-              設定下載按鈕的外部連結，用戶點擊後將導向此連結下載遊戲。
-            </p>
-            <input
-              type="url"
-              value={downloadData.link || ""}
-              onChange={(e) => {
-                if (editingData.length === 0) {
-                  setEditingData([{ link: e.target.value }]);
-                } else {
-                  updateItem(0, "link", e.target.value);
-                }
-              }}
-              placeholder="輸入下載連結 (如: https://drive.google.com/...)"
-              className="input w-full"
-            />
+
+            {/* 更新補丁 */}
+            <div className="card p-4">
+              <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2">
+                <Download className="w-5 h-5 text-green-400" />
+                更新補丁
+              </h3>
+              <p className="text-[var(--color-text-muted)] text-sm mb-4">
+                管理遊戲更新補丁，每個補丁可設定獨立的下載連結
+              </p>
+              <div className="space-y-4">
+                {(downloadCenterData.patches || []).map((patch, index) => (
+                  <div key={patch.id} className="bg-[var(--color-bg-dark)] p-4 rounded-lg space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[var(--color-text-muted)] text-sm">補丁 #{index + 1}</span>
+                      <button
+                        onClick={() => removePatch(index)}
+                        className="text-red-400 hover:text-red-300 p-1"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="text"
+                        value={patch.name}
+                        onChange={(e) => updatePatchItem(index, "name", e.target.value)}
+                        placeholder="補丁名稱 (如: 更新補丁 v2.5.3)"
+                        className="input"
+                      />
+                      <input
+                        type="text"
+                        value={patch.date}
+                        onChange={(e) => updatePatchItem(index, "date", e.target.value)}
+                        placeholder="發布日期 (如: 2024-12-01)"
+                        className="input"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <input
+                        type="text"
+                        value={patch.size}
+                        onChange={(e) => updatePatchItem(index, "size", e.target.value)}
+                        placeholder="檔案大小 (如: 256 MB)"
+                        className="input"
+                      />
+                      <input
+                        type="text"
+                        value={patch.description}
+                        onChange={(e) => updatePatchItem(index, "description", e.target.value)}
+                        placeholder="描述"
+                        className="input"
+                      />
+                    </div>
+                    <input
+                      type="url"
+                      value={patch.downloadUrl}
+                      onChange={(e) => updatePatchItem(index, "downloadUrl", e.target.value)}
+                      placeholder="補丁下載連結 (如: https://drive.google.com/...)"
+                      className="input w-full"
+                    />
+                  </div>
+                ))}
+                <button
+                  onClick={addPatch}
+                  className="text-green-400 text-sm hover:underline flex items-center gap-1"
+                >
+                  <Plus className="w-4 h-4" />
+                  新增補丁
+                </button>
+              </div>
+            </div>
           </div>
         );
       }
@@ -1374,8 +1532,8 @@ export default function AdminContentPage() {
                   {renderForm()}
                 </div>
 
-                {/* 三國排行和國戰有自己的邏輯，不顯示通用新增按鈕 */}
-                {activeSection !== "arenaRanking" && activeSection !== "nationWar" && (
+                {/* 三國排行、國戰、下載專區有自己的邏輯，不顯示通用新增按鈕 */}
+                {activeSection !== "arenaRanking" && activeSection !== "nationWar" && activeSection !== "downloadCenter" && (
                   <button
                     onClick={addItem}
                     className="mt-4 w-full card p-4 flex items-center justify-center gap-2 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors border-dashed"

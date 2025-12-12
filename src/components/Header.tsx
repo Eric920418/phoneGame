@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, Crown, MessageSquare, Bell, Star, ChevronDown, Settings, BookOpen, Search, Gift, Download, Megaphone, Map, Swords } from "lucide-react";
+import { Menu, X, Crown, MessageSquare, Bell, Star, ChevronDown, Settings, BookOpen, Search, Gift, Download, Map, Swords } from "lucide-react";
 import UserMenu from "./UserMenu";
 
 // 下拉選單項目介面
@@ -41,13 +41,9 @@ export default function Header() {
       ]
     },
     {
-      href: "/guide/announcements",
+      href: "/announcements",
       label: "公告",
       icon: Bell,
-      dropdown: [
-        { href: "/guide/announcements", label: "活動公告", icon: Megaphone },
-        { href: "/announcements", label: "最新公告", icon: Bell },
-      ]
     },
     { href: "/forum", label: "論壇", icon: MessageSquare },
     { href: "/#reviews", label: "玩家評價", icon: Star },

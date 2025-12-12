@@ -1,4 +1,4 @@
-import { Download, Monitor, Smartphone, Apple, FileDown, HardDrive, Wifi } from "lucide-react";
+import { Download, Monitor, Apple, FileDown, HardDrive, Wifi } from "lucide-react";
 import { graphqlFetch } from "@/lib/apolloClient";
 
 // 強制動態渲染
@@ -27,6 +27,7 @@ interface PatchItem {
   date: string;
   size: string;
   description: string;
+  downloadUrl?: string;
 }
 
 interface DownloadData {
@@ -43,8 +44,10 @@ interface ContentBlock {
 const iconMap: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
   Monitor,
   Apple,
-  Smartphone,
 };
+
+// 只保留 Windows 和 Mac 的下載項目
+const allowedDownloadIds = ["windows", "mac"];
 
 async function getDownloadData(): Promise<DownloadData> {
   try {
@@ -58,7 +61,12 @@ async function getDownloadData(): Promise<DownloadData> {
     `, undefined, { skipCache: true });
 
     if (data.contentBlock?.payload) {
-      return data.contentBlock.payload;
+      const payload = data.contentBlock.payload;
+      // 過濾只保留 Windows 和 Mac
+      return {
+        downloads: payload.downloads.filter((d) => allowedDownloadIds.includes(d.id)),
+        patches: payload.patches,
+      };
     }
     return { downloads: [], patches: [] };
   } catch (error) {
@@ -211,13 +219,19 @@ export default async function DownloadPage() {
                     <div className="text-[var(--color-text-dark)]">{patch.date}</div>
                     <div className="text-[var(--color-text-muted)]">{patch.size}</div>
                   </div>
-                  <a
-                    href="#"
-                    className="btn-secondary text-sm py-2 px-4 flex items-center gap-2"
-                  >
-                    <FileDown className="w-4 h-4" />
-                    下載
-                  </a>
+                  {patch.downloadUrl ? (
+                    <a
+                      href={patch.downloadUrl}
+                      className="btn-secondary text-sm py-2 px-4 flex items-center gap-2"
+                    >
+                      <FileDown className="w-4 h-4" />
+                      下載
+                    </a>
+                  ) : (
+                    <span className="text-sm py-2 px-4 text-[var(--color-text-dark)]">
+                      即將推出
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
