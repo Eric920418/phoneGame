@@ -453,7 +453,7 @@ export default async function HomePage() {
         {/* 內容容器 - 手機版減少左右 padding 讓金屬框有更多空間 */}
         <div className="relative z-10 max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-12 space-y-6 sm:space-y-8 md:space-y-12">
           {/* ==================== 1. 公告 Section (合併最新+活動) ==================== */}
-          <FramedSection id="announcements" compact={true}>
+          <FramedSection id="announcements" compact={false}>
             <AnnouncementSection
               latestAnnouncements={latestAnnouncements}
               eventAnnouncements={displayEventAnnouncements}
