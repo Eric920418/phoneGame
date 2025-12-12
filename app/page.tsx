@@ -40,6 +40,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import ReviewSection from "@/components/ReviewSection";
+import AnnouncementSection from "@/components/AnnouncementSection";
 
 // ==================== 介面定義 ====================
 interface Announcement {
@@ -451,161 +452,56 @@ export default async function HomePage() {
 
         {/* 內容容器 - 手機版減少左右 padding 讓金屬框有更多空間 */}
         <div className="relative z-10 max-w-7xl mx-auto px-2 sm:px-4 md:px-6 lg:px-8 py-8 sm:py-12 space-y-6 sm:space-y-8 md:space-y-12">
-          {/* ==================== 1. 活動公告 Section ==================== */}
+          {/* ==================== 1. 公告 Section (合併最新+活動) ==================== */}
           <FramedSection id="announcements" compact={true}>
-            <SectionTitle
-              icon={Megaphone}
-              title="活動公告"
-              color="#e74c3c"
-              href="/guide/announcements"
+            <AnnouncementSection
+              latestAnnouncements={latestAnnouncements}
+              eventAnnouncements={displayEventAnnouncements}
             />
-            {displayEventAnnouncements.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                {displayEventAnnouncements.slice(0, 4).map((event: { id: number; title: string; date: string; type: string; isHot: boolean; image?: string }) => (
-                  <Link
-                    key={event.id}
-                    href={`/guide/announcements/${event.id}`}
-                    className="card p-2 sm:p-4 hover:border-red-500/30 transition-all group"
-                  >
-                    {event.image && (
-                      <div className="relative w-full h-20 sm:h-24 rounded-lg overflow-hidden mb-2 border border-[var(--color-border)]">
-                        <Image
-                          src={event.image}
-                          alt={event.title}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform"
-                        />
-                      </div>
-                    )}
-                    <div className="flex items-center gap-2 mb-2 flex-wrap">
-                      {event.isHot && (
-                        <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[10px] sm:text-xs font-semibold">
-                          🔥 熱門
-                        </span>
-                      )}
-                      <span className="text-[10px] sm:text-xs text-[var(--color-text-dark)]">
-                        {event.type}
-                      </span>
-                    </div>
-                    <h3 className="font-semibold text-sm sm:text-base text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors mb-2 line-clamp-2">
-                      {event.title}
-                    </h3>
-                    <div className="flex items-center gap-1 text-[10px] sm:text-xs text-[var(--color-text-muted)]">
-                      <Calendar className="w-3 h-3 shrink-0" />
-                      {event.date}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <div className="card p-8 text-center">
-                <Megaphone className="w-12 h-12 text-[var(--color-text-dark)] mx-auto mb-4" />
-                <p className="text-[var(--color-text-muted)]">暫無活動公告</p>
-              </div>
-            )}
           </FramedSection>
 
-          {/* ==================== 最新公告 & 討論區 ==================== */}
+          {/* ==================== 討論區 Section ==================== */}
           <FramedSection compact={true}>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8">
-              {/* 最新公告 */}
-              <div className="lg:col-span-2">
-                <SectionTitle
-                  icon={Bell}
-                  title="最新公告"
-                  color="var(--color-primary)"
-                  href="/announcements"
-                />
-                <div className="space-y-4">
-                  {latestAnnouncements.length > 0 ? (
-                    latestAnnouncements.slice(0, 3).map((announcement) => (
-                      <Link
-                        key={announcement.id}
-                        href={`/announcements/${announcement.slug}`}
-                        className="card p-4 flex items-start gap-4 group"
-                      >
-                        <div className="flex-shrink-0 mt-1">
-                          <Flame className="w-5 h-5 text-[var(--color-primary)]" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span
-                              className={`tag ${getTypeStyle(
-                                announcement.type
-                              )}`}
-                            >
-                              {getTypeLabel(announcement.type)}
-                            </span>
-                            <span className="text-[var(--color-text-dark)] text-xs flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              {formatDate(announcement.publishedAt)}
-                            </span>
-                          </div>
-                          <h3 className="text-[var(--color-text)] font-medium group-hover:text-[var(--color-primary)] transition-colors truncate">
-                            {announcement.title}
-                          </h3>
-                          {announcement.excerpt && (
-                            <p className="text-[var(--color-text-muted)] text-sm mt-1 line-clamp-2">
-                              {announcement.excerpt}
-                            </p>
-                          )}
-                        </div>
-                        <ChevronRight className="w-5 h-5 text-[var(--color-text-dark)] group-hover:text-[var(--color-primary)] transition-colors flex-shrink-0" />
-                      </Link>
-                    ))
-                  ) : (
-                    <div className="card p-8 text-center">
-                      <Bell className="w-12 h-12 text-[var(--color-text-dark)] mx-auto mb-4" />
-                      <p className="text-[var(--color-text-muted)]">暫無公告</p>
+            <SectionTitle
+              icon={MessageSquare}
+              title="討論區"
+              color="var(--color-primary)"
+              href="/forum"
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+              {categories.length > 0 ? (
+                categories.map((category) => (
+                  <Link
+                    key={category.id}
+                    href={`/forum?category=${category.slug}`}
+                    className="card p-4 flex items-center gap-3 group"
+                  >
+                    <div
+                      className="w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0"
+                      style={{ backgroundColor: `${category.color}20` }}
+                    >
+                      {category.icon || "💬"}
                     </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 討論區 */}
-              <div>
-                <SectionTitle
-                  icon={MessageSquare}
-                  title="討論區"
-                  color="var(--color-primary)"
-                  href="/forum"
-                />
-                <div className="space-y-3">
-                  {categories.length > 0 ? (
-                    categories.map((category) => (
-                      <Link
-                        key={category.id}
-                        href={`/forum?category=${category.slug}`}
-                        className="card p-4 flex items-center gap-3 group"
-                      >
-                        <div
-                          className="w-10 h-10 rounded-lg flex items-center justify-center text-xl"
-                          style={{ backgroundColor: `${category.color}20` }}
-                        >
-                          {category.icon || "💬"}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="text-[var(--color-text)] font-medium group-hover:text-[var(--color-primary)] transition-colors">
-                            {category.name}
-                          </h3>
-                          <p className="text-[var(--color-text-muted)] text-sm truncate">
-                            {category.description}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1 text-[var(--color-text-dark)] text-sm">
-                          <Users className="w-4 h-4" />
-                          {category.postCount}
-                        </div>
-                      </Link>
-                    ))
-                  ) : (
-                    <div className="card p-8 text-center">
-                      <MessageSquare className="w-12 h-12 text-[var(--color-text-dark)] mx-auto mb-4" />
-                      <p className="text-[var(--color-text-muted)]">暫無分類</p>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-[var(--color-text)] font-medium group-hover:text-[var(--color-primary)] transition-colors">
+                        {category.name}
+                      </h3>
+                      <p className="text-[var(--color-text-muted)] text-sm truncate">
+                        {category.description}
+                      </p>
                     </div>
-                  )}
+                    <div className="flex items-center gap-1 text-[var(--color-text-dark)] text-sm shrink-0">
+                      <Users className="w-4 h-4" />
+                      {category.postCount}
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <div className="card p-8 text-center col-span-full">
+                  <MessageSquare className="w-12 h-12 text-[var(--color-text-dark)] mx-auto mb-4" />
+                  <p className="text-[var(--color-text-muted)]">暫無分類</p>
                 </div>
-              </div>
+              )}
             </div>
           </FramedSection>
 

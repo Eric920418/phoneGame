@@ -178,24 +178,9 @@ function extractGameInfo(contentBlocks: Record<string, unknown>) {
   return info.join('\n');
 }
 
-// 生成隨機遊戲時數 (遊戲尚未開服，顯示其他遊戲經驗時數，保持合理範圍)
-function generateGameHours(personaType: string): number {
-  switch (personaType) {
-    case "大學生玩家":
-      return Math.floor(Math.random() * 150) + 50; // 50-200小時
-    case "上班族":
-      return Math.floor(Math.random() * 100) + 30; // 30-130小時
-    case "三國迷":
-      return Math.floor(Math.random() * 200) + 80; // 80-280小時
-    case "手遊老手":
-      return Math.floor(Math.random() * 300) + 100; // 100-400小時
-    case "社群玩家":
-      return Math.floor(Math.random() * 180) + 60; // 60-240小時
-    case "休閒玩家":
-      return Math.floor(Math.random() * 80) + 20; // 20-100小時
-    default:
-      return Math.floor(Math.random() * 100) + 30; // 30-130小時
-  }
+// 生成遊戲時數 (遊戲尚未開服，所有玩家都是 0 小時)
+function generateGameHours(_personaType: string): number {
+  return 0;
 }
 
 // 創建 AI 虛擬用戶
@@ -277,13 +262,14 @@ ${gameFeatures}
    - 「讚」「推」「期待」「開服見」「12/20衝」
    - 可以用「ㄅㄆㄇ」注音縮寫如「ㄏㄏ」「ㄎㄎ」
 4. 可以提一下為什麼期待（國戰、三國、武將等）
-5. 表情符號最多1個或不用
+5. 不要使用任何表情符號（emoji）
 6. 要很自然，像在 Dcard、PTT、IG 留言
 
 【避免】
 - 太長、太正式
 - 廣告腔
 - 老人用語
+- 任何表情符號（emoji）
 
 JSON 格式回覆：
 {
