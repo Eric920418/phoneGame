@@ -119,6 +119,17 @@ export default function AnnouncementSection({
               </button>
             );
           })}
+
+          <span className="text-[var(--color-text-dark)] mx-1">|</span>
+
+          {/* 所有公告連結 */}
+          <Link
+            href="/announcements"
+            className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-all bg-[var(--color-primary)]/10 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/20 border border-[var(--color-primary)]/30"
+          >
+            <Megaphone className="w-3 h-3 sm:w-4 sm:h-4" />
+            所有公告
+          </Link>
         </div>
       </div>
 

@@ -74,10 +74,11 @@ const sponsorPlans = [
   { name: "鑽石", price: 1000, color: "#b9f2ff", benefits: ["15000 元寶", "神話坐騎", "永久加成"] },
 ];
 
-// 下載項目（只需要連結）
-const downloadItems = [
-  { link: "" },
-];
+// 下載項目結構（從 downloadCenter 轉換）
+interface DownloadCenterData {
+  downloads?: { id: string; downloadUrl: string }[];
+  patches?: unknown[];
+}
 
 // 遊戲設定建議
 const gameSettings = [
@@ -186,7 +187,7 @@ const playerReviews = [
 // ==================== 內容區塊介面 ====================
 interface ContentBlocks {
   sponsorPlans?: typeof sponsorPlans;
-  downloadItems?: typeof downloadItems;
+  downloadCenter?: DownloadCenterData;
   gameSettings?: typeof gameSettings;
   beginnerGuides?: typeof beginnerGuides;
   dropItems?: typeof dropItems;
@@ -367,7 +368,11 @@ export default async function HomePage() {
 
   // 使用数据库数据
   const displaySponsorPlans = contentBlocks.sponsorPlans || sponsorPlans;
-  const displayDownloadItems = contentBlocks.downloadItems || downloadItems;
+  // 從 downloadCenter 提取下載連結（優先使用 Windows）
+  const downloadCenterData = contentBlocks.downloadCenter;
+  const downloadLink = downloadCenterData?.downloads?.find(d => d.id === "windows")?.downloadUrl
+    || downloadCenterData?.downloads?.[0]?.downloadUrl
+    || "";
   const displayGameSettings = contentBlocks.gameSettings || gameSettings;
   const displayBeginnerGuides = contentBlocks.beginnerGuides || beginnerGuides;
   const displayDropItems = contentBlocks.dropItems || dropItems;
@@ -556,26 +561,60 @@ export default async function HomePage() {
               color="#3498db"
               href="/guide/download"
             />
-            <div className="flex justify-center">
-              {(() => {
-                const downloadLink = (displayDownloadItems[0] as { link?: string })?.link || "";
-                return downloadLink ? (
-                  <a
-                    href={downloadLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn-primary text-lg px-8 py-4 flex items-center gap-3"
-                  >
-                    <FileDown className="w-6 h-6" />
-                    立即下載遊戲
-                  </a>
-                ) : (
-                  <div className="text-[var(--color-text-muted)] text-center py-8">
-                    下載連結尚未設定
-                  </div>
-                );
-              })()}
-            </div>
+            {downloadCenterData?.downloads && downloadCenterData.downloads.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+                {downloadCenterData.downloads.map((item) => {
+                  const content = (
+                    <>
+                      <div
+                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0 text-2xl sm:text-3xl"
+                        style={{ backgroundColor: item.id === "windows" ? "#0078d420" : "#55555520" }}
+                      >
+                        {item.id === "windows" ? (
+                          <Monitor className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: "#0078d4" }} />
+                        ) : (
+                          <span>🍎</span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-bold text-[var(--color-text)] text-sm sm:text-base">
+                          {item.id === "windows" ? "Windows 客戶端" : "macOS 客戶端"}
+                        </h3>
+                        <p className="text-[var(--color-text-muted)] text-xs sm:text-sm truncate">
+                          {item.downloadUrl ? "點擊下載" : "尚未設定"}
+                        </p>
+                      </div>
+                      <FileDown className={`w-5 h-5 sm:w-6 sm:h-6 shrink-0 ${
+                        item.downloadUrl ? "text-blue-400" : "text-[var(--color-text-dark)]"
+                      }`} />
+                    </>
+                  );
+
+                  return item.downloadUrl ? (
+                    <a
+                      key={item.id}
+                      href={item.downloadUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="card p-4 sm:p-6 flex items-center gap-4 transition-all hover:scale-[1.02] hover:border-blue-500/50"
+                    >
+                      {content}
+                    </a>
+                  ) : (
+                    <div
+                      key={item.id}
+                      className="card p-4 sm:p-6 flex items-center gap-4 opacity-50"
+                    >
+                      {content}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-[var(--color-text-muted)] text-center py-8">
+                下載連結尚未設定
+              </div>
+            )}
           </FramedSection>
 
           {/* ==================== 4. 遊戲設定 Section ==================== */}
@@ -756,7 +795,7 @@ export default async function HomePage() {
           </FramedSection>
 
           {/* ==================== 8. 寶箱福袋內容 Section ==================== */}
-          <FramedSection id="treasure" compact={false}>
+          <FramedSection id="treasure" compact={true}>
             <SectionTitle
               icon={Gift}
               title="寶箱福袋內容"
@@ -764,37 +803,39 @@ export default async function HomePage() {
               href="/guide/treasure"
             />
             {displayTreasureBoxes.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-                {displayTreasureBoxes.map((box, index) => (
-                  <Link
-                    key={index}
-                    href="/guide/treasure"
-                    className="card p-4 hover:border-yellow-500/30 transition-all"
-                  >
-                    <div className="flex items-center gap-2 mb-3">
-                      <Gift className="w-5 h-5 text-yellow-400 shrink-0" />
-                      <h3 className="font-bold text-[var(--color-text)]">{box.name}</h3>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {(box.items || []).slice(0, 6).map((item, i) => {
-                        const displayText = typeof item === 'string' ? item : (item as { name?: string }).name || '';
-                        return (
-                          <span
-                            key={i}
-                            className="text-xs text-[var(--color-text-muted)] py-1 px-2 rounded bg-[var(--color-bg-darker)]"
-                          >
-                            {displayText}
+              <div className="overflow-x-auto pb-2 -mx-2 px-2 scrollbar-thin scrollbar-thumb-yellow-500/30 scrollbar-track-transparent">
+                <div className="flex gap-3 sm:gap-4" style={{ minWidth: 'max-content' }}>
+                  {displayTreasureBoxes.map((box, index) => (
+                    <Link
+                      key={index}
+                      href="/guide/treasure"
+                      className="card p-4 hover:border-yellow-500/30 transition-all w-[280px] sm:w-[320px] shrink-0"
+                    >
+                      <div className="flex items-center gap-2 mb-3">
+                        <Gift className="w-5 h-5 text-yellow-400 shrink-0" />
+                        <h3 className="font-bold text-[var(--color-text)] truncate">{box.name}</h3>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {(box.items || []).slice(0, 6).map((item, i) => {
+                          const displayText = typeof item === 'string' ? item : (item as { name?: string }).name || '';
+                          return (
+                            <span
+                              key={i}
+                              className="text-xs text-[var(--color-text-muted)] py-1 px-2 rounded bg-[var(--color-bg-darker)]"
+                            >
+                              {displayText}
+                            </span>
+                          );
+                        })}
+                        {(box.items || []).length > 6 && (
+                          <span className="text-xs text-yellow-400 py-1 px-2">
+                            +{box.items.length - 6}
                           </span>
-                        );
-                      })}
-                      {(box.items || []).length > 6 && (
-                        <span className="text-xs text-yellow-400 py-1 px-2">
-                          +{box.items.length - 6}
-                        </span>
-                      )}
-                    </div>
-                  </Link>
-                ))}
+                        )}
+                      </div>
+                    </Link>
+                  ))}
+                </div>
               </div>
             ) : (
               <div className="card p-8 text-center">

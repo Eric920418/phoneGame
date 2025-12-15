@@ -22,7 +22,7 @@ const sidebarItems = [
   { id: "dungeon", name: "副本介紹", icon: Map, href: "/guide/dungeon" },
   { id: "treasure", name: "寶箱福袋內容", icon: Gift, href: "/guide/treasure" },
   { id: "nation-war", name: "國戰時間", icon: Swords, href: "/guide/nation-war" },
-  { id: "arena", name: "武魂擂台", icon: Trophy, href: "/guide/arena" },
+  { id: "arena", name: "三國排行", icon: Trophy, href: "/guide/arena" },
 ];
 
 /**
