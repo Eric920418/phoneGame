@@ -795,7 +795,7 @@ export default async function HomePage() {
           </FramedSection>
 
           {/* ==================== 8. 寶箱福袋內容 Section ==================== */}
-          <FramedSection id="treasure" compact={false}>
+          <FramedSection id="treasure" compact={true}>
             <SectionTitle
               icon={Gift}
               title="寶箱福袋內容"
@@ -803,38 +803,43 @@ export default async function HomePage() {
               href="/guide/treasure"
             />
             {displayTreasureBoxes.length > 0 ? (
-              <div className="overflow-x-auto pb-2 -mx-2 px-2 scrollbar-thin scrollbar-thumb-yellow-500/30 scrollbar-track-transparent">
-                <div className="flex gap-3 sm:gap-4" style={{ minWidth: 'max-content' }}>
-                  {displayTreasureBoxes.map((box, index) => (
-                    <Link
-                      key={index}
-                      href="/guide/treasure"
-                      className="card p-4 hover:border-yellow-500/30 transition-all w-[280px] sm:w-[320px] shrink-0"
-                    >
-                      <div className="flex items-center gap-2 mb-3">
-                        <Gift className="w-5 h-5 text-yellow-400 shrink-0" />
-                        <h3 className="font-bold text-[var(--color-text)] truncate">{box.name}</h3>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {(box.items || []).slice(0, 6).map((item, i) => {
-                          const displayText = typeof item === 'string' ? item : (item as { name?: string }).name || '';
-                          return (
-                            <span
-                              key={i}
-                              className="text-xs text-[var(--color-text-muted)] py-1 px-2 rounded bg-[var(--color-bg-darker)]"
-                            >
-                              {displayText}
+              <div className="relative">
+                {/* 右側漸層提示 */}
+                <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-black/50 to-transparent z-10 pointer-events-none" />
+
+                <div className="overflow-x-auto pb-4 -mx-2 px-2 horizontal-scroll">
+                  <div className="flex gap-3 sm:gap-4" style={{ minWidth: 'max-content' }}>
+                    {displayTreasureBoxes.map((box, index) => (
+                      <Link
+                        key={index}
+                        href="/guide/treasure"
+                        className="card p-4 hover:border-yellow-500/30 transition-all w-[280px] sm:w-[320px] shrink-0"
+                      >
+                        <div className="flex items-center gap-2 mb-3">
+                          <Gift className="w-5 h-5 text-yellow-400 shrink-0" />
+                          <h3 className="font-bold text-[var(--color-text)] truncate">{box.name}</h3>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {(box.items || []).slice(0, 6).map((item, i) => {
+                            const displayText = typeof item === 'string' ? item : (item as { name?: string }).name || '';
+                            return (
+                              <span
+                                key={i}
+                                className="text-xs text-[var(--color-text-muted)] py-1 px-2 rounded bg-[var(--color-bg-darker)]"
+                              >
+                                {displayText}
+                              </span>
+                            );
+                          })}
+                          {(box.items || []).length > 6 && (
+                            <span className="text-xs text-yellow-400 py-1 px-2">
+                              +{box.items.length - 6}
                             </span>
-                          );
-                        })}
-                        {(box.items || []).length > 6 && (
-                          <span className="text-xs text-yellow-400 py-1 px-2">
-                            +{box.items.length - 6}
-                          </span>
-                        )}
-                      </div>
-                    </Link>
-                  ))}
+                          )}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </div>
             ) : (

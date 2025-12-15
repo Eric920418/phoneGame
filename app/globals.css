@@ -57,6 +57,31 @@
     background: var(--color-border-light);
   }
 
+  /* 水平滾動區塊 - 更粗更明顯的滾動條 */
+  .horizontal-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-primary) var(--color-bg-darker);
+  }
+
+  .horizontal-scroll::-webkit-scrollbar {
+    height: 10px;
+  }
+
+  .horizontal-scroll::-webkit-scrollbar-track {
+    background: var(--color-bg-darker);
+    border-radius: 5px;
+  }
+
+  .horizontal-scroll::-webkit-scrollbar-thumb {
+    background: linear-gradient(90deg, var(--color-primary), var(--color-primary-light));
+    border-radius: 5px;
+    border: 2px solid var(--color-bg-darker);
+  }
+
+  .horizontal-scroll::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(90deg, var(--color-primary-light), var(--color-primary));
+  }
+
   ::selection {
     background: var(--color-primary);
     color: var(--color-bg-dark);

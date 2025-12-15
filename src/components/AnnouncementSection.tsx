@@ -133,62 +133,69 @@ export default function AnnouncementSection({
         </div>
       </div>
 
-      {/* 公告列表 */}
+      {/* 公告列表 - 水平滾動 */}
       {filteredAnnouncements.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {filteredAnnouncements.slice(0, 8).map((announcement) => (
-            <Link
-              key={announcement.id}
-              href={`/announcements/${announcement.slug}`}
-              className="card p-3 sm:p-4 hover:border-[var(--color-primary)]/30 transition-all group"
-            >
-              {/* 圖片 (如果有) */}
-              {announcement.coverImage && (
-                <div className="relative w-full h-20 sm:h-24 rounded-lg overflow-hidden mb-2 border border-[var(--color-border)]">
-                  <Image
-                    src={announcement.coverImage}
-                    alt={announcement.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform"
-                  />
-                </div>
-              )}
+        <div className="relative">
+          {/* 右側漸層提示 */}
+          <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-[var(--color-bg-dark)] to-transparent z-10 pointer-events-none" />
 
-              {/* 標籤 */}
-              <div className="flex items-center gap-2 mb-2 flex-wrap">
-                {announcement.isHot && (
-                  <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[10px] sm:text-xs font-semibold flex items-center gap-1">
-                    <Flame className="w-3 h-3" />
-                    熱門
-                  </span>
-                )}
-                <span className={`tag ${getTypeStyle(announcement.type)}`}>
-                  {getTypeLabel(announcement.type)}
-                </span>
-              </div>
+          <div className="overflow-x-auto pb-4 -mx-2 px-2 horizontal-scroll">
+            <div className="flex gap-3 sm:gap-4" style={{ minWidth: 'max-content' }}>
+              {filteredAnnouncements.slice(0, 12).map((announcement) => (
+                <Link
+                  key={announcement.id}
+                  href={`/announcements/${announcement.slug}`}
+                  className="card p-3 sm:p-4 hover:border-[var(--color-primary)]/30 transition-all group w-[260px] sm:w-[300px] shrink-0"
+                >
+                  {/* 圖片 (如果有) */}
+                  {announcement.coverImage && (
+                    <div className="relative w-full h-20 sm:h-24 rounded-lg overflow-hidden mb-2 border border-[var(--color-border)]">
+                      <Image
+                        src={announcement.coverImage}
+                        alt={announcement.title}
+                        fill
+                        className="object-cover group-hover:scale-105 transition-transform"
+                      />
+                    </div>
+                  )}
 
-              {/* 標題 */}
-              <h3 className="font-semibold text-sm sm:text-base text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors mb-2 line-clamp-2">
-                {announcement.title}
-              </h3>
+                  {/* 標籤 */}
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    {announcement.isHot && (
+                      <span className="px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 text-[10px] sm:text-xs font-semibold flex items-center gap-1">
+                        <Flame className="w-3 h-3" />
+                        熱門
+                      </span>
+                    )}
+                    <span className={`tag ${getTypeStyle(announcement.type)}`}>
+                      {getTypeLabel(announcement.type)}
+                    </span>
+                  </div>
 
-              {/* 摘要 */}
-              {announcement.excerpt && !announcement.coverImage && (
-                <p className="text-[var(--color-text-muted)] text-xs sm:text-sm mb-2 line-clamp-2">
-                  {announcement.excerpt}
-                </p>
-              )}
+                  {/* 標題 */}
+                  <h3 className="font-semibold text-sm sm:text-base text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors mb-2 line-clamp-2">
+                    {announcement.title}
+                  </h3>
 
-              {/* 日期 */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1 text-[10px] sm:text-xs text-[var(--color-text-muted)]">
-                  <Calendar className="w-3 h-3 shrink-0" />
-                  {formatDate(announcement.publishedAt)}
-                </div>
-                <ChevronRight className="w-4 h-4 text-[var(--color-text-dark)] group-hover:text-[var(--color-primary)] transition-colors" />
-              </div>
-            </Link>
-          ))}
+                  {/* 摘要 */}
+                  {announcement.excerpt && !announcement.coverImage && (
+                    <p className="text-[var(--color-text-muted)] text-xs sm:text-sm mb-2 line-clamp-2">
+                      {announcement.excerpt}
+                    </p>
+                  )}
+
+                  {/* 日期 */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1 text-[10px] sm:text-xs text-[var(--color-text-muted)]">
+                      <Calendar className="w-3 h-3 shrink-0" />
+                      {formatDate(announcement.publishedAt)}
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-[var(--color-text-dark)] group-hover:text-[var(--color-primary)] transition-colors" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       ) : (
         <div className="card p-8 text-center">
