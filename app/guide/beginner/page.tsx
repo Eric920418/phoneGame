@@ -57,7 +57,9 @@ export default async function BeginnerPage() {
           <BookOpen className="w-7 h-7 text-green-400" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold text-[var(--color-text)]">新手攻略</h1>
+          <h1 className="text-3xl font-bold text-[var(--color-text)]">
+            新手攻略
+          </h1>
           <p className="text-[var(--color-text-muted)] mt-1">
             入門教學與基礎指南，助你快速上手
           </p>
@@ -86,49 +88,49 @@ export default async function BeginnerPage() {
             const coverImage = guide.images?.[0] || guide.image;
 
             return (
-            <Link
-              key={index}
-              href={`/guide/beginner/${guide.chapter}`}
-              className="card overflow-hidden hover:border-green-500/30 transition-all group"
-            >
-              {/* 攻略圖片 */}
-              {coverImage ? (
-                <div className="relative overflow-hidden">
-                  <img
-                    src={coverImage}
-                    alt={guide.title}
-                    className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                  <div className="absolute bottom-3 left-3">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500/80 text-white">
-                      第 {guide.chapter} 章
-                    </span>
+              <Link
+                key={index}
+                href={`/guide/beginner/${guide.chapter}`}
+                className="card overflow-hidden hover:border-green-500/30 transition-all group"
+              >
+                {/* 攻略圖片 */}
+                {coverImage ? (
+                  <div className="relative overflow-hidden">
+                    <img
+                      src={coverImage}
+                      alt={guide.title}
+                      className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                    <div className="absolute bottom-3 left-3">
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500/80 text-white">
+                        第 {guide.chapter} 章
+                      </span>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="relative h-48 bg-gradient-to-br from-green-500/20 to-green-600/10 flex items-center justify-center">
-                  <BookOpen className="w-16 h-16 text-green-500/40" />
-                  <div className="absolute bottom-3 left-3">
-                    <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500/80 text-white">
-                      第 {guide.chapter} 章
-                    </span>
+                ) : (
+                  <div className="relative h-48 bg-gradient-to-br from-green-500/20 to-green-600/10 flex items-center justify-center">
+                    <BookOpen className="w-16 h-16 text-green-500/40" />
+                    <div className="absolute bottom-3 left-3">
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-500/80 text-white">
+                        第 {guide.chapter} 章
+                      </span>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* 攻略內容 */}
-              <div className="p-4">
-                <h3 className="text-lg font-bold text-[var(--color-text)] mb-2 group-hover:text-green-400 transition-colors flex items-center justify-between">
-                  {guide.title}
-                  <ChevronRight className="w-5 h-5 text-[var(--color-text-muted)] group-hover:text-green-400 group-hover:translate-x-1 transition-all" />
-                </h3>
-                <p className="text-sm text-[var(--color-text-muted)] line-clamp-2">
-                  {guide.desc}
-                </p>
-              </div>
-            </Link>
-          );
+                {/* 攻略內容 */}
+                <div className="p-4">
+                  <h3 className="text-lg font-bold text-[var(--color-text)] mb-2 group-hover:text-green-400 transition-colors flex items-center justify-between">
+                    {guide.title}
+                    <ChevronRight className="w-5 h-5 text-[var(--color-text-muted)] group-hover:text-green-400 group-hover:translate-x-1 transition-all" />
+                  </h3>
+                  <p className="text-sm text-[var(--color-text-muted)] line-clamp-2">
+                    {guide.desc}
+                  </p>
+                </div>
+              </Link>
+            );
           })}
         </div>
       ) : (
@@ -145,14 +147,14 @@ export default async function BeginnerPage() {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-[var(--color-text-muted)]">
           <ul className="space-y-2">
-            <li>• 每天記得簽到領取免費獎勵</li>
-            <li>• 優先完成主線任務解鎖功能</li>
-            <li>• 加入公會獲得額外經驗加成</li>
+            <li>• 每天記得領首都宮殿區的神速單及軍魂符</li>
+            <li>• 善用ALT+H自動練功</li>
+            <li>• 優先研究一下煉造房可以鍛造那些東西</li>
           </ul>
           <ul className="space-y-2">
-            <li>• 善用自動戰鬥功能刷副本</li>
-            <li>• 別急著消耗高級材料，等裝備更好再強化</li>
-            <li>• 多參與活動獲取限定獎勵</li>
+            <li>• 打到神鐵、精鋼、流星鐵、百煉鋼，優先留等後期再搞裝備</li>
+            <li>• 加入軍團参與國戰拿取額外参與獎勵</li>
+            <li>• 時常看官網，會落實日更 別錯過更多資訊</li>
           </ul>
         </div>
       </div>
