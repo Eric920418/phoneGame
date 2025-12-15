@@ -181,8 +181,11 @@ export default function DropsPage() {
                   <h3 className="text-lg font-bold text-[var(--color-primary)] mb-3">
                     怪物：《{group.boss}》
                   </h3>
-                  <p className="text-[var(--color-text-muted)] leading-relaxed">
+                  <p className="text-[var(--color-text-muted)] leading-relaxed mb-3">
                     {group.items.join('、')}。
+                  </p>
+                  <p className="text-[var(--color-text-muted)] leading-relaxed">
+                    <span className="text-[var(--color-primary)]">地點：</span>{group.location}
                   </p>
                 </div>
               ));
@@ -207,8 +210,11 @@ export default function DropsPage() {
                 <h3 className="text-lg font-bold text-[var(--color-primary)] mb-3">
                   怪物：《{bossData.boss}》
                 </h3>
-                <p className="text-[var(--color-text-muted)] leading-relaxed">
+                <p className="text-[var(--color-text-muted)] leading-relaxed mb-3">
                   {(bossData.drops || []).map(drop => drop.name).join('、')}。
+                </p>
+                <p className="text-[var(--color-text-muted)] leading-relaxed">
+                  <span className="text-[var(--color-primary)]">地點：</span>{bossData.location}
                 </p>
               </div>
             ))}
