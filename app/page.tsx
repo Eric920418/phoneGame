@@ -688,51 +688,43 @@ export default async function HomePage() {
           </FramedSection>
 
           {/* ==================== 6. 掉落查詢 Section ==================== */}
-          <FramedSection id="drops" compact={false}>
+          <FramedSection id="drops" compact={true}>
             <SectionTitle
               icon={Search}
               title="掉落查詢"
               color="#f39c12"
               href="/guide/drops"
             />
-            {/* 以 BOSS 為主的卡片式顯示 - 最多顯示 4 個 */}
+            {/* 以 BOSS 為主的卡片式顯示 - 最多顯示 4 個，精簡版 */}
             {displayDropItems.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 {displayDropItems.slice(0, 4).map((bossData, index) => (
-                  <Link key={index} href="/guide/drops" className="card p-4 hover:border-[#f39c12]/30 transition-all block">
-                    {/* BOSS 標題 */}
-                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[var(--color-border)]">
-                      <div className="w-10 h-10 rounded-lg bg-[#f39c12]/10 flex items-center justify-center">
-                        <Skull className="w-5 h-5 text-[#f39c12]" />
+                  <Link key={index} href="/guide/drops" className="card p-3 sm:p-4 hover:border-[#f39c12]/30 transition-all block group">
+                    {/* BOSS 名稱 */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#f39c12]/10 flex items-center justify-center shrink-0">
+                        <Skull className="w-4 h-4 sm:w-5 sm:h-5 text-[#f39c12]" />
                       </div>
-                      <div>
-                        <h3 className="font-bold text-[var(--color-text)] text-lg">{bossData.boss}</h3>
-                        <div className="flex items-center gap-1 text-sm text-[var(--color-text-muted)]">
-                          <MapPin className="w-3 h-3" />
-                          {bossData.location}
-                        </div>
-                      </div>
+                      <h3 className="font-bold text-[var(--color-text)] text-sm sm:text-base group-hover:text-[var(--color-primary)] transition-colors line-clamp-1">
+                        {bossData.boss}
+                      </h3>
                     </div>
-                    {/* 掉落物品列表 */}
-                    <div className="space-y-2">
-                      {(bossData.drops || []).map((drop, dIndex) => (
+                    {/* 掉落物品 - 只顯示前三個 */}
+                    <div className="space-y-1.5">
+                      {(bossData.drops || []).slice(0, 3).map((drop, dIndex) => (
                         <div
                           key={dIndex}
-                          className="flex items-center justify-between p-2 rounded-lg bg-[var(--color-bg-darker)] hover:bg-[var(--color-bg-card-hover)] transition-colors"
+                          className="flex items-center gap-2 text-xs sm:text-sm text-[var(--color-text-muted)]"
                         >
-                          <div className="flex items-center gap-2">
-                            <Star className="w-4 h-4 shrink-0 text-[#f39c12]" />
-                            <span className="font-medium text-sm text-[var(--color-text)]">
-                              {drop.name}
-                            </span>
-                          </div>
-                          {drop.type && (
-                            <span className="text-xs px-2 py-1 rounded bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
-                              {drop.type}
-                            </span>
-                          )}
+                          <Star className="w-3 h-3 shrink-0 text-[#f39c12]" />
+                          <span className="truncate">{drop.name}</span>
                         </div>
                       ))}
+                      {(bossData.drops || []).length > 3 && (
+                        <div className="text-xs text-[#f39c12] pt-1">
+                          +{(bossData.drops || []).length - 3} 更多...
+                        </div>
+                      )}
                     </div>
                   </Link>
                 ))}

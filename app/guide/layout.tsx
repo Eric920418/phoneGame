@@ -48,7 +48,7 @@ export default function GuideLayout({
 
         <div className="flex flex-col lg:flex-row gap-8">
           {/* 側邊欄導航 */}
-          <aside className="lg:w-64 flex-shrink-0">
+          <aside className="lg:w-48 flex-shrink-0">
             <nav className="sticky top-24 space-y-1">
               <h2 className="text-[var(--color-text)] font-bold text-lg mb-4 px-3">
                 遊戲資訊

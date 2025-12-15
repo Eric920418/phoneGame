@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { Search, MapPin, Star, Skull, X } from "lucide-react";
+import { Search, MapPin, Star, Skull, X, ChevronDown, ChevronUp } from "lucide-react";
 import { graphqlFetch } from "@/lib/apolloClient";
 
 /**
@@ -33,10 +33,27 @@ interface SearchResult {
   location: string;
 }
 
+// 預設顯示的物品數量
+const DEFAULT_VISIBLE_ITEMS = 3;
+
 export default function DropsPage() {
   const [dropItems, setDropItems] = useState<BossDropData[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [expandedBosses, setExpandedBosses] = useState<Set<number>>(new Set());
+
+  // 切換展開/收合狀態
+  const toggleBossExpand = (index: number) => {
+    setExpandedBosses((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(index)) {
+        newSet.delete(index);
+      } else {
+        newSet.add(index);
+      }
+      return newSet;
+    });
+  };
 
   useEffect(() => {
     async function fetchData() {
@@ -63,7 +80,7 @@ export default function DropsPage() {
     fetchData();
   }, []);
 
-  // 搜尋結果 - 當有搜尋關鍵字時，找出所有匹配的物品
+  // 搜尋結果 - 當有搜尋關鍵字時，找出所有匹配的物品或地區
   const searchResults = useMemo<SearchResult[]>(() => {
     if (!searchQuery.trim()) return [];
 
@@ -71,8 +88,13 @@ export default function DropsPage() {
     const query = searchQuery.toLowerCase();
 
     dropItems.forEach((bossData) => {
+      // 檢查地區或 BOSS 名稱是否匹配
+      const locationMatch = bossData.location.toLowerCase().includes(query);
+      const bossMatch = bossData.boss.toLowerCase().includes(query);
+
       (bossData.drops || []).forEach((drop) => {
-        if (drop.name.toLowerCase().includes(query)) {
+        // 物品名稱匹配，或地區/BOSS 匹配
+        if (drop.name.toLowerCase().includes(query) || locationMatch || bossMatch) {
           results.push({
             itemName: drop.name,
             itemType: drop.type,
@@ -129,7 +151,7 @@ export default function DropsPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="搜尋物品名稱（如：寶、劍、馬...）"
+              placeholder="搜尋物品、地區或 BOSS 名稱"
               className="input pl-12 pr-10 w-full text-lg py-3"
             />
             {searchQuery && (
@@ -160,33 +182,27 @@ export default function DropsPage() {
                   key={index}
                   className="card p-4 hover:border-orange-500/30 transition-all"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="flex items-center gap-3">
                     {/* 物品資訊 */}
-                    <div className="flex items-center gap-3 flex-1">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
                       <Star className="w-5 h-5 text-[#f39c12] shrink-0" />
-                      <div>
-                        <span className="font-bold text-[var(--color-text)] text-lg">
-                          {result.itemName}
+                      <span className="font-bold text-[var(--color-text)] text-lg truncate">
+                        {result.itemName}
+                      </span>
+                      {result.itemType && (
+                        <span className="text-xs px-2 py-0.5 rounded bg-[var(--color-primary)]/10 text-[var(--color-primary)] shrink-0">
+                          {result.itemType}
                         </span>
-                        {result.itemType && (
-                          <span className="ml-2 text-xs px-2 py-0.5 rounded bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
-                            {result.itemType}
-                          </span>
-                        )}
-                      </div>
+                      )}
                     </div>
 
                     {/* BOSS 和地點資訊 */}
-                    <div className="flex items-center gap-4 text-sm bg-[var(--color-bg-darker)] px-4 py-2 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <Skull className="w-4 h-4 text-[#f39c12]" />
-                        <span className="text-[var(--color-text)] font-medium">{result.boss}</span>
-                      </div>
-                      <div className="w-px h-4 bg-[var(--color-border)]" />
-                      <div className="flex items-center gap-1 text-[var(--color-text-muted)]">
-                        <MapPin className="w-4 h-4" />
-                        <span>{result.location}</span>
-                      </div>
+                    <div className="flex items-center gap-2 text-sm shrink-0 whitespace-nowrap">
+                      <Skull className="w-4 h-4 text-[#f39c12]" />
+                      <span className="text-[var(--color-text)] font-medium">{result.boss}</span>
+                      <span className="text-[var(--color-text-dark)] mx-1">|</span>
+                      <MapPin className="w-3 h-3 text-[var(--color-text-muted)]" />
+                      <span className="text-[var(--color-text-muted)] text-xs">{result.location}</span>
                     </div>
                   </div>
                 </div>
@@ -230,30 +246,56 @@ export default function DropsPage() {
 
                 {/* 掉落物品列表 */}
                 <div className="space-y-3">
-                  <h4 className="text-sm font-medium text-[var(--color-text-muted)]">
-                    掉落物品
-                  </h4>
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-[var(--color-text-muted)]">
+                      掉落物品 ({(bossData.drops || []).length})
+                    </h4>
+                  </div>
                   {(bossData.drops || []).length > 0 ? (
-                    <div className="space-y-2">
-                      {bossData.drops.map((drop, dIndex) => (
-                        <div
-                          key={dIndex}
-                          className="flex items-center justify-between py-2 px-3 rounded-lg bg-[var(--color-bg-darker)] hover:bg-[var(--color-bg-card-hover)] transition-colors"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Star className="w-4 h-4 text-[#f39c12]" />
-                            <span className="text-[var(--color-text)] font-medium">
-                              {drop.name}
-                            </span>
+                    <>
+                      <div className="space-y-2">
+                        {(expandedBosses.has(index)
+                          ? bossData.drops
+                          : bossData.drops.slice(0, DEFAULT_VISIBLE_ITEMS)
+                        ).map((drop, dIndex) => (
+                          <div
+                            key={dIndex}
+                            className="flex items-center justify-between py-2 px-3 rounded-lg bg-[var(--color-bg-darker)] hover:bg-[var(--color-bg-card-hover)] transition-colors"
+                          >
+                            <div className="flex items-center gap-3">
+                              <Star className="w-4 h-4 text-[#f39c12]" />
+                              <span className="text-[var(--color-text)] font-medium">
+                                {drop.name}
+                              </span>
+                            </div>
+                            {drop.type && (
+                              <span className="text-xs px-2 py-1 rounded bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
+                                {drop.type}
+                              </span>
+                            )}
                           </div>
-                          {drop.type && (
-                            <span className="text-xs px-2 py-1 rounded bg-[var(--color-primary)]/10 text-[var(--color-primary)]">
-                              {drop.type}
-                            </span>
+                        ))}
+                      </div>
+                      {/* 展開/收合按鈕 */}
+                      {bossData.drops.length > DEFAULT_VISIBLE_ITEMS && (
+                        <button
+                          onClick={() => toggleBossExpand(index)}
+                          className="w-full flex items-center justify-center gap-2 py-2 text-sm text-[var(--color-primary)] hover:text-[var(--color-primary-light)] transition-colors rounded-lg hover:bg-[var(--color-bg-darker)]"
+                        >
+                          {expandedBosses.has(index) ? (
+                            <>
+                              <ChevronUp className="w-4 h-4" />
+                              收合
+                            </>
+                          ) : (
+                            <>
+                              <ChevronDown className="w-4 h-4" />
+                              展開全部 ({bossData.drops.length - DEFAULT_VISIBLE_ITEMS} 項)
+                            </>
                           )}
-                        </div>
-                      ))}
-                    </div>
+                        </button>
+                      )}
+                    </>
                   ) : (
                     <p className="text-sm text-[var(--color-text-muted)] py-2">
                       暫無掉落物品資料
