@@ -22,7 +22,8 @@
       "Bash(crontab:*)",
       "Bash(timeout 10 pnpm start:*)",
       "Bash(sudo systemctl restart:*)",
-      "Bash(pm2 restart:*)"
+      "Bash(pm2 restart:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [],
     "ask": []

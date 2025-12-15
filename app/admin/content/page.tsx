@@ -7,7 +7,8 @@ import Link from "next/link";
 import {
   ArrowLeft, Save, AlertCircle, Check, Plus, Trash2,
   Heart, Download, Settings, BookOpen, Search,
-  Map, Gift, Skull, Swords, Trophy, Quote, Flag, ChevronUp, ChevronDown
+  Map, Gift, Skull, Swords, Trophy, Quote, Flag, ChevronUp, ChevronDown,
+  Upload, FileSpreadsheet, X
 } from "lucide-react";
 import { graphqlFetch } from "@/lib/apolloClient";
 
@@ -92,6 +93,14 @@ export default function AdminContentPage() {
   const [activeSection, setActiveSection] = useState<string | null>(null);
   const [editingData, setEditingData] = useState<unknown[]>([]);
   const [saving, setSaving] = useState(false);
+
+  // Excel 導入相關 state
+  const [showExcelImport, setShowExcelImport] = useState(false);
+  const [excelFile, setExcelFile] = useState<File | null>(null);
+  const [excelParsing, setExcelParsing] = useState(false);
+  const [excelPreviewData, setExcelPreviewData] = useState<unknown[] | null>(null);
+  const [excelError, setExcelError] = useState<string | null>(null);
+  const [excelParseErrors, setExcelParseErrors] = useState<string[]>([]);
 
   useEffect(() => {
     if (!isLoading && (!user || !user.isAdmin)) {
@@ -296,6 +305,74 @@ export default function AdminContentPage() {
     const arr = item[field] as unknown[];
     arr.splice(subIndex, 1);
     setEditingData(newData);
+  };
+
+  // Excel 導入功能
+  const handleExcelFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setExcelFile(file);
+      setExcelPreviewData(null);
+      setExcelError(null);
+      setExcelParseErrors([]);
+    }
+    e.target.value = ""; // 清空 input 以便重複選擇
+  };
+
+  const handleParseExcel = async () => {
+    if (!excelFile) return;
+
+    setExcelParsing(true);
+    setExcelError(null);
+    setExcelParseErrors([]);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", excelFile);
+
+      const res = await fetch("/api/parse-excel", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        setExcelError(result.error || "解析失敗");
+        if (result.parseErrors) {
+          setExcelParseErrors(result.parseErrors);
+        }
+        return;
+      }
+
+      setExcelPreviewData(result.data);
+      if (result.parseErrors) {
+        setExcelParseErrors(result.parseErrors);
+      }
+    } catch (err) {
+      setExcelError(err instanceof Error ? err.message : "解析失敗");
+    } finally {
+      setExcelParsing(false);
+    }
+  };
+
+  const handleApplyExcelData = () => {
+    if (!excelPreviewData) return;
+
+    // 將預覽資料套用到 dropItems
+    handleSectionClick("dropItems");
+    setEditingData(excelPreviewData);
+    setShowExcelImport(false);
+    setExcelFile(null);
+    setExcelPreviewData(null);
+    setSuccess("Excel 資料已導入，請確認後點擊「儲存變更」按鈕");
+  };
+
+  const resetExcelImport = () => {
+    setExcelFile(null);
+    setExcelPreviewData(null);
+    setExcelError(null);
+    setExcelParseErrors([]);
   };
 
   if (isLoading || loading) {
@@ -1436,18 +1513,183 @@ export default function AdminContentPage() {
     <div className="min-h-screen bg-[var(--color-bg-dark)]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Link
-            href="/admin/dashboard"
-            className="p-2 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-card)] transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-[var(--color-text)]">首頁內容管理</h1>
-            <p className="text-[var(--color-text-muted)] text-sm">輕鬆編輯首頁各區塊的內容</p>
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/admin/dashboard"
+              className="p-2 rounded-lg text-[var(--color-text-muted)] hover:text-[var(--color-text)] hover:bg-[var(--color-bg-card)] transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div>
+              <h1 className="text-2xl font-bold text-[var(--color-text)]">首頁內容管理</h1>
+              <p className="text-[var(--color-text-muted)] text-sm">輕鬆編輯首頁各區塊的內容</p>
+            </div>
           </div>
+          <button
+            onClick={() => setShowExcelImport(!showExcelImport)}
+            className="btn btn-secondary flex items-center gap-2"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Excel 快速導入
+          </button>
         </div>
+
+        {/* Excel 導入區塊 */}
+        {showExcelImport && (
+          <div className="card p-6 mb-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold text-[var(--color-text)] flex items-center gap-2">
+                <FileSpreadsheet className="w-5 h-5 text-green-500" />
+                Excel 快速導入（掉落查詢）
+              </h2>
+              <button
+                onClick={() => {
+                  setShowExcelImport(false);
+                  resetExcelImport();
+                }}
+                className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="bg-[var(--color-bg-dark)] p-4 rounded-lg mb-4">
+              <p className="text-[var(--color-text-muted)] text-sm mb-2">
+                <strong className="text-[var(--color-text)]">Excel 格式要求：</strong>
+              </p>
+              <ul className="text-[var(--color-text-muted)] text-sm list-disc list-inside space-y-1">
+                <li>第一行必須是標題行：<code className="bg-[var(--color-bg-card)] px-1 rounded">BOSS</code>、<code className="bg-[var(--color-bg-card)] px-1 rounded">出生地點</code>、<code className="bg-[var(--color-bg-card)] px-1 rounded">物品</code></li>
+                <li>物品欄位以空格分隔多個物品</li>
+                <li>只支援 .xlsx 或 .xls 格式</li>
+              </ul>
+            </div>
+
+            {/* 檔案選擇 */}
+            <div className="flex items-center gap-4 mb-4">
+              <label className="btn btn-secondary cursor-pointer flex items-center gap-2">
+                <Upload className="w-4 h-4" />
+                選擇 Excel 檔案
+                <input
+                  type="file"
+                  accept=".xlsx,.xls"
+                  onChange={handleExcelFileChange}
+                  className="hidden"
+                />
+              </label>
+              {excelFile && (
+                <div className="flex items-center gap-2 text-[var(--color-text)]">
+                  <FileSpreadsheet className="w-4 h-4 text-green-500" />
+                  <span>{excelFile.name}</span>
+                  <button
+                    onClick={resetExcelImport}
+                    className="text-red-400 hover:text-red-300 p-1"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 解析按鈕 */}
+            {excelFile && !excelPreviewData && (
+              <button
+                onClick={handleParseExcel}
+                disabled={excelParsing}
+                className="btn btn-primary mb-4"
+              >
+                {excelParsing ? "解析中..." : "解析並預覽"}
+              </button>
+            )}
+
+            {/* 錯誤訊息 */}
+            {excelError && (
+              <div className="mb-4 p-4 rounded-lg bg-red-500/10 border border-red-500/20 flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-red-400 text-sm font-medium">{excelError}</p>
+                  {excelParseErrors.length > 0 && (
+                    <ul className="mt-2 text-red-400/80 text-xs list-disc list-inside">
+                      {excelParseErrors.slice(0, 5).map((err, i) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                      {excelParseErrors.length > 5 && (
+                        <li>... 還有 {excelParseErrors.length - 5} 個錯誤</li>
+                      )}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 預覽資料 */}
+            {excelPreviewData && (
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-[var(--color-text)] font-medium">
+                    預覽資料（共 {excelPreviewData.length} 筆 BOSS）
+                  </h3>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={resetExcelImport}
+                      className="btn btn-secondary text-sm"
+                    >
+                      重新選擇
+                    </button>
+                    <button
+                      onClick={handleApplyExcelData}
+                      className="btn btn-primary text-sm flex items-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      套用資料
+                    </button>
+                  </div>
+                </div>
+
+                {excelParseErrors.length > 0 && (
+                  <div className="mb-3 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                    <p className="text-yellow-400 text-sm">
+                      注意：有 {excelParseErrors.length} 行資料無法解析，已跳過
+                    </p>
+                  </div>
+                )}
+
+                <div className="max-h-96 overflow-y-auto border border-[var(--color-border)] rounded-lg">
+                  <table className="w-full text-sm">
+                    <thead className="bg-[var(--color-bg-dark)] sticky top-0">
+                      <tr>
+                        <th className="text-left p-3 text-[var(--color-text-muted)]">#</th>
+                        <th className="text-left p-3 text-[var(--color-text-muted)]">BOSS</th>
+                        <th className="text-left p-3 text-[var(--color-text-muted)]">出生地點</th>
+                        <th className="text-left p-3 text-[var(--color-text-muted)]">掉落物品數</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(excelPreviewData as { boss: string; location: string; drops: unknown[] }[]).map((item, index) => (
+                        <tr key={index} className="border-t border-[var(--color-border)] hover:bg-[var(--color-bg-dark)]/50">
+                          <td className="p-3 text-[var(--color-text-muted)]">{index + 1}</td>
+                          <td className="p-3 text-[var(--color-text)] font-medium">{item.boss}</td>
+                          <td className="p-3 text-[var(--color-text-muted)] max-w-xs truncate" title={item.location}>
+                            {item.location || "-"}
+                          </td>
+                          <td className="p-3 text-[var(--color-text-muted)]">
+                            <span className="bg-[var(--color-primary)]/20 text-[var(--color-primary)] px-2 py-0.5 rounded text-xs">
+                              {item.drops?.length || 0} 個
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <p className="mt-3 text-[var(--color-text-muted)] text-xs">
+                  點擊「套用資料」後，資料會載入到編輯區，您需要再點擊「儲存變更」才會正式存到資料庫
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* 左側：區塊列表 */}

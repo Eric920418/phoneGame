@@ -206,16 +206,7 @@ export default function AnnouncementSection({
         </div>
       )}
 
-      {/* 查看更多連結 */}
-      <div className="mt-4 text-center">
-        <Link
-          href="/announcements"
-          className="text-[var(--color-primary)] hover:text-[var(--color-primary-light)] inline-flex items-center gap-1 text-sm"
-        >
-          查看所有公告
-          <ChevronRight className="w-4 h-4" />
-        </Link>
-      </div>
+
     </div>
   );
 }
