@@ -416,10 +416,54 @@ export default async function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { name: "LINE官方", url: "https://lin.ee/v3QB1Nh", icon: "💬" },
-              { name: "LINE社群", url: "https://line.me/ti/g2/2bdAwMsiQEfaxUbufL9MIVQdIYw0Bla5W3Ta5w?utm_source=invitation&utm_medium=link_copy&utm_campaign=default", icon: "👥" },
-              { name: "FB粉專", url: "https://www.facebook.com/profile.php?id=61584223575435", icon: "📘" },
-              { name: "TikTok", url: "https://www.tiktok.com/@polang2025", icon: "🎵" },
+              {
+                name: "LINE官方",
+                url: "https://lin.ee/v3QB1Nh",
+                icon: (
+                  <Image
+                    src="/稿定设计-4.png"
+                    alt="LINE"
+                    width={100}
+                    height={100}
+                  />
+                ),
+              },
+              {
+                name: "LINE社群",
+                url: "https://line.me/ti/g2/2bdAwMsiQEfaxUbufL9MIVQdIYw0Bla5W3Ta5w?utm_source=invitation&utm_medium=link_copy&utm_campaign=default",
+                icon: (
+                  <Image
+                    src="/稿定设计-2.png"
+                    alt="LINE"
+                    width={100}
+                    height={100}
+                  />
+                ),
+              },
+              {
+                name: "FB粉專",
+                url: "https://www.facebook.com/profile.php?id=61584223575435",
+                icon: (
+                  <Image
+                    src="/稿定设计-3.png"
+                    alt="FB"
+                    width={100}
+                    height={100}
+                  />
+                ),
+              },
+              {
+                name: "TikTok",
+                url: "https://www.tiktok.com/@polang2025",
+                icon: (
+                  <Image
+                    src="/稿定设计-1.png"
+                    alt="TikTok"
+                    width={100}
+                    height={100}
+                  />
+                ),
+              },
             ].map((social, i) => (
               <a
                 key={i}
@@ -567,32 +611,45 @@ export default async function HomePage() {
               color="#3498db"
               href="/guide/download"
             />
-            {downloadCenterData?.downloads && downloadCenterData.downloads.length > 0 ? (
+            {downloadCenterData?.downloads &&
+            downloadCenterData.downloads.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
                 {downloadCenterData.downloads.map((item) => {
                   const content = (
                     <>
                       <div
                         className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0 text-2xl sm:text-3xl"
-                        style={{ backgroundColor: item.id === "windows" ? "#0078d420" : "#55555520" }}
+                        style={{
+                          backgroundColor:
+                            item.id === "windows" ? "#0078d420" : "#55555520",
+                        }}
                       >
                         {item.id === "windows" ? (
-                          <Monitor className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: "#0078d4" }} />
+                          <Monitor
+                            className="w-6 h-6 sm:w-7 sm:h-7"
+                            style={{ color: "#0078d4" }}
+                          />
                         ) : (
                           <span>🍎</span>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-[var(--color-text)] text-sm sm:text-base">
-                          {item.id === "windows" ? "Windows 客戶端" : "macOS 客戶端"}
+                          {item.id === "windows"
+                            ? "Windows 客戶端"
+                            : "macOS 客戶端"}
                         </h3>
                         <p className="text-[var(--color-text-muted)] text-xs sm:text-sm truncate">
                           {item.downloadUrl ? "點擊下載" : "尚未設定"}
                         </p>
                       </div>
-                      <FileDown className={`w-5 h-5 sm:w-6 sm:h-6 shrink-0 ${
-                        item.downloadUrl ? "text-blue-400" : "text-[var(--color-text-dark)]"
-                      }`} />
+                      <FileDown
+                        className={`w-5 h-5 sm:w-6 sm:h-6 shrink-0 ${
+                          item.downloadUrl
+                            ? "text-blue-400"
+                            : "text-[var(--color-text-dark)]"
+                        }`}
+                      />
                     </>
                   );
 
@@ -632,33 +689,60 @@ export default async function HomePage() {
               href="/guide/settings"
             />
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
-              {displayGameSettings.map((group: { id?: string; name?: string; category?: string; color?: string; settings: { name: string }[] }, index: number) => {
-                // 優先使用 category（後台設定的組名稱），其次用 name
-                const displayName = group.category || group.name || `設定組 #${index + 1}`;
-                const defaultColors = ['#3498db', '#2ecc71', '#9b59b6', '#e74c3c', '#f39c12', '#1abc9c'];
-                const displayColor = group.color || defaultColors[index % defaultColors.length];
-                return (
-                  <Link key={group.id || index} href="/guide/settings" className="card p-4 hover:border-purple-500/30 transition-all group">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-                        style={{ backgroundColor: `${displayColor}20` }}
-                      >
-                        <Shield className="w-5 h-5" style={{ color: displayColor }} />
+              {displayGameSettings.map(
+                (
+                  group: {
+                    id?: string;
+                    name?: string;
+                    category?: string;
+                    color?: string;
+                    settings: { name: string }[];
+                  },
+                  index: number
+                ) => {
+                  // 優先使用 category（後台設定的組名稱），其次用 name
+                  const displayName =
+                    group.category || group.name || `設定組 #${index + 1}`;
+                  const defaultColors = [
+                    "#3498db",
+                    "#2ecc71",
+                    "#9b59b6",
+                    "#e74c3c",
+                    "#f39c12",
+                    "#1abc9c",
+                  ];
+                  const displayColor =
+                    group.color || defaultColors[index % defaultColors.length];
+                  return (
+                    <Link
+                      key={group.id || index}
+                      href="/guide/settings"
+                      className="card p-4 hover:border-purple-500/30 transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+                          style={{ backgroundColor: `${displayColor}20` }}
+                        >
+                          <Shield
+                            className="w-5 h-5"
+                            style={{ color: displayColor }}
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="font-semibold text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors text-sm sm:text-base line-clamp-1">
+                            {displayName}
+                          </h3>
+                          <p className="text-xs text-[var(--color-text-muted)]">
+                            {group.settings.length} 項設定
+                          </p>
+                        </div>
+                        <ChevronRight className="w-5 h-5 text-[var(--color-text-dark)] group-hover:text-[var(--color-primary)] transition-colors shrink-0" />
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h3 className="font-semibold text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors text-sm sm:text-base line-clamp-1">
-                          {displayName}
-                        </h3>
-                        <p className="text-xs text-[var(--color-text-muted)]">
-                          {group.settings.length} 項設定
-                        </p>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-[var(--color-text-dark)] group-hover:text-[var(--color-primary)] transition-colors shrink-0" />
-                    </div>
-                  </Link>
-                );
-              })}
+                    </Link>
+                  );
+                }
+              )}
             </div>
           </FramedSection>
 
@@ -705,7 +789,11 @@ export default async function HomePage() {
             {displayDropItems.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                 {displayDropItems.slice(0, 4).map((bossData, index) => (
-                  <Link key={index} href="/guide/drops" className="card p-3 sm:p-4 hover:border-[#f39c12]/30 transition-all block group">
+                  <Link
+                    key={index}
+                    href="/guide/drops"
+                    className="card p-3 sm:p-4 hover:border-[#f39c12]/30 transition-all block group"
+                  >
                     {/* BOSS 名稱 */}
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[#f39c12]/10 flex items-center justify-center shrink-0">
@@ -717,15 +805,17 @@ export default async function HomePage() {
                     </div>
                     {/* 掉落物品 - 只顯示前三個 */}
                     <div className="space-y-1.5">
-                      {(bossData.drops || []).slice(0, 3).map((drop, dIndex) => (
-                        <div
-                          key={dIndex}
-                          className="flex items-center gap-2 text-xs sm:text-sm text-[var(--color-text-muted)]"
-                        >
-                          <Star className="w-3 h-3 shrink-0 text-[#f39c12]" />
-                          <span className="truncate">{drop.name}</span>
-                        </div>
-                      ))}
+                      {(bossData.drops || [])
+                        .slice(0, 3)
+                        .map((drop, dIndex) => (
+                          <div
+                            key={dIndex}
+                            className="flex items-center gap-2 text-xs sm:text-sm text-[var(--color-text-muted)]"
+                          >
+                            <Star className="w-3 h-3 shrink-0 text-[#f39c12]" />
+                            <span className="truncate">{drop.name}</span>
+                          </div>
+                        ))}
                       {(bossData.drops || []).length > 3 && (
                         <div className="text-xs text-[#f39c12] pt-1">
                           +{(bossData.drops || []).length - 3} 更多...
@@ -740,7 +830,9 @@ export default async function HomePage() {
                 <div className="w-12 h-12 rounded-full bg-[#f39c12]/10 flex items-center justify-center mx-auto mb-3">
                   <Search className="w-6 h-6 text-[#f39c12]" />
                 </div>
-                <p className="text-[var(--color-text-muted)]">暫無掉落資料，敬請期待</p>
+                <p className="text-[var(--color-text-muted)]">
+                  暫無掉落資料，敬請期待
+                </p>
               </div>
             )}
           </FramedSection>
@@ -806,7 +898,10 @@ export default async function HomePage() {
                 <div className="absolute right-0 top-0 bottom-4 w-12 bg-gradient-to-l from-black/50 to-transparent z-10 pointer-events-none" />
 
                 <div className="overflow-x-auto pb-4 -mx-2 px-2 horizontal-scroll">
-                  <div className="flex gap-3 sm:gap-4" style={{ minWidth: 'max-content' }}>
+                  <div
+                    className="flex gap-3 sm:gap-4"
+                    style={{ minWidth: "max-content" }}
+                  >
                     {displayTreasureBoxes.map((box, index) => (
                       <Link
                         key={index}
@@ -815,11 +910,16 @@ export default async function HomePage() {
                       >
                         <div className="flex items-center gap-2 mb-3">
                           <Gift className="w-5 h-5 text-yellow-400 shrink-0" />
-                          <h3 className="font-bold text-[var(--color-text)] truncate">{box.name}</h3>
+                          <h3 className="font-bold text-[var(--color-text)] truncate">
+                            {box.name}
+                          </h3>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           {(box.items || []).slice(0, 6).map((item, i) => {
-                            const displayText = typeof item === 'string' ? item : (item as { name?: string }).name || '';
+                            const displayText =
+                              typeof item === "string"
+                                ? item
+                                : (item as { name?: string }).name || "";
                             return (
                               <span
                                 key={i}
@@ -850,8 +950,6 @@ export default async function HomePage() {
             )}
           </FramedSection>
 
-
-
           {/* ==================== 10. 國戰時間 Section ==================== */}
           <FramedSection id="nation-war" compact={true}>
             <SectionTitle
@@ -862,7 +960,10 @@ export default async function HomePage() {
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
               {/* 時間表 */}
-              <Link href="/guide/nation-war" className="card p-4 h-[300px] flex flex-col hover:border-violet-500/30 transition-all">
+              <Link
+                href="/guide/nation-war"
+                className="card p-4 h-[300px] flex flex-col hover:border-violet-500/30 transition-all"
+              >
                 <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
                   <Clock className="w-4 h-4 text-violet-400" />
                   每週時程表
@@ -906,7 +1007,10 @@ export default async function HomePage() {
               </Link>
 
               {/* 三國陣營 */}
-              <Link href="/guide/nation-war" className="card p-4 h-[300px] flex flex-col hover:border-violet-500/30 transition-all overflow-hidden">
+              <Link
+                href="/guide/nation-war"
+                className="card p-4 h-[300px] flex flex-col hover:border-violet-500/30 transition-all overflow-hidden"
+              >
                 <h3 className="font-semibold text-[var(--color-text)] mb-3 flex items-center gap-2 text-sm sm:text-base shrink-0">
                   <Flag className="w-4 h-4 text-violet-400" />
                   三國陣營
@@ -963,7 +1067,10 @@ export default async function HomePage() {
             />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               {/* 等級排行 */}
-              <Link href="/guide/arena" className="card p-4 h-[350px] flex flex-col hover:border-amber-500/30 transition-all">
+              <Link
+                href="/guide/arena"
+                className="card p-4 h-[350px] flex flex-col hover:border-amber-500/30 transition-all"
+              >
                 <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
                   <Medal className="w-4 h-4 text-amber-400" />
                   等級排行
@@ -1012,56 +1119,64 @@ export default async function HomePage() {
               </Link>
 
               {/* 國戰討敵排行 */}
-              <Link href="/guide/arena" className="card p-4 h-[350px] flex flex-col hover:border-red-500/30 transition-all">
+              <Link
+                href="/guide/arena"
+                className="card p-4 h-[350px] flex flex-col hover:border-red-500/30 transition-all"
+              >
                 <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
                   <Swords className="w-4 h-4 text-red-400" />
                   國戰討敵排行
                 </h3>
                 <div className="space-y-2 overflow-y-auto flex-1">
-                  {(displayArenaRanking.nationWarRanking || []).map((player) => (
-                    <div
-                      key={player.rank}
-                      className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]"
-                    >
-                      <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                        <span
-                          className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold shrink-0 ${
-                            player.rank === 1
-                              ? "bg-yellow-500/20 text-yellow-400"
-                              : player.rank === 2
-                              ? "bg-gray-400/20 text-gray-300"
-                              : player.rank === 3
-                              ? "bg-orange-500/20 text-orange-400"
-                              : "bg-[var(--color-bg-card)] text-[var(--color-text-muted)]"
-                          }`}
-                        >
-                          {player.rank}
-                        </span>
-                        <div className="min-w-0">
+                  {(displayArenaRanking.nationWarRanking || []).map(
+                    (player) => (
+                      <div
+                        key={player.rank}
+                        className="flex items-center justify-between p-2 sm:p-3 rounded-lg bg-[var(--color-bg-darker)]"
+                      >
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                           <span
-                            className={`font-medium text-sm truncate block ${
-                              player.rank <= 3
-                                ? "text-[var(--color-primary)]"
-                                : "text-[var(--color-text)]"
+                            className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold shrink-0 ${
+                              player.rank === 1
+                                ? "bg-yellow-500/20 text-yellow-400"
+                                : player.rank === 2
+                                ? "bg-gray-400/20 text-gray-300"
+                                : player.rank === 3
+                                ? "bg-orange-500/20 text-orange-400"
+                                : "bg-[var(--color-bg-card)] text-[var(--color-text-muted)]"
                             }`}
                           >
-                            {player.name}
+                            {player.rank}
                           </span>
-                          <p className="text-[10px] sm:text-xs text-[var(--color-text-dark)] truncate">
-                            {player.guild}
-                          </p>
+                          <div className="min-w-0">
+                            <span
+                              className={`font-medium text-sm truncate block ${
+                                player.rank <= 3
+                                  ? "text-[var(--color-primary)]"
+                                  : "text-[var(--color-text)]"
+                              }`}
+                            >
+                              {player.name}
+                            </span>
+                            <p className="text-[10px] sm:text-xs text-[var(--color-text-dark)] truncate">
+                              {player.guild}
+                            </p>
+                          </div>
                         </div>
+                        <span className="font-bold text-red-400 text-sm sm:text-base shrink-0 ml-2">
+                          {player.score}
+                        </span>
                       </div>
-                      <span className="font-bold text-red-400 text-sm sm:text-base shrink-0 ml-2">
-                        {player.score}
-                      </span>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </Link>
 
               {/* 赤壁討敵排行 */}
-              <Link href="/guide/arena" className="card p-4 h-[350px] flex flex-col hover:border-orange-500/30 transition-all">
+              <Link
+                href="/guide/arena"
+                className="card p-4 h-[350px] flex flex-col hover:border-orange-500/30 transition-all"
+              >
                 <h3 className="font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2 text-sm sm:text-base shrink-0">
                   <Flame className="w-4 h-4 text-orange-400" />
                   赤壁討敵排行
