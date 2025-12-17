@@ -5,8 +5,8 @@ const OPENAI_TIMEOUT = 30000; // 30 秒超時
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
-  timeout: OPENAI_TIMEOUT, // 添加超時設置
-  maxRetries: 2, // 最多重試 2 次
+  timeout: OPENAI_TIMEOUT,
+  maxRetries: 2,
 });
 
 // 中文玩家名稱池 - 更自然的網名
@@ -31,37 +31,37 @@ const AVATARS = [
   "🐉", "🦁", "🐯", "🦅", "🗡️", "🛡️", "⚡", "🔱", "👹", "🎭"
 ];
 
-// 評論口吻模板 - 讓 AI 模仿不同類型玩家（2025台灣年輕人風格）
+// 評論口吻模板 - 復古 MMORPG 老玩家風格
 const REVIEW_PERSONAS = [
   {
-    type: "大學生玩家",
-    style: "大學生，期待開服後跟室友一起玩",
-    tone: "年輕活潑、用語很潮、會用縮寫"
+    type: "打王老手",
+    style: "喜歡打王掉寶的老玩家",
+    tone: "有打王經驗、對掉寶機制有感"
   },
   {
-    type: "上班族",
-    style: "剛出社會的年輕上班族，想找遊戲紓壓",
-    tone: "期待下班後能玩、輕鬆口吻"
+    type: "復古情懷玩家",
+    style: "懷念以前群英Online的老玩家",
+    tone: "有懷舊情懷、喜歡原味玩法"
   },
   {
-    type: "三國迷",
-    style: "本來就喜歡三國題材的玩家",
-    tone: "對三國內容有期待、會提武將"
+    type: "公平黨",
+    style: "討厭P2W、喜歡公平競爭",
+    tone: "關注公平性、不吃課金"
   },
   {
-    type: "手遊老手",
-    style: "玩過很多手遊，看到這款覺得不錯",
-    tone: "有經驗但期待新遊戲"
+    type: "社交玩家",
+    style: "喜歡跟人互動、參與國戰",
+    tone: "享受社交、國戰對抗"
   },
   {
-    type: "社群玩家",
-    style: "喜歡跟朋友組隊玩遊戲",
-    tone: "期待公會系統、國戰"
+    type: "練功控",
+    style: "享受角色成長的玩家",
+    tone: "關注練功節奏、升等體驗"
   },
   {
-    type: "休閒玩家",
-    style: "不想太肝，找輕鬆的遊戲",
-    tone: "佛系、輕鬆、不想太累"
+    type: "裝備控",
+    style: "喜歡打裝、強化裝備的玩家",
+    tone: "關注裝備取得、強化系統"
   }
 ];
 
@@ -77,110 +77,267 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number, errorMessage: st
 
 const DB_TIMEOUT = 10000; // 10 秒數據庫超時
 
-// 從資料庫獲取最新內容
-async function getLatestContent() {
-  try {
-    // 獲取最新公告（帶超時）
-    const announcements = await withTimeout(
-      prisma.announcement.findMany({
-        where: { isPublished: true },
-        orderBy: { publishedAt: 'desc' },
-        take: 5,
-        select: { title: true, excerpt: true, type: true }
-      }),
-      DB_TIMEOUT,
-      '獲取公告超時'
-    );
+// 資料型別定義
+interface SponsorPlan {
+  name: string;
+  price: number;
+  benefits: string[];
+}
 
-    // 獲取內容區塊（帶超時）
-    const contentBlocks = await withTimeout(
-      prisma.contentBlock.findMany({
-        select: { key: true, payload: true }
-      }),
-      DB_TIMEOUT,
-      '獲取內容區塊超時'
-    );
+interface DropItem {
+  boss: string;
+  location: string;
+  category?: string;
+  drops: { name: string }[];
+}
+
+interface Monster {
+  name: string;
+  drops: string[];
+}
+
+interface Dungeon {
+  name: string;
+  cooldown?: string;
+  dungeonTime?: string;
+  players: string;
+  monsters?: Monster[];
+}
+
+interface TreasureBox {
+  name: string;
+  items: string[];
+}
+
+interface WarScheduleItem {
+  day: string;
+  time: string;
+  type: string;
+}
+
+interface NationWarData {
+  rules?: { title: string; items: string[] }[];
+  rewards?: { rank: string; items: string[] }[];
+}
+
+interface RankingPlayer {
+  rank: number;
+  name: string;
+  guild: string;
+  score: number;
+}
+
+interface ArenaRanking {
+  levelRanking?: RankingPlayer[];
+  nationWarRanking?: RankingPlayer[];
+  chibiRanking?: RankingPlayer[];
+}
+
+interface GuideItem {
+  chapter: number;
+  title: string;
+  desc: string;
+}
+
+interface SettingsCategory {
+  category?: string;
+  name?: string;
+  settings: { name: string; value?: string }[];
+}
+
+interface DownloadData {
+  downloads: { name: string; version: string; size: string }[];
+  patches: { name: string; date: string; description: string }[];
+}
+
+interface Faction {
+  name: string;
+  leader: string;
+  description: string;
+  bonus: string;
+}
+
+// 從資料庫獲取所有內容
+async function getAllContent() {
+  try {
+    // 並行獲取所有內容區塊
+    const [announcements, contentBlocks] = await Promise.all([
+      // 獲取最新公告
+      withTimeout(
+        prisma.announcement.findMany({
+          where: { isPublished: true },
+          orderBy: { publishedAt: 'desc' },
+          take: 5,
+          select: { title: true, excerpt: true, type: true }
+        }),
+        DB_TIMEOUT,
+        '獲取公告超時'
+      ),
+      // 獲取所有內容區塊
+      withTimeout(
+        prisma.contentBlock.findMany({
+          select: { key: true, payload: true }
+        }),
+        DB_TIMEOUT,
+        '獲取內容區塊超時'
+      )
+    ]);
 
     // 解析內容區塊
-    const parsedBlocks: Record<string, unknown> = {};
+    const blocks: Record<string, unknown> = {};
     contentBlocks.forEach(block => {
-      parsedBlocks[block.key] = block.payload;
+      blocks[block.key] = block.payload;
     });
 
-    return {
-      announcements,
-      contentBlocks: parsedBlocks
-    };
+    return { announcements, blocks };
   } catch (error) {
     console.error("獲取資料庫內容失敗:", error);
-    return { announcements: [], contentBlocks: {} };
+    return { announcements: [], blocks: {} };
   }
 }
 
 // 從資料庫內容區塊提取遊戲資訊
-function extractGameInfo(contentBlocks: Record<string, unknown>) {
+function extractGameInfo(blocks: Record<string, unknown>) {
   const info: string[] = [];
 
-  // 提取活動公告
-  if (contentBlocks.eventAnnouncements && Array.isArray(contentBlocks.eventAnnouncements)) {
-    const events = contentBlocks.eventAnnouncements as Array<{ title: string; date: string }>;
-    if (events.length > 0) {
-      info.push("【最新活動】");
-      events.slice(0, 3).forEach(e => info.push(`- ${e.title}（${e.date}）`));
+  // 1. 贊助方案
+  const sponsorPlans = blocks.sponsorPlans as SponsorPlan[] | undefined;
+  if (sponsorPlans && Array.isArray(sponsorPlans) && sponsorPlans.length > 0) {
+    info.push("【贊助方案】");
+    sponsorPlans.slice(0, 3).forEach(p => {
+      info.push(`- ${p.name}（NT$${p.price}）：${(p.benefits || []).slice(0, 2).join('、')}`);
+    });
+  }
+
+  // 2. 掉落查詢
+  const dropItems = blocks.dropItems as DropItem[] | undefined;
+  if (dropItems && Array.isArray(dropItems) && dropItems.length > 0) {
+    info.push("\n【怪物掉落】");
+    // 取幾個有代表性的怪物
+    const sampleDrops = dropItems.slice(0, 5);
+    sampleDrops.forEach(d => {
+      const dropNames = (d.drops || []).map(drop => drop.name).slice(0, 3).join('、');
+      info.push(`- ${d.boss}（${d.location}）：${dropNames}`);
+    });
+  }
+
+  // 3. 副本介紹
+  const dungeons = blocks.dungeons as Dungeon[] | undefined;
+  if (dungeons && Array.isArray(dungeons) && dungeons.length > 0) {
+    info.push("\n【副本介紹】");
+    dungeons.forEach(d => {
+      const details: string[] = [];
+      if (d.players) details.push(`${d.players}人`);
+      if (d.cooldown) details.push(`間隔${d.cooldown}`);
+      if (d.dungeonTime) details.push(`時間${d.dungeonTime}`);
+      info.push(`- ${d.name}（${details.join('，')}）`);
+      if (d.monsters && d.monsters.length > 0) {
+        const bossNames = d.monsters.map(m => m.name).join('、');
+        info.push(`  BOSS：${bossNames}`);
+      }
+    });
+  }
+
+  // 4. 寶箱福袋內容
+  const treasureBoxes = blocks.treasureBoxes as TreasureBox[] | undefined;
+  if (treasureBoxes && Array.isArray(treasureBoxes) && treasureBoxes.length > 0) {
+    info.push("\n【寶箱福袋】");
+    treasureBoxes.slice(0, 3).forEach(box => {
+      const items = (box.items || []).slice(0, 3).join('、');
+      info.push(`- ${box.name}：${items}...`);
+    });
+  }
+
+  // 5. 國戰時間
+  const warSchedule = blocks.warSchedule as WarScheduleItem[] | undefined;
+  if (warSchedule && Array.isArray(warSchedule) && warSchedule.length > 0) {
+    info.push("\n【國戰時間】");
+    warSchedule.forEach(w => {
+      info.push(`- ${w.day} ${w.time} - ${w.type}`);
+    });
+  }
+
+  // 6. 國戰規則與獎勵
+  const nationWar = blocks.nationWar as NationWarData | undefined;
+  if (nationWar) {
+    if (nationWar.rewards && nationWar.rewards.length > 0) {
+      info.push("\n【國戰獎勵】");
+      nationWar.rewards.slice(0, 3).forEach(r => {
+        info.push(`- ${r.rank}：${(r.items || []).slice(0, 2).join('、')}`);
+      });
     }
   }
 
-  // 提取副本資訊
-  if (contentBlocks.dungeons && Array.isArray(contentBlocks.dungeons)) {
-    const dungeons = contentBlocks.dungeons as Array<{ name: string; boss: string; level: number }>;
-    if (dungeons.length > 0) {
-      info.push("\n【副本挑戰】");
-      dungeons.forEach(d => info.push(`- ${d.name}（Lv.${d.level}）- BOSS: ${d.boss}`));
+  // 7. 三國陣營
+  const factions = blocks.factions as Faction[] | undefined;
+  if (factions && Array.isArray(factions) && factions.length > 0) {
+    info.push("\n【三國陣營】");
+    factions.forEach(f => {
+      info.push(`- ${f.name}：${f.description}${f.bonus ? `（${f.bonus}）` : ''}`);
+    });
+  }
+
+  // 8. 三國排行
+  const arenaRanking = blocks.arenaRanking as ArenaRanking | undefined;
+  if (arenaRanking) {
+    const topPlayers: string[] = [];
+    if (arenaRanking.levelRanking && arenaRanking.levelRanking.length > 0) {
+      const top = arenaRanking.levelRanking[0];
+      topPlayers.push(`等級榜首：${top.name}（Lv.${top.score}）`);
+    }
+    if (arenaRanking.nationWarRanking && arenaRanking.nationWarRanking.length > 0) {
+      const top = arenaRanking.nationWarRanking[0];
+      topPlayers.push(`國戰榜首：${top.name}（${top.score}討敵）`);
+    }
+    if (topPlayers.length > 0) {
+      info.push("\n【三國排行】");
+      topPlayers.forEach(p => info.push(`- ${p}`));
     }
   }
 
-  // 提取 BOSS 資訊
-  if (contentBlocks.bossList && Array.isArray(contentBlocks.bossList)) {
-    const bosses = contentBlocks.bossList as Array<{ name: string; title: string; location: string }>;
-    if (bosses.length > 0) {
-      info.push("\n【知名 BOSS】");
-      bosses.forEach(b => info.push(`- ${b.name}「${b.title}」- ${b.location}`));
-    }
+  // 9. 新手攻略
+  const beginnerGuides = blocks.beginnerGuides as GuideItem[] | undefined;
+  if (beginnerGuides && Array.isArray(beginnerGuides) && beginnerGuides.length > 0) {
+    info.push("\n【新手攻略章節】");
+    beginnerGuides.slice(0, 3).forEach(g => {
+      info.push(`- 第${g.chapter}章：${g.title}`);
+    });
   }
 
-  // 提取掉落資訊
-  if (contentBlocks.dropItems && Array.isArray(contentBlocks.dropItems)) {
-    const drops = contentBlocks.dropItems as Array<{ name: string; rarity: string; rate: string }>;
-    if (drops.length > 0) {
-      info.push("\n【稀有掉落】");
-      drops.forEach(d => info.push(`- ${d.name}（${d.rarity}，${d.rate}掉率）`));
-    }
+  // 10. 遊戲設定（快捷鍵）
+  const gameSettings = blocks.gameSettings as SettingsCategory[] | undefined;
+  if (gameSettings && Array.isArray(gameSettings) && gameSettings.length > 0) {
+    info.push("\n【遊戲快捷鍵】");
+    const allSettings = gameSettings.flatMap(g => g.settings || []).slice(0, 5);
+    allSettings.forEach(s => {
+      info.push(`- ${s.name}：${s.value || ''}`);
+    });
   }
 
-  // 提取贊助方案
-  if (contentBlocks.sponsorPlans && Array.isArray(contentBlocks.sponsorPlans)) {
-    const plans = contentBlocks.sponsorPlans as Array<{ name: string; benefits: string[] }>;
-    if (plans.length > 0) {
-      info.push("\n【贊助福利】");
-      plans.slice(0, 2).forEach(p => info.push(`- ${p.name}方案：${p.benefits.slice(0, 2).join('、')}`));
+  // 11. 下載專區
+  const downloadCenter = blocks.downloadCenter as DownloadData | undefined;
+  if (downloadCenter) {
+    if (downloadCenter.downloads && downloadCenter.downloads.length > 0) {
+      info.push("\n【下載專區】");
+      downloadCenter.downloads.forEach(d => {
+        info.push(`- ${d.name}（${d.version}，${d.size}）`);
+      });
     }
-  }
-
-  // 提取擂台排行
-  if (contentBlocks.arenaRanking && Array.isArray(contentBlocks.arenaRanking)) {
-    const ranking = contentBlocks.arenaRanking as Array<{ name: string; guild: string }>;
-    if (ranking.length > 0) {
-      info.push("\n【武魂擂台高手】");
-      ranking.slice(0, 3).forEach((r, i) => info.push(`- 第${i + 1}名：${r.name}（${r.guild}）`));
+    if (downloadCenter.patches && downloadCenter.patches.length > 0) {
+      info.push("最新補丁：");
+      downloadCenter.patches.slice(0, 2).forEach(p => {
+        info.push(`- ${p.name}（${p.date}）：${p.description}`);
+      });
     }
   }
 
   return info.join('\n');
 }
 
-// 生成遊戲時數 (遊戲尚未開服，所有玩家都是 0 小時)
+// 生成遊戲時數
 function generateGameHours(_personaType: string): number {
-  return 0;
+  // 復古服玩家有一定遊戲時數
+  return Math.floor(Math.random() * 200) + 50;
 }
 
 // 創建 AI 虛擬用戶
@@ -205,7 +362,7 @@ async function getOrCreateAIUser(persona: typeof REVIEW_PERSONAS[0]): Promise<nu
 }
 
 // 使用 OpenAI 根據網站內容和資料庫資料生成擬人化評論
-async function generateReviewContent(dbContent: Awaited<ReturnType<typeof getLatestContent>>): Promise<{
+async function generateReviewContent(dbContent: Awaited<ReturnType<typeof getAllContent>>): Promise<{
   content: string;
   rating: number;
   isRecommended: boolean;
@@ -214,77 +371,118 @@ async function generateReviewContent(dbContent: Awaited<ReturnType<typeof getLat
   // 隨機選擇一個玩家類型
   const persona = REVIEW_PERSONAS[Math.floor(Math.random() * REVIEW_PERSONAS.length)];
 
-  // 準備公告資訊（從資料庫讀取）
+  // 準備公告資訊
   const announcementInfo = dbContent.announcements.length > 0
     ? dbContent.announcements.map(a => `- ${a.title}`).join('\n')
     : "";
 
   // 從資料庫內容區塊提取動態遊戲資訊
-  const dynamicGameInfo = extractGameInfo(dbContent.contentBlocks);
+  const dynamicGameInfo = extractGameInfo(dbContent.blocks);
 
-  // 準備遊戲內容資訊（基礎資訊 + 資料庫動態內容）
-  const gameFeatures = `
-【遊戲名稱】破浪三國
-【遊戲類型】三國題材策略手遊
-
-【核心玩法】
-- 武將養成：收集培養各種三國武將
-- 國戰系統：週六日 19:00-22:00 開放大規模國戰
-- 三大陣營：魏國、蜀國、吳國
-- 副本挑戰：虎牢關、赤壁之戰、五丈原、長坂坡
-- 武魂擂台：PVP 競技排位賽
-
-${dynamicGameInfo ? `【從官網讀取的最新內容】\n${dynamicGameInfo}` : ""}
-
-${announcementInfo ? `【最新公告】\n${announcementInfo}` : ""}
-`.trim();
+  // 隨機選擇一個評論句型
+  const SENTENCE_STARTERS = [
+    "最近在這服打王，最有感的是",
+    "我玩過不少私服，這服給我的感覺是",
+    "如果你喜歡復古群英，這服",
+    "回來玩群英，發現這服",
+    "玩了一陣子，說說感受",
+    ""
+  ];
+  const sentenceStarter = SENTENCE_STARTERS[Math.floor(Math.random() * SENTENCE_STARTERS.length)];
 
   const completion = await openai.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       {
         role: "system",
-        content: `你是2025年的台灣年輕人，正在期待「破浪三國」12/20開服。幫我寫一條簡短的期待留言。
+        content: `你正在評論的遊戲是《三國群英傳 Online》私服，屬於「復古 MMORPG」，不是卡牌遊戲，也不是收集武將類型遊戲。
 
-【你的設定】
+本遊戲核心特色如下：
+1. 玩家只操作「一名主角色」，沒有收集武將系統。
+2. 遊戲重點在於：
+   - 打王（BOSS 掉落）
+   - 練功與角色成長
+   - 裝備取得與強化
+   - 國戰、赤壁戰場對抗
+   - 技能搭配與操作節奏
+3. 遊戲風格偏向：
+   - 老玩家情懷
+   - 高自由度
+   - 不追求自動化或課金即勝
+4. 本服為「復古服」，強調：
+   - 原味玩法
+   - 公平性
+   - 打寶與時間投入的成就感
+5. 請避免提及：
+   - 抽卡
+   - 收集武將
+   - 放置玩法
+   - 卡牌養成
+
+你的身份設定：
+你是一名《三國群英傳 Online》的老玩家，
+曾經玩過官方版本，也玩過其他私服，
+現在正在「破浪三國」這個復古私服遊玩。
+
+【你的玩家類型】
 類型：${persona.type}
 背景：${persona.style}
 說話風格：${persona.tone}
 
-【遊戲資訊】
-${gameFeatures}
+【從官網讀取的最新內容】
+${dynamicGameInfo}
 
-【重要！寫留言的要求】
-1. 字數要短！控制在 30-60 字左右，不要超過 80 字
-2. 重點是表達「期待12/20開服」的心情
-3. 用 2025 年台灣年輕人的口語，例如：
-   - 「等好久了」「終於要開服」「先卡位」「衝一波」
-   - 「讚」「推」「期待」「開服見」「12/20衝」
-   - 可以用「ㄅㄆㄇ」注音縮寫如「ㄏㄏ」「ㄎㄎ」
-4. 可以提一下為什麼期待（國戰、三國、武將等）
-5. 不要使用任何表情符號（emoji）
-6. 要很自然，像在 Dcard、PTT、IG 留言
+${announcementInfo ? `【最新公告】\n${announcementInfo}` : ""}
 
-【避免】
-- 太長、太正式
-- 廣告腔
-- 老人用語
-- 任何表情符號（emoji）
+你的評論角度是：
+- 玩家視角
+- 非官方宣傳
+- 像在社群或官網留言區分享真實感受
+- 語氣自然、不過度誇張、不像廣告
+
+評論內容請優先圍繞以下主題（任選1~2點）：
+1. 打王與掉寶的感受
+2. 練功節奏是否順暢
+3. 裝備取得的成就感
+4. 復古玩法帶來的情懷
+5. 玩家之間的互動或國戰氛圍
+6. 服主或官方是否重視遊戲體驗
+
+請避免：
+- 講教學
+- 講功能列表
+- 講未實際體驗過的內容
+- 使用任何表情符號（emoji）
+
+【重要！寫評論的要求】
+1. 字數要短！控制在 30-80 字左右
+2. 語氣自然，像真實玩家留言
+3. 可以根據官網內容提到具體的BOSS名稱、副本名稱、裝備等
+4. 不要使用任何表情符號（emoji）
+
+${sentenceStarter ? `【建議開頭句型】\n「${sentenceStarter}……」` : ""}
+
+示範評論風格：
+- 「這服打王是真的要跑地圖，不是站著等刷新那種，掉寶看到的時候還是會緊張一下，有找回以前玩群英的感覺。」
+- 「很久沒玩這種沒有一堆商城提示的三國了，練功就是練功，裝備慢慢打，反而比較耐玩。」
+- 「不太吃課金，很多裝備都是靠時間打出來的，對老玩家來說算友善。」
+- 「練功點常遇到人，偶爾還會聊天或一起清怪，比一個人掛機有溫度多了。」
+- 「前期練等不會太卡，但也不會快到沒感覺，算是有抓到復古服該有的節奏。」
 
 JSON 格式回覆：
 {
-  "content": "留言內容",
+  "content": "評論內容",
   "rating": 5,
   "isRecommended": true
 }`
       },
       {
         role: "user",
-        content: `以「${persona.type}」身份寫一條簡短的期待12/20開服留言，要像真的台灣年輕人！記得字數要短！`
+        content: `以「${persona.type}」的身份，根據官網資料寫一條自然的玩家評論。記得字數要短、語氣自然！`
       }
     ],
-    temperature: 1.1, // 提高創意度
-    max_tokens: 200,
+    temperature: 1.1,
+    max_tokens: 300,
     response_format: { type: "json_object" },
   });
 
@@ -293,14 +491,14 @@ JSON 格式回覆：
   try {
     const parsed = JSON.parse(responseText);
     return {
-      content: parsed.content || "12/20要開服了！等好久終於可以玩，先卡位",
+      content: parsed.content || "復古群英玩起來就是舒服，打王有感覺，練功有節奏。",
       rating: Math.min(5, Math.max(4, parsed.rating || 5)),
       isRecommended: true,
       persona,
     };
   } catch {
     return {
-      content: "終於要開服了！12/20衝一波，三國題材的國戰超期待",
+      content: "這服打王掉寶的感覺找回來了，復古玩法不用一直看商城，玩得比較踏實。",
       rating: 5,
       isRecommended: true,
       persona,
@@ -316,12 +514,12 @@ export async function generateAIReview(): Promise<{
 }> {
   try {
     // 1. 從資料庫獲取最新內容
-    const dbContent = await getLatestContent();
+    const dbContent = await getAllContent();
 
     // 2. 使用 OpenAI 生成擬人化評論
     const reviewData = await generateReviewContent(dbContent);
 
-    // 3. 獲取或創建 AI 用戶（根據玩家類型設定遊戲時數）
+    // 3. 獲取或創建 AI 用戶
     const userId = await getOrCreateAIUser(reviewData.persona);
 
     // 4. 創建評論（自動審核通過）

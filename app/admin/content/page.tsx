@@ -96,7 +96,7 @@ export default function AdminContentPage() {
 
   // Excel 導入相關 state
   const [showExcelImport, setShowExcelImport] = useState(false);
-  const [excelFile, setExcelFile] = useState<File | null>(null);
+  const [excelFiles, setExcelFiles] = useState<File[]>([]);
   const [excelParsing, setExcelParsing] = useState(false);
   const [excelPreviewData, setExcelPreviewData] = useState<unknown[] | null>(null);
   const [excelError, setExcelError] = useState<string | null>(null);
@@ -251,8 +251,8 @@ export default function AdminContentPage() {
 
     // 為沒有預設資料的區塊提供模板
     const emptyTemplates: Record<string, unknown> = {
-      dropItems: { boss: "", location: "", drops: [] },
-      dungeons: { name: "", level: 1, players: "", boss: "", cooldown: "", rewards: [] },
+      dropItems: { boss: "", location: "", category: "", drops: [] },
+      dungeons: { name: "", image: "", cooldown: "", dungeonTime: "", players: "", monsters: [] },
     };
 
     const template = defaultData[activeSection]?.[0] || emptyTemplates[activeSection] || {};
@@ -260,7 +260,13 @@ export default function AdminContentPage() {
     if ('id' in newItem) newItem.id = Date.now();
     if ('rank' in newItem) newItem.rank = editingData.length + 1;
     if ('chapter' in newItem) newItem.chapter = editingData.length + 1;
-    setEditingData([...editingData, newItem]);
+
+    // dropItems 新增項目插入到最前面，其他區塊添加到最後
+    if (activeSection === "dropItems") {
+      setEditingData([newItem, ...editingData]);
+    } else {
+      setEditingData([...editingData, newItem]);
+    }
   };
 
   const removeItem = (index: number) => {
@@ -309,9 +315,11 @@ export default function AdminContentPage() {
 
   // Excel 導入功能
   const handleExcelFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setExcelFile(file);
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      // 合併新選擇的檔案到現有檔案列表
+      const newFiles = Array.from(files);
+      setExcelFiles(prev => [...prev, ...newFiles]);
       setExcelPreviewData(null);
       setExcelError(null);
       setExcelParseErrors([]);
@@ -319,35 +327,62 @@ export default function AdminContentPage() {
     e.target.value = ""; // 清空 input 以便重複選擇
   };
 
+  const removeExcelFile = (index: number) => {
+    setExcelFiles(prev => prev.filter((_, i) => i !== index));
+    setExcelPreviewData(null);
+    setExcelError(null);
+    setExcelParseErrors([]);
+  };
+
   const handleParseExcel = async () => {
-    if (!excelFile) return;
+    if (excelFiles.length === 0) return;
 
     setExcelParsing(true);
     setExcelError(null);
     setExcelParseErrors([]);
 
     try {
-      const formData = new FormData();
-      formData.append("file", excelFile);
+      const allData: unknown[] = [];
+      const allErrors: string[] = [];
 
-      const res = await fetch("/api/parse-excel", {
-        method: "POST",
-        body: formData,
-      });
+      // 逐一解析每個檔案
+      for (let i = 0; i < excelFiles.length; i++) {
+        const file = excelFiles[i];
+        const formData = new FormData();
+        formData.append("file", file);
 
-      const result = await res.json();
+        try {
+          const res = await fetch("/api/parse-excel", {
+            method: "POST",
+            body: formData,
+          });
 
-      if (!res.ok) {
-        setExcelError(result.error || "解析失敗");
-        if (result.parseErrors) {
-          setExcelParseErrors(result.parseErrors);
+          const result = await res.json();
+
+          if (res.ok && result.data) {
+            // 合併資料
+            allData.push(...result.data);
+            // 如果有解析錯誤，加上檔名前綴
+            if (result.parseErrors && result.parseErrors.length > 0) {
+              allErrors.push(...result.parseErrors.map((err: string) => `[${file.name}] ${err}`));
+            }
+          } else {
+            allErrors.push(`[${file.name}] ${result.error || "解析失敗"}`);
+          }
+        } catch (err) {
+          allErrors.push(`[${file.name}] ${err instanceof Error ? err.message : "解析失敗"}`);
         }
+      }
+
+      if (allData.length === 0) {
+        setExcelError("所有檔案都無法解析，請檢查檔案格式");
+        setExcelParseErrors(allErrors);
         return;
       }
 
-      setExcelPreviewData(result.data);
-      if (result.parseErrors) {
-        setExcelParseErrors(result.parseErrors);
+      setExcelPreviewData(allData);
+      if (allErrors.length > 0) {
+        setExcelParseErrors(allErrors);
       }
     } catch (err) {
       setExcelError(err instanceof Error ? err.message : "解析失敗");
@@ -362,13 +397,13 @@ export default function AdminContentPage() {
     // 將預覽資料套用到編輯區
     setEditingData(excelPreviewData);
     setShowExcelImport(false);
-    setExcelFile(null);
+    setExcelFiles([]);
     setExcelPreviewData(null);
-    setSuccess("Excel 資料已導入，請確認後點擊「儲存變更」按鈕");
+    setSuccess(`Excel 資料已導入（共 ${excelPreviewData.length} 筆），請確認後點擊「儲存變更」按鈕`);
   };
 
   const resetExcelImport = () => {
-    setExcelFile(null);
+    setExcelFiles([]);
     setExcelPreviewData(null);
     setExcelError(null);
     setExcelParseErrors([]);
@@ -784,81 +819,106 @@ export default function AdminContentPage() {
       case "dropItems":
         return (
           <>
-            {/* Excel 導入區塊 */}
+            {/* 新增方式選擇區塊 */}
             <div className="card p-4 mb-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-[var(--color-text)] font-medium flex items-center gap-2">
-                  <FileSpreadsheet className="w-5 h-5 text-green-500" />
-                  Excel 快速導入
-                </h3>
-                {showExcelImport && (
-                  <button
-                    onClick={() => {
-                      setShowExcelImport(false);
-                      resetExcelImport();
-                    }}
-                    className="text-[var(--color-text-muted)] hover:text-[var(--color-text)] p-1"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                )}
+              <h3 className="text-[var(--color-text)] font-medium mb-4">新增掉落資料</h3>
+              <div className="flex flex-wrap gap-3">
+                {/* 手動新增按鈕 */}
+                <button
+                  onClick={addItem}
+                  className="btn btn-primary text-sm flex items-center gap-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  手動新增 BOSS
+                </button>
+
+                {/* Excel 導入按鈕 */}
+                <button
+                  onClick={() => setShowExcelImport(!showExcelImport)}
+                  className={`btn text-sm flex items-center gap-2 ${showExcelImport ? 'btn-primary' : 'btn-secondary'}`}
+                >
+                  <FileSpreadsheet className="w-4 h-4" />
+                  從 Excel 批量導入
+                </button>
               </div>
 
-              {!showExcelImport ? (
-                <button
-                  onClick={() => setShowExcelImport(true)}
-                  className="btn btn-secondary text-sm flex items-center gap-2"
-                >
-                  <Upload className="w-4 h-4" />
-                  從 Excel 導入資料
-                </button>
-              ) : (
-                <div className="space-y-4">
+              {/* Excel 導入展開區塊 */}
+              {showExcelImport && (
+                <div className="space-y-4 mt-4 pt-4 border-t border-[var(--color-border)]">
                   <div className="bg-[var(--color-bg-dark)] p-3 rounded-lg">
                     <p className="text-[var(--color-text-muted)] text-sm mb-2">
                       <strong className="text-[var(--color-text)]">Excel 格式要求：</strong>
                     </p>
                     <ul className="text-[var(--color-text-muted)] text-xs list-disc list-inside space-y-1">
-                      <li>第一行必須是標題行：<code className="bg-[var(--color-bg-card)] px-1 rounded">BOSS</code>、<code className="bg-[var(--color-bg-card)] px-1 rounded">出生地點</code>、<code className="bg-[var(--color-bg-card)] px-1 rounded">物品</code></li>
+                      <li>第一行必須是標題行：<code className="bg-[var(--color-bg-card)] px-1 rounded">分類</code>、<code className="bg-[var(--color-bg-card)] px-1 rounded">BOSS</code>、<code className="bg-[var(--color-bg-card)] px-1 rounded">出生地點</code>、<code className="bg-[var(--color-bg-card)] px-1 rounded">物品</code></li>
                       <li>物品欄位以空格分隔多個物品</li>
+                      <li>分類欄位可以留空（例如：世界BOSS、副本BOSS）</li>
                       <li>只支援 .xlsx 或 .xls 格式</li>
+                      <li><strong className="text-[var(--color-primary)]">可一次選擇多個檔案</strong>，所有資料會自動合併</li>
                     </ul>
                   </div>
 
                   {/* 檔案選擇 */}
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <label className="btn btn-secondary cursor-pointer flex items-center gap-2 text-sm">
-                      <Upload className="w-4 h-4" />
-                      選擇 Excel 檔案
-                      <input
-                        type="file"
-                        accept=".xlsx,.xls"
-                        onChange={handleExcelFileChange}
-                        className="hidden"
-                      />
-                    </label>
-                    {excelFile && (
-                      <div className="flex items-center gap-2 text-[var(--color-text)] text-sm">
-                        <FileSpreadsheet className="w-4 h-4 text-green-500" />
-                        <span>{excelFile.name}</span>
-                        <button
-                          onClick={resetExcelImport}
-                          className="text-red-400 hover:text-red-300 p-1"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <label className="btn btn-secondary cursor-pointer flex items-center gap-2 text-sm">
+                        <Upload className="w-4 h-4" />
+                        選擇 Excel 檔案
+                        <input
+                          type="file"
+                          accept=".xlsx,.xls"
+                          multiple
+                          onChange={handleExcelFileChange}
+                          className="hidden"
+                        />
+                      </label>
+                      {excelFiles.length > 0 && (
+                        <div className="flex items-center gap-2 text-[var(--color-text-muted)] text-sm">
+                          <FileSpreadsheet className="w-4 h-4 text-green-500" />
+                          <span>已選擇 {excelFiles.length} 個檔案</span>
+                          <button
+                            onClick={resetExcelImport}
+                            className="text-red-400 hover:text-red-300 text-xs underline"
+                          >
+                            清除全部
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 檔案列表 */}
+                    {excelFiles.length > 0 && (
+                      <div className="bg-[var(--color-bg-dark)] p-3 rounded-lg space-y-2 max-h-40 overflow-y-auto">
+                        {excelFiles.map((file, index) => (
+                          <div key={index} className="flex items-center justify-between gap-2 p-2 bg-[var(--color-bg-card)] rounded">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <FileSpreadsheet className="w-4 h-4 text-green-500 shrink-0" />
+                              <span className="text-[var(--color-text)] text-sm truncate">{file.name}</span>
+                              <span className="text-[var(--color-text-muted)] text-xs shrink-0">
+                                ({(file.size / 1024).toFixed(1)} KB)
+                              </span>
+                            </div>
+                            <button
+                              onClick={() => removeExcelFile(index)}
+                              className="text-red-400 hover:text-red-300 p-1 shrink-0"
+                              title="移除此檔案"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
 
                   {/* 解析按鈕 */}
-                  {excelFile && !excelPreviewData && (
+                  {excelFiles.length > 0 && !excelPreviewData && (
                     <button
                       onClick={handleParseExcel}
                       disabled={excelParsing}
                       className="btn btn-primary text-sm"
                     >
-                      {excelParsing ? "解析中..." : "解析並預覽"}
+                      {excelParsing ? `解析中... (${excelFiles.length} 個檔案)` : `解析並預覽 (${excelFiles.length} 個檔案)`}
                     </button>
                   )}
 
@@ -919,15 +979,25 @@ export default function AdminContentPage() {
                           <thead className="bg-[var(--color-bg-dark)] sticky top-0">
                             <tr>
                               <th className="text-left p-2 text-[var(--color-text-muted)]">#</th>
+                              <th className="text-left p-2 text-[var(--color-text-muted)]">分類</th>
                               <th className="text-left p-2 text-[var(--color-text-muted)]">BOSS</th>
                               <th className="text-left p-2 text-[var(--color-text-muted)]">出生地點</th>
                               <th className="text-left p-2 text-[var(--color-text-muted)]">掉落物品數</th>
                             </tr>
                           </thead>
                           <tbody>
-                            {(excelPreviewData as { boss: string; location: string; drops: unknown[] }[]).map((item, idx) => (
+                            {(excelPreviewData as { boss: string; location: string; category?: string; drops: unknown[] }[]).map((item, idx) => (
                               <tr key={idx} className="border-t border-[var(--color-border)] hover:bg-[var(--color-bg-dark)]/50">
                                 <td className="p-2 text-[var(--color-text-muted)]">{idx + 1}</td>
+                                <td className="p-2 text-[var(--color-text-muted)]">
+                                  {item.category ? (
+                                    <span className="bg-[var(--color-primary)]/10 text-[var(--color-primary)] px-1.5 py-0.5 rounded text-xs">
+                                      {item.category}
+                                    </span>
+                                  ) : (
+                                    "-"
+                                  )}
+                                </td>
                                 <td className="p-2 text-[var(--color-text)] font-medium">{item.boss}</td>
                                 <td className="p-2 text-[var(--color-text-muted)] max-w-[120px] truncate" title={item.location}>
                                   {item.location || "-"}
@@ -954,7 +1024,7 @@ export default function AdminContentPage() {
 
             {/* BOSS 列表 */}
             {editingData.map((item: unknown, index: number) => {
-              const data = item as { boss: string; location: string; drops: { name: string; type: string }[] };
+              const data = item as { boss: string; location: string; category?: string; drops: { name: string }[] };
               return (
                 <div key={index} className="card p-4 space-y-3">
                   <div className="flex items-center justify-between">
@@ -963,7 +1033,7 @@ export default function AdminContentPage() {
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-3 gap-3">
                     <input
                       type="text"
                       value={data.boss}
@@ -976,6 +1046,13 @@ export default function AdminContentPage() {
                       value={data.location}
                       onChange={(e) => updateItem(index, "location", e.target.value)}
                       placeholder="出沒地點 (如: 虎牢關)"
+                      className="input"
+                    />
+                    <input
+                      type="text"
+                      value={data.category || ""}
+                      onChange={(e) => updateItem(index, "category", e.target.value)}
+                      placeholder="分類 (如: 世界BOSS)"
                       className="input"
                     />
                   </div>
@@ -993,13 +1070,6 @@ export default function AdminContentPage() {
                           placeholder="物品名稱"
                           className="input flex-1"
                         />
-                        <input
-                          type="text"
-                          value={drop.type}
-                          onChange={(e) => updateNestedItem(index, "drops", dIndex, "type", e.target.value)}
-                          placeholder="類型 (如: 武器、材料)"
-                          className="input w-32"
-                        />
                         <button
                           onClick={() => removeNestedItem(index, "drops", dIndex)}
                           className="text-red-400 hover:text-red-300 p-2"
@@ -1009,7 +1079,7 @@ export default function AdminContentPage() {
                       </div>
                     ))}
                     <button
-                      onClick={() => addNestedItem(index, "drops", { name: "", type: "" })}
+                      onClick={() => addNestedItem(index, "drops", { name: "" })}
                       className="text-[var(--color-primary)] text-sm hover:underline flex items-center gap-1"
                     >
                       <Plus className="w-4 h-4" />
@@ -1024,7 +1094,42 @@ export default function AdminContentPage() {
 
       case "dungeons":
         return editingData.map((item: unknown, index: number) => {
-          const data = item as { name: string; level: number; players: string; boss: string; cooldown?: string; rewards?: string[] };
+          const data = item as { name: string; image?: string; cooldown?: string; dungeonTime?: string; players: string; monsters?: { name: string; drops: string[] }[] };
+
+          const handleDungeonImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append("file", file);
+            try {
+              const res = await fetch("/api/upload", { method: "POST", body: formData });
+              const result = await res.json();
+              if (result.url) {
+                updateItem(index, "image", result.url);
+              } else {
+                setError("圖片上傳失敗");
+              }
+            } catch {
+              setError("圖片上傳失敗");
+            }
+          };
+
+          const addMonster = () => {
+            const newMonsters = [...(data.monsters || []), { name: "", drops: [] }];
+            updateItem(index, "monsters", newMonsters);
+          };
+
+          const updateMonster = (mIndex: number, field: string, value: unknown) => {
+            const newMonsters = [...(data.monsters || [])];
+            (newMonsters[mIndex] as Record<string, unknown>)[field] = value;
+            updateItem(index, "monsters", newMonsters);
+          };
+
+          const removeMonster = (mIndex: number) => {
+            const newMonsters = (data.monsters || []).filter((_, i) => i !== mIndex);
+            updateItem(index, "monsters", newMonsters);
+          };
+
           return (
             <div key={index} className="card p-4 space-y-3">
               <div className="flex items-center justify-between">
@@ -1033,54 +1138,110 @@ export default function AdminContentPage() {
                   <Trash2 className="w-4 h-4" />
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <input
-                  type="text"
-                  value={data.name}
-                  onChange={(e) => updateItem(index, "name", e.target.value)}
-                  placeholder="副本名稱"
-                  className="input"
-                />
-                <input
-                  type="number"
-                  value={data.level}
-                  onChange={(e) => updateItem(index, "level", parseInt(e.target.value) || 1)}
-                  placeholder="等級要求"
-                  className="input"
-                  min={1}
-                />
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <input
-                  type="text"
-                  value={data.players}
-                  onChange={(e) => updateItem(index, "players", e.target.value)}
-                  placeholder="人數 (如: 5人)"
-                  className="input"
-                />
-                <input
-                  type="text"
-                  value={data.boss}
-                  onChange={(e) => updateItem(index, "boss", e.target.value)}
-                  placeholder="最終 BOSS"
-                  className="input"
-                />
-                <input
-                  type="text"
-                  value={data.cooldown || ""}
-                  onChange={(e) => updateItem(index, "cooldown", e.target.value)}
-                  placeholder="冷卻時間 (如: 每日1次)"
-                  className="input"
-                />
-              </div>
+
+              {/* 放置圖片 */}
               <div>
-                <label className="text-[var(--color-text)] text-sm mb-2 block">通關獎勵 (每行一個)</label>
-                <textarea
-                  value={(data.rewards || []).join("\n")}
-                  onChange={(e) => updateItem(index, "rewards", e.target.value.split("\n").filter(Boolean))}
-                  placeholder="傳說武器&#10;元寶 x500&#10;稀有坐騎"
-                  className="input w-full min-h-[100px]"
-                />
+                <label className="text-[var(--color-text)] text-sm mb-2 block">放置圖片</label>
+                <div className="flex gap-2">
+                  <label className="btn btn-secondary cursor-pointer text-sm">
+                    <input type="file" accept="image/*" onChange={handleDungeonImageUpload} className="hidden" />
+                    選擇圖片
+                  </label>
+                  {data.image && (
+                    <button onClick={() => updateItem(index, "image", "")} className="btn btn-secondary text-red-400 text-sm">
+                      移除圖片
+                    </button>
+                  )}
+                </div>
+                {data.image && (
+                  <div className="mt-2 relative rounded-lg overflow-hidden border border-[var(--color-border)]">
+                    <img src={data.image} alt="預覽" className="w-full h-32 object-cover" />
+                  </div>
+                )}
+              </div>
+
+              {/* 副本名稱 */}
+              <input
+                type="text"
+                value={data.name}
+                onChange={(e) => updateItem(index, "name", e.target.value)}
+                placeholder="副本名稱"
+                className="input w-full"
+              />
+
+              {/* 間隔時間、副本時間、人數限制 */}
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="text-[var(--color-text-muted)] text-xs mb-1 block">間隔時間</label>
+                  <input
+                    type="text"
+                    value={data.cooldown || ""}
+                    onChange={(e) => updateItem(index, "cooldown", e.target.value)}
+                    placeholder="如: 每日1次"
+                    className="input w-full"
+                  />
+                </div>
+                <div>
+                  <label className="text-[var(--color-text-muted)] text-xs mb-1 block">副本時間</label>
+                  <input
+                    type="text"
+                    value={data.dungeonTime || ""}
+                    onChange={(e) => updateItem(index, "dungeonTime", e.target.value)}
+                    placeholder="如: 30分鐘"
+                    className="input w-full"
+                  />
+                </div>
+                <div>
+                  <label className="text-[var(--color-text-muted)] text-xs mb-1 block">人數限制</label>
+                  <input
+                    type="text"
+                    value={data.players}
+                    onChange={(e) => updateItem(index, "players", e.target.value)}
+                    placeholder="如: 1-5人"
+                    className="input w-full"
+                  />
+                </div>
+              </div>
+
+              {/* 怪物與掉落物 */}
+              <div className="space-y-2">
+                <label className="text-[var(--color-text)] text-sm flex items-center gap-2">
+                  <Skull className="w-4 h-4 text-red-400" />
+                  怪物與掉落物
+                </label>
+                {(data.monsters || []).map((monster, mIndex) => (
+                  <div key={mIndex} className="bg-[var(--color-bg-dark)] p-3 rounded-lg space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[var(--color-text-muted)] text-xs">怪物 #{mIndex + 1}</span>
+                      <button onClick={() => removeMonster(mIndex)} className="text-red-400 hover:text-red-300 p-1">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={monster.name}
+                      onChange={(e) => updateMonster(mIndex, "name", e.target.value)}
+                      placeholder="怪物名稱"
+                      className="input w-full"
+                    />
+                    <div>
+                      <label className="text-[var(--color-text-muted)] text-xs mb-1 block">掉落物品 (每行一個)</label>
+                      <textarea
+                        value={(monster.drops || []).join("\n")}
+                        onChange={(e) => updateMonster(mIndex, "drops", e.target.value.split("\n").filter(Boolean))}
+                        placeholder="傳說武器&#10;元寶 x500&#10;稀有材料"
+                        className="input w-full min-h-[60px]"
+                      />
+                    </div>
+                  </div>
+                ))}
+                <button
+                  onClick={addMonster}
+                  className="text-[var(--color-primary)] text-sm hover:underline flex items-center gap-1"
+                >
+                  <Plus className="w-4 h-4" />
+                  新增怪物
+                </button>
               </div>
             </div>
           );
@@ -1783,8 +1944,8 @@ export default function AdminContentPage() {
                   {renderForm()}
                 </div>
 
-                {/* 三國排行、國戰、下載專區有自己的邏輯，不顯示通用新增按鈕 */}
-                {activeSection !== "arenaRanking" && activeSection !== "nationWar" && activeSection !== "downloadCenter" && (
+                {/* 三國排行、國戰、下載專區、掉落查詢有自己的邏輯，不顯示通用新增按鈕 */}
+                {activeSection !== "arenaRanking" && activeSection !== "nationWar" && activeSection !== "downloadCenter" && activeSection !== "dropItems" && (
                   <button
                     onClick={addItem}
                     className="mt-4 w-full card p-4 flex items-center justify-center gap-2 text-[var(--color-primary)] hover:bg-[var(--color-primary)]/10 transition-colors border-dashed"

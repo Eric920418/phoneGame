@@ -3,11 +3,12 @@ import * as XLSX from "xlsx";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB for Excel files
 
-// 預期的 Excel 格式：BOSS, 出生地點, 物品
+// 預期的 Excel 格式：分類, BOSS, 出生地點, 物品
 interface DropItemData {
   boss: string;
   location: string;
-  drops: { name: string; type: string }[];
+  category?: string;
+  drops: { name: string }[];
 }
 
 export async function POST(request: NextRequest) {
@@ -65,15 +66,15 @@ export async function POST(request: NextRequest) {
 
     // 驗證標題行格式
     const header = rawData[0];
-    if (!header || header.length < 3) {
+    if (!header || header.length < 4) {
       return NextResponse.json(
-        { error: "標題行格式錯誤，需要至少三個欄位：BOSS, 出生地點, 物品" },
+        { error: "標題行格式錯誤，需要至少四個欄位：分類, BOSS, 出生地點, 物品" },
         { status: 400 }
       );
     }
 
     // 檢查標題是否符合預期格式
-    const expectedHeaders = ["BOSS", "出生地點", "物品"];
+    const expectedHeaders = ["分類", "BOSS", "出生地點", "物品"];
     const headerMatch = expectedHeaders.every((expected, index) => {
       const actual = String(header[index] || "").trim();
       return actual === expected;
@@ -82,9 +83,9 @@ export async function POST(request: NextRequest) {
     if (!headerMatch) {
       return NextResponse.json(
         {
-          error: `標題行格式不符合，預期格式：${expectedHeaders.join(", ")}，實際格式：${header.slice(0, 3).join(", ")}`,
+          error: `標題行格式不符合，預期格式：${expectedHeaders.join(", ")}，實際格式：${header.slice(0, 4).join(", ")}`,
           expectedFormat: expectedHeaders,
-          actualFormat: header.slice(0, 3)
+          actualFormat: header.slice(0, 4)
         },
         { status: 400 }
       );
@@ -98,9 +99,10 @@ export async function POST(request: NextRequest) {
       const row = rawData[i];
       if (!row || row.length === 0) continue; // 跳過空行
 
-      const boss = String(row[0] || "").trim();
-      const location = String(row[1] || "").trim();
-      const itemsStr = String(row[2] || "").trim();
+      const category = String(row[0] || "").trim();
+      const boss = String(row[1] || "").trim();
+      const location = String(row[2] || "").trim();
+      const itemsStr = String(row[3] || "").trim();
 
       // 驗證必填欄位
       if (!boss) {
@@ -112,11 +114,12 @@ export async function POST(request: NextRequest) {
       const drops = itemsStr
         .split(/\s+/)
         .filter(Boolean)
-        .map(name => ({ name: name.trim(), type: "" }));
+        .map(name => ({ name: name.trim() }));
 
       dropItems.push({
         boss,
         location,
+        category: category || undefined,
         drops
       });
     }

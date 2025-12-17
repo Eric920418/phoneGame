@@ -1,4 +1,4 @@
-import { Map, Swords, Users, Trophy, RefreshCw } from "lucide-react";
+import { Map, Users, RefreshCw, Clock, Skull, Gift } from "lucide-react";
 import { graphqlFetch } from "@/lib/apolloClient";
 
 // 強制動態渲染
@@ -10,14 +10,19 @@ export const revalidate = 0;
  * 展示遊戲內各種副本的介紹與攻略
  */
 
+interface Monster {
+  name: string;
+  drops: string[];
+}
+
 interface Dungeon {
   id: number;
   name: string;
-  level: number;
-  players: string;
-  boss: string;
+  image?: string;
   cooldown?: string;
-  rewards: string[];
+  dungeonTime?: string;
+  players: string;
+  monsters?: Monster[];
 }
 
 interface ContentBlock {
@@ -66,71 +71,83 @@ export default async function DungeonPage() {
 
       {/* 副本列表 */}
       {dungeons.length > 0 ? (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {dungeons.map((dungeon, idx) => (
             <div
               key={idx}
-              className="card p-6 hover:border-teal-500/30 transition-all group"
+              className="card overflow-hidden hover:border-teal-500/30 transition-all group"
             >
-              <div className="flex flex-col lg:flex-row gap-6">
-                {/* 副本基本資訊 */}
-                <div className="lg:w-1/3">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-xl font-bold text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors">
-                      {dungeon.name}
-                    </h3>
-                    <div className="px-3 py-1 rounded-full text-xs font-bold bg-teal-500/20 text-teal-400">
-                      Lv.{dungeon.level}+
+              {/* 副本圖片 */}
+              {dungeon.image && (
+                <div className="relative h-48 w-full">
+                  <img
+                    src={dungeon.image}
+                    alt={dungeon.name}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-bg-card)] to-transparent" />
+                </div>
+              )}
+
+              <div className="p-6">
+                {/* 副本名稱 */}
+                <h3 className="text-xl font-bold text-[var(--color-text)] group-hover:text-[var(--color-primary)] transition-colors mb-4">
+                  {dungeon.name}
+                </h3>
+
+                {/* 副本條件 */}
+                <div className="flex flex-wrap gap-4 text-sm mb-6">
+                  {dungeon.players && (
+                    <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400">
+                      <Users className="w-4 h-4" />
+                      人數限制: {dungeon.players}
+                    </span>
+                  )}
+                  {dungeon.cooldown && (
+                    <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-orange-500/10 text-orange-400">
+                      <RefreshCw className="w-4 h-4" />
+                      間隔時間: {dungeon.cooldown}
+                    </span>
+                  )}
+                  {dungeon.dungeonTime && (
+                    <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-400">
+                      <Clock className="w-4 h-4" />
+                      副本時間: {dungeon.dungeonTime}
+                    </span>
+                  )}
+                </div>
+
+                {/* 怪物與掉落物 */}
+                {dungeon.monsters && dungeon.monsters.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium text-[var(--color-text)] mb-3 flex items-center gap-2">
+                      <Skull className="w-4 h-4 text-red-400" />
+                      怪物與掉落物
+                    </h4>
+                    <div className="space-y-3">
+                      {dungeon.monsters.map((monster, mIdx) => (
+                        <div key={mIdx} className="bg-[var(--color-bg-darker)] p-4 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-red-400 font-medium">{monster.name}</span>
+                          </div>
+                          {monster.drops && monster.drops.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {monster.drops.map((drop, dIdx) => (
+                                <span
+                                  key={dIdx}
+                                  className="flex items-center gap-1 px-2 py-1 rounded bg-[var(--color-bg-card)] text-[var(--color-text-muted)] text-xs"
+                                >
+                                  <Gift className="w-3 h-3 text-yellow-400" />
+                                  {drop}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   </div>
-
-                  {/* 副本條件 */}
-                  <div className="flex flex-wrap gap-3 text-sm">
-                    <span className="flex items-center gap-1 text-[var(--color-text-muted)]">
-                      <Users className="w-4 h-4" />
-                      {dungeon.players}
-                    </span>
-                    {dungeon.cooldown && (
-                      <span className="flex items-center gap-1 text-[var(--color-text-muted)]">
-                        <RefreshCw className="w-4 h-4" />
-                        {dungeon.cooldown}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* BOSS 資訊 */}
-                <div className="lg:w-1/3">
-                  <h4 className="text-sm font-medium text-[var(--color-text)] mb-3 flex items-center gap-2">
-                    <Swords className="w-4 h-4 text-red-400" />
-                    BOSS
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {dungeon.boss && (
-                      <span className="px-3 py-1.5 rounded-lg bg-red-500/10 text-red-400 text-sm">
-                        {dungeon.boss}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* 獎勵 */}
-                <div className="lg:w-1/3">
-                  <h4 className="text-sm font-medium text-[var(--color-text)] mb-3 flex items-center gap-2">
-                    <Trophy className="w-4 h-4 text-yellow-400" />
-                    通關獎勵
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {(dungeon.rewards || []).map((reward, index) => (
-                      <span
-                        key={index}
-                        className="px-3 py-1.5 rounded-lg bg-[var(--color-bg-darker)] text-[var(--color-text-muted)] text-sm"
-                      >
-                        {reward}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                )}
               </div>
             </div>
           ))}

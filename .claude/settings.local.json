@@ -23,7 +23,8 @@
       "Bash(timeout 10 pnpm start:*)",
       "Bash(sudo systemctl restart:*)",
       "Bash(pm2 restart:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(pm2 logs:*)"
     ],
     "deny": [],
     "ask": []

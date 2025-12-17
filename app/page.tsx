@@ -411,24 +411,30 @@ export default async function HomePage() {
         />
       </section>
 
-      {/* ==================== Stats Section ==================== */}
+      {/* ==================== Social Media Links Section ==================== */}
       <section className="bg-[var(--color-bg-darker)] border-y border-[var(--color-border)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { value: "200+", label: "活躍玩家" },
-              { value: "50+", label: "遊戲更新" },
-              { value: "24/7", label: "客服支援" },
-              { value: "99.9%", label: "服務穩定" },
-            ].map((stat, i) => (
-              <div key={i} className="text-center">
-                <div className="text-3xl font-bold text-[var(--color-primary)]">
-                  {stat.value}
+              { name: "LINE官方", url: "https://lin.ee/v3QB1Nh", icon: "💬" },
+              { name: "LINE社群", url: "https://line.me/ti/g2/2bdAwMsiQEfaxUbufL9MIVQdIYw0Bla5W3Ta5w?utm_source=invitation&utm_medium=link_copy&utm_campaign=default", icon: "👥" },
+              { name: "FB粉專", url: "https://www.facebook.com/profile.php?id=61584223575435", icon: "📘" },
+              { name: "TikTok", url: "https://www.tiktok.com/@polang2025", icon: "🎵" },
+            ].map((social, i) => (
+              <a
+                key={i}
+                href={social.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-center transition-transform hover:scale-105 cursor-pointer group"
+              >
+                <div className="text-4xl mb-2 group-hover:scale-110 transition-transform">
+                  {social.icon}
                 </div>
-                <div className="text-[var(--color-text-muted)] text-sm">
-                  {stat.label}
+                <div className="text-[var(--color-text)] font-medium group-hover:text-[var(--color-primary)] transition-colors">
+                  {social.name}
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         </div>
