@@ -1,5 +1,6 @@
-import { Download, Monitor, Apple, FileDown, HardDrive, Wifi } from "lucide-react";
+import { Download, Monitor, FileDown, UserPlus, ChevronRight } from "lucide-react";
 import { graphqlFetch } from "@/lib/apolloClient";
+import Link from "next/link";
 
 // 強制動態渲染
 export const dynamic = "force-dynamic";
@@ -7,47 +8,29 @@ export const revalidate = 0;
 
 /**
  * 下載專區頁面
- * 提供遊戲客戶端、補丁等下載連結
+ * 提供遊戲主程式與更新檔下載連結，以及註冊步驟教學
  */
 
-interface DownloadItem {
-  id: string;
-  name: string;
-  icon: string;
-  version: string;
-  size: string;
-  description: string;
-  downloadUrl: string;
-  color: string;
-}
-
-interface PatchItem {
-  id: string;
-  name: string;
-  date: string;
-  size: string;
-  description: string;
-  downloadUrl?: string;
+interface StepItem {
+  step: number;
+  title: string;
+  desc: string;
+  image?: string;
+  images?: string[];
+  content?: string;
 }
 
 interface DownloadData {
-  downloads: DownloadItem[];
-  patches: PatchItem[];
+  mainProgram?: { name: string; downloadUrl: string };
+  updateFile?: { name: string; downloadUrl: string };
+  launcher?: { name: string; downloadUrl: string };
+  registrationSteps?: StepItem[];
 }
 
 interface ContentBlock {
   key: string;
   payload: DownloadData;
 }
-
-// 圖標映射
-const iconMap: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
-  Monitor,
-  Apple,
-};
-
-// 只保留 Windows 和 Mac 的下載項目
-const allowedDownloadIds = ["windows", "mac"];
 
 async function getDownloadData(): Promise<DownloadData> {
   try {
@@ -61,22 +44,23 @@ async function getDownloadData(): Promise<DownloadData> {
     `, undefined, { skipCache: true });
 
     if (data.contentBlock?.payload) {
-      const payload = data.contentBlock.payload;
-      // 過濾只保留 Windows 和 Mac
-      return {
-        downloads: payload.downloads.filter((d) => allowedDownloadIds.includes(d.id)),
-        patches: payload.patches,
-      };
+      return data.contentBlock.payload;
     }
-    return { downloads: [], patches: [] };
+    return {};
   } catch (error) {
     console.error("獲取下載資料失敗:", error);
-    return { downloads: [], patches: [] };
+    return {};
   }
 }
 
 export default async function DownloadPage() {
-  const { downloads, patches } = await getDownloadData();
+  const downloadData = await getDownloadData();
+
+  const hasMainProgram = downloadData.mainProgram?.downloadUrl;
+  const hasUpdateFile = downloadData.updateFile?.downloadUrl;
+  const hasLauncher = downloadData.launcher?.downloadUrl;
+  const hasAnyDownload = hasMainProgram || hasUpdateFile || hasLauncher;
+  const registrationSteps = downloadData.registrationSteps || [];
 
   return (
     <div className="space-y-8">
@@ -88,155 +72,182 @@ export default async function DownloadPage() {
         <div>
           <h1 className="text-3xl font-bold text-[var(--color-text)]">下載專區</h1>
           <p className="text-[var(--color-text-muted)] mt-1">
-            遊戲客戶端與更新補丁下載
+            遊戲主程式與更新檔下載
           </p>
         </div>
       </div>
 
-      {/* 系統需求提示 */}
-      <div className="card p-6 border-blue-500/20">
-        <div className="flex items-start gap-4">
-          <HardDrive className="w-6 h-6 text-blue-400 flex-shrink-0 mt-1" />
-          <div>
-            <h3 className="text-lg font-semibold text-[var(--color-text)] mb-2">
-              系統需求
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-[var(--color-text-muted)]">
-              <div>
-                <strong className="text-[var(--color-text)]">最低配置：</strong>
-                <ul className="mt-1 space-y-1">
-                  <li>• CPU: Intel i3 或同等級</li>
-                  <li>• RAM: 4 GB</li>
-                  <li>• 顯卡: GTX 750 或同等級</li>
-                  <li>• 硬碟: 10 GB 可用空間</li>
-                </ul>
-              </div>
-              <div>
-                <strong className="text-[var(--color-text)]">建議配置：</strong>
-                <ul className="mt-1 space-y-1">
-                  <li>• CPU: Intel i5 或同等級</li>
-                  <li>• RAM: 8 GB</li>
-                  <li>• 顯卡: GTX 1060 或同等級</li>
-                  <li>• 硬碟: SSD 20 GB 可用空間</li>
-                </ul>
+      {/* 下載區域 */}
+      {hasAnyDownload ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* 主程式下載 */}
+          {hasMainProgram && (
+            <div className="card p-6 hover:border-blue-500/30 transition-all">
+              <div className="flex items-start gap-4">
+                <div
+                  className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: "#0078d420" }}
+                >
+                  <Monitor className="w-7 h-7" style={{ color: "#0078d4" }} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold text-[var(--color-text)] mb-2">
+                    {downloadData.mainProgram?.name || "遊戲主程式"}
+                  </h3>
+                  <p className="text-sm text-[var(--color-text-muted)] mb-4">
+                    下載完整遊戲主程式安裝檔
+                  </p>
+                  <a
+                    href={downloadData.mainProgram?.downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary text-sm py-2.5 px-5 flex items-center gap-2 w-fit"
+                  >
+                    <FileDown className="w-4 h-4" />
+                    立即下載
+                  </a>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
+          )}
 
-      {/* 客戶端下載 */}
-      <div>
-        <h2 className="text-xl font-bold text-[var(--color-text)] mb-4 flex items-center gap-2">
-          <Monitor className="w-5 h-5 text-[var(--color-primary)]" />
-          遊戲客戶端
-        </h2>
-        {downloads.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {downloads.map((item) => {
-              const IconComponent = iconMap[item.icon] || Monitor;
-              return (
+          {/* 更新檔下載 */}
+          {hasUpdateFile && (
+            <div className="card p-6 hover:border-green-500/30 transition-all">
+              <div className="flex items-start gap-4">
                 <div
-                  key={item.id}
-                  className="card p-6 hover:border-blue-500/30 transition-all"
+                  className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: "#22c55e20" }}
                 >
-                  <div className="flex items-start gap-4">
-                    <div
-                      className="w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0"
-                      style={{ backgroundColor: `${item.color}20` }}
-                    >
-                      <IconComponent
-                        className="w-6 h-6"
-                        style={{ color: item.color }}
-                      />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-lg font-semibold text-[var(--color-text)]">
-                          {item.name}
-                        </h3>
-                        <span className="text-xs px-2 py-0.5 rounded bg-[var(--color-bg-darker)] text-[var(--color-text-muted)]">
-                          {item.version}
-                        </span>
-                      </div>
-                      <p className="text-sm text-[var(--color-text-muted)] mb-3">
-                        {item.description}
-                      </p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-[var(--color-text-dark)]">
-                          檔案大小: {item.size}
-                        </span>
-                        <a
-                          href={item.downloadUrl}
-                          className="btn-primary text-sm py-2 px-4 flex items-center gap-2"
-                        >
-                          <FileDown className="w-4 h-4" />
-                          下載
-                        </a>
-                      </div>
-                    </div>
-                  </div>
+                  <FileDown className="w-7 h-7" style={{ color: "#22c55e" }} />
                 </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold text-[var(--color-text)] mb-2">
+                    {downloadData.updateFile?.name || "更新檔"}
+                  </h3>
+                  <p className="text-sm text-[var(--color-text-muted)] mb-4">
+                    下載最新遊戲更新檔案
+                  </p>
+                  <a
+                    href={downloadData.updateFile?.downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary text-sm py-2.5 px-5 flex items-center gap-2 w-fit bg-green-600 hover:bg-green-500"
+                  >
+                    <FileDown className="w-4 h-4" />
+                    立即下載
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 登入器下載 */}
+          {hasLauncher && (
+            <div className="card p-6 hover:border-purple-500/30 transition-all">
+              <div className="flex items-start gap-4">
+                <div
+                  className="w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ backgroundColor: "#a855f720" }}
+                >
+                  <Download className="w-7 h-7" style={{ color: "#a855f7" }} />
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-semibold text-[var(--color-text)] mb-2">
+                    {downloadData.launcher?.name || "登入器"}
+                  </h3>
+                  <p className="text-sm text-[var(--color-text-muted)] mb-4">
+                    下載遊戲登入器
+                  </p>
+                  <a
+                    href={downloadData.launcher?.downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-primary text-sm py-2.5 px-5 flex items-center gap-2 w-fit bg-purple-600 hover:bg-purple-500"
+                  >
+                    <FileDown className="w-4 h-4" />
+                    立即下載
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="card p-12 text-center">
+          <Download className="w-16 h-16 text-[var(--color-text-dark)] mx-auto mb-4" />
+          <p className="text-[var(--color-text-muted)]">下載連結尚未設定</p>
+        </div>
+      )}
+
+      {/* 註冊步驟區域 */}
+      {registrationSteps.length > 0 && (
+        <>
+          {/* 註冊步驟標題 */}
+          <div className="flex items-center gap-4 pt-4">
+            <div className="w-14 h-14 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+              <UserPlus className="w-7 h-7 text-cyan-400" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold text-[var(--color-text)]">註冊步驟</h2>
+              <p className="text-[var(--color-text-muted)] mt-1">
+                完整的帳號註冊流程教學
+              </p>
+            </div>
+          </div>
+
+          {/* 步驟列表 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {registrationSteps.map((step, index) => {
+              const coverImage = step.images?.[0] || step.image;
+
+              return (
+                <Link
+                  key={index}
+                  href={`/guide/register/${step.step}`}
+                  className="card overflow-hidden hover:border-cyan-500/30 transition-all group"
+                >
+                  {/* 步驟圖片 */}
+                  {coverImage ? (
+                    <div className="relative overflow-hidden">
+                      <img
+                        src={coverImage}
+                        alt={step.title}
+                        className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      <div className="absolute bottom-3 left-3">
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-cyan-500/80 text-white">
+                          第 {step.step} 步
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="relative h-48 bg-gradient-to-br from-cyan-500/20 to-cyan-600/10 flex items-center justify-center">
+                      <UserPlus className="w-16 h-16 text-cyan-500/40" />
+                      <div className="absolute bottom-3 left-3">
+                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-cyan-500/80 text-white">
+                          第 {step.step} 步
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 步驟內容 */}
+                  <div className="p-4">
+                    <h3 className="text-lg font-bold text-[var(--color-text)] mb-2 group-hover:text-cyan-400 transition-colors flex items-center justify-between">
+                      {step.title}
+                      <ChevronRight className="w-5 h-5 text-[var(--color-text-muted)] group-hover:text-cyan-400 group-hover:translate-x-1 transition-all" />
+                    </h3>
+                    <p className="text-sm text-[var(--color-text-muted)] line-clamp-2">
+                      {step.desc}
+                    </p>
+                  </div>
+                </Link>
               );
             })}
           </div>
-        ) : (
-          <div className="card p-12 text-center">
-            <Download className="w-16 h-16 text-[var(--color-text-dark)] mx-auto mb-4" />
-            <p className="text-[var(--color-text-muted)]">暫無下載資料</p>
-          </div>
-        )}
-      </div>
-
-      {/* 更新補丁 */}
-      {patches.length > 0 && (
-        <div>
-          <h2 className="text-xl font-bold text-[var(--color-text)] mb-4 flex items-center gap-2">
-            <Wifi className="w-5 h-5 text-[var(--color-primary)]" />
-            更新補丁
-          </h2>
-          <div className="space-y-3">
-            {patches.map((patch) => (
-              <div
-                key={patch.id}
-                className="card p-4 flex items-center justify-between hover:border-blue-500/30 transition-all"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                    <FileDown className="w-5 h-5 text-blue-400" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-[var(--color-text)]">
-                      {patch.name}
-                    </h3>
-                    <p className="text-sm text-[var(--color-text-muted)]">
-                      {patch.description}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-6">
-                  <div className="text-right text-sm">
-                    <div className="text-[var(--color-text-dark)]">{patch.date}</div>
-                    <div className="text-[var(--color-text-muted)]">{patch.size}</div>
-                  </div>
-                  {patch.downloadUrl ? (
-                    <a
-                      href={patch.downloadUrl}
-                      className="btn-secondary text-sm py-2 px-4 flex items-center gap-2"
-                    >
-                      <FileDown className="w-4 h-4" />
-                      下載
-                    </a>
-                  ) : (
-                    <span className="text-sm py-2 px-4 text-[var(--color-text-dark)]">
-                      即將推出
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+        </>
       )}
     </div>
   );

@@ -740,21 +740,13 @@ const ReviewResolvers = {
         throw new Error('請先登入');
       }
 
-      // 檢查是否已發過評價
-      const existingReview = await prisma.review.findFirst({
-        where: { userId: user.id },
-      });
-      if (existingReview) {
-        throw new Error('您已經發表過評價，可以編輯現有評價');
-      }
-
       return await prisma.review.create({
         data: {
           content: input.content,
           rating: Math.min(5, Math.max(1, input.rating)),
           isRecommended: input.isRecommended,
           userId: user.id,
-          isApproved: false, // 需要審核
+          isApproved: true, // 直接顯示，不需要審核
         },
         include: { user: true, likes: true, replies: true },
       });

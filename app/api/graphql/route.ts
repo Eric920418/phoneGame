@@ -63,6 +63,8 @@ const PUBLIC_MUTATIONS = [
   'reportReview',
   'updateProfile',
   'updateGameHours',
+  'createPost',
+  'createComment',
 ];
 
 const withAuth = (resolvers: Record<string, unknown>) => {

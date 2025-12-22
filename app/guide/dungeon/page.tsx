@@ -1,4 +1,4 @@
-import { Map, Users, RefreshCw, Clock, Skull, Gift } from "lucide-react";
+import { Map, Users, RefreshCw, Clock, Skull, Gift, Star } from "lucide-react";
 import { graphqlFetch } from "@/lib/apolloClient";
 
 // 強制動態渲染
@@ -19,6 +19,7 @@ interface Dungeon {
   id: number;
   name: string;
   image?: string;
+  level?: string;
   cooldown?: string;
   dungeonTime?: string;
   players: string;
@@ -97,6 +98,12 @@ export default async function DungeonPage() {
 
                 {/* 副本條件 */}
                 <div className="flex flex-wrap gap-4 text-sm mb-6">
+                  {dungeon.level && (
+                    <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-teal-500/10 text-teal-400">
+                      <Star className="w-4 h-4" />
+                      等級: {dungeon.level}
+                    </span>
+                  )}
                   {dungeon.players && (
                     <span className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-500/10 text-blue-400">
                       <Users className="w-4 h-4" />

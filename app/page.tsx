@@ -37,6 +37,7 @@ import {
   Flag,
   ThumbsUp,
   Quote,
+  UserPlus,
 } from "lucide-react";
 import Image from "next/image";
 import ReviewSection from "@/components/ReviewSection";
@@ -76,8 +77,9 @@ const sponsorPlans = [
 
 // 下載項目結構（從 downloadCenter 轉換）
 interface DownloadCenterData {
-  downloads?: { id: string; downloadUrl: string }[];
-  patches?: unknown[];
+  mainProgram?: { name: string; downloadUrl: string };
+  updateFile?: { name: string; downloadUrl: string };
+  launcher?: { name: string; downloadUrl: string };
 }
 
 // 遊戲設定建議
@@ -368,11 +370,8 @@ export default async function HomePage() {
 
   // 使用数据库数据
   const displaySponsorPlans = contentBlocks.sponsorPlans || sponsorPlans;
-  // 從 downloadCenter 提取下載連結（優先使用 Windows）
-  const downloadCenterData = contentBlocks.downloadCenter;
-  const downloadLink = downloadCenterData?.downloads?.find(d => d.id === "windows")?.downloadUrl
-    || downloadCenterData?.downloads?.[0]?.downloadUrl
-    || "";
+  // 下載專區資料
+  const downloadCenterData = contentBlocks.downloadCenter as DownloadCenterData | undefined;
   const displayGameSettings = contentBlocks.gameSettings || gameSettings;
   const displayBeginnerGuides = contentBlocks.beginnerGuides || beginnerGuides;
   const displayDropItems = contentBlocks.dropItems || dropItems;
@@ -611,73 +610,107 @@ export default async function HomePage() {
               color="#3498db"
               href="/guide/download"
             />
-            {downloadCenterData?.downloads &&
-            downloadCenterData.downloads.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
-                {downloadCenterData.downloads.map((item) => {
-                  const content = (
-                    <>
-                      <div
-                        className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0 text-2xl sm:text-3xl"
-                        style={{
-                          backgroundColor:
-                            item.id === "windows" ? "#0078d420" : "#55555520",
-                        }}
-                      >
-                        {item.id === "windows" ? (
-                          <Monitor
-                            className="w-6 h-6 sm:w-7 sm:h-7"
-                            style={{ color: "#0078d4" }}
-                          />
-                        ) : (
-                          <span>🍎</span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-[var(--color-text)] text-sm sm:text-base">
-                          {item.id === "windows"
-                            ? "Windows 客戶端"
-                            : "macOS 客戶端"}
-                        </h3>
-                        <p className="text-[var(--color-text-muted)] text-xs sm:text-sm truncate">
-                          {item.downloadUrl ? "點擊下載" : "尚未設定"}
-                        </p>
-                      </div>
-                      <FileDown
-                        className={`w-5 h-5 sm:w-6 sm:h-6 shrink-0 ${
-                          item.downloadUrl
-                            ? "text-blue-400"
-                            : "text-[var(--color-text-dark)]"
-                        }`}
-                      />
-                    </>
-                  );
-
-                  return item.downloadUrl ? (
-                    <a
-                      key={item.id}
-                      href={item.downloadUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="card p-4 sm:p-6 flex items-center gap-4 transition-all hover:scale-[1.02] hover:border-blue-500/50"
-                    >
-                      {content}
-                    </a>
-                  ) : (
+            {(downloadCenterData?.mainProgram?.downloadUrl || downloadCenterData?.updateFile?.downloadUrl || downloadCenterData?.launcher?.downloadUrl) ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                {/* 主程式下載 */}
+                {downloadCenterData?.mainProgram?.downloadUrl ? (
+                  <a
+                    href={downloadCenterData.mainProgram.downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="card p-4 sm:p-6 flex items-center gap-4 transition-all hover:scale-[1.02] hover:border-blue-500/50"
+                  >
                     <div
-                      key={item.id}
-                      className="card p-4 sm:p-6 flex items-center gap-4 opacity-50"
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: "#0078d420" }}
                     >
-                      {content}
+                      <Monitor className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: "#0078d4" }} />
                     </div>
-                  );
-                })}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-[var(--color-text)] text-sm sm:text-base">
+                        {downloadCenterData.mainProgram.name || "遊戲主程式"}
+                      </h3>
+                      <p className="text-[var(--color-text-muted)] text-xs sm:text-sm">點擊下載</p>
+                    </div>
+                    <FileDown className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 text-blue-400" />
+                  </a>
+                ) : null}
+
+                {/* 更新檔下載 */}
+                {downloadCenterData?.updateFile?.downloadUrl ? (
+                  <a
+                    href={downloadCenterData.updateFile.downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="card p-4 sm:p-6 flex items-center gap-4 transition-all hover:scale-[1.02] hover:border-green-500/50"
+                  >
+                    <div
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: "#22c55e20" }}
+                    >
+                      <FileDown className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: "#22c55e" }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-[var(--color-text)] text-sm sm:text-base">
+                        {downloadCenterData.updateFile.name || "更新檔"}
+                      </h3>
+                      <p className="text-[var(--color-text-muted)] text-xs sm:text-sm">點擊下載</p>
+                    </div>
+                    <FileDown className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 text-green-400" />
+                  </a>
+                ) : null}
+
+                {/* 登入器下載 */}
+                {downloadCenterData?.launcher?.downloadUrl ? (
+                  <a
+                    href={downloadCenterData.launcher.downloadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="card p-4 sm:p-6 flex items-center gap-4 transition-all hover:scale-[1.02] hover:border-purple-500/50"
+                  >
+                    <div
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: "#a855f720" }}
+                    >
+                      <Download className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: "#a855f7" }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-bold text-[var(--color-text)] text-sm sm:text-base">
+                        {downloadCenterData.launcher.name || "登入器"}
+                      </h3>
+                      <p className="text-[var(--color-text-muted)] text-xs sm:text-sm">點擊下載</p>
+                    </div>
+                    <FileDown className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 text-purple-400" />
+                  </a>
+                ) : null}
               </div>
             ) : (
               <div className="text-[var(--color-text-muted)] text-center py-8">
                 下載連結尚未設定
               </div>
             )}
+
+            {/* 查看完整下載與註冊步驟 */}
+            <div className="mt-4 flex justify-center">
+              <Link
+                href="/guide/download"
+                className="card p-3 sm:p-4 flex items-center gap-3 transition-all hover:scale-[1.02] hover:border-cyan-500/50 group"
+              >
+                <div
+                  className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0"
+                  style={{ backgroundColor: "#06b6d420" }}
+                >
+                  <UserPlus className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: "#06b6d4" }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-bold text-[var(--color-text)] text-sm sm:text-base group-hover:text-cyan-400 transition-colors">
+                    查看完整下載與註冊步驟
+                  </h3>
+                  <p className="text-[var(--color-text-muted)] text-xs sm:text-sm">新手必看的註冊教學</p>
+                </div>
+                <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6 shrink-0 text-cyan-400 group-hover:translate-x-1 transition-transform" />
+              </Link>
+            </div>
           </FramedSection>
 
           {/* ==================== 4. 遊戲設定 Section ==================== */}

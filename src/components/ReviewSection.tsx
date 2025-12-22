@@ -379,8 +379,10 @@ export default function ReviewSection() {
   const { user, token } = useAuth();
   const [data, setData] = useState<ReviewListResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState("newest");
+  const [currentPage, setCurrentPage] = useState(1);
   const [showForm, setShowForm] = useState(false);
   const [expandedReplies, setExpandedReplies] = useState<Set<number>>(new Set());
   const [replyingTo, setReplyingTo] = useState<number | null>(null);
@@ -398,10 +400,14 @@ export default function ReviewSection() {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
 
-  const fetchReviews = useCallback(async () => {
+  const fetchReviews = useCallback(async (page: number = 1, append: boolean = false) => {
     // 防止重複請求
     if (fetchingRef.current) return;
     fetchingRef.current = true;
+
+    if (append) {
+      setLoadingMore(true);
+    }
 
     try {
       const response = await fetchWithTimeout("/api/graphql", {
@@ -412,7 +418,7 @@ export default function ReviewSection() {
         },
         body: JSON.stringify({
           query: REVIEWS_QUERY,
-          variables: { page: 1, pageSize: 10, sortBy },
+          variables: { page, pageSize: 10, sortBy },
         }),
       });
 
@@ -421,7 +427,16 @@ export default function ReviewSection() {
       if (result.errors) {
         setError(result.errors[0].message);
       } else {
-        setData(result.data.reviews);
+        if (append && data) {
+          // 追加新評論到現有列表
+          setData({
+            ...result.data.reviews,
+            reviews: [...data.reviews, ...result.data.reviews.reviews],
+          });
+        } else {
+          setData(result.data.reviews);
+        }
+        setCurrentPage(page);
         setError(null);
       }
     } catch (err) {
@@ -432,13 +447,18 @@ export default function ReviewSection() {
       }
     } finally {
       setLoading(false);
+      setLoadingMore(false);
       fetchingRef.current = false;
     }
-  }, [sortBy, token]);
+  }, [sortBy, token, data]);
+
+  const handleLoadMore = useCallback(() => {
+    fetchReviews(currentPage + 1, true);
+  }, [fetchReviews, currentPage]);
 
   useEffect(() => {
-    fetchReviews();
-  }, [fetchReviews]);
+    fetchReviews(1, false);
+  }, [sortBy, token]);
 
   const handleSubmitReview = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -467,9 +487,10 @@ export default function ReviewSection() {
       } else {
         setShowForm(false);
         setFormData({ content: "", rating: 5, isRecommended: true });
-        // 重新獲取評價列表
+        // 重新獲取評價列表（從第一頁開始）
+        setCurrentPage(1);
         fetchingRef.current = false; // 允許重新請求
-        fetchReviews();
+        fetchReviews(1, false);
       }
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
@@ -690,6 +711,29 @@ export default function ReviewSection() {
               onReport={(id) => setReportingId(id)}
             />
           ))
+        )}
+
+        {/* 查看更多按鈕 */}
+        {data?.hasMore && (
+          <div className="text-center pt-4">
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="btn px-6 py-2 text-sm"
+            >
+              {loadingMore ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  載入中...
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="w-4 h-4 mr-2" />
+                  查看更多評論
+                </>
+              )}
+            </button>
+          </div>
         )}
       </div>
 

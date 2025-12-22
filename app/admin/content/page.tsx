@@ -8,7 +8,7 @@ import {
   ArrowLeft, Save, AlertCircle, Check, Plus, Trash2,
   Heart, Download, Settings, BookOpen, Search,
   Map, Gift, Skull, Swords, Trophy, Quote, Flag, ChevronUp, ChevronDown,
-  Upload, FileSpreadsheet, X
+  Upload, FileSpreadsheet, X, UserPlus
 } from "lucide-react";
 import { graphqlFetch } from "@/lib/apolloClient";
 
@@ -32,11 +32,12 @@ const defaultData: Record<string, unknown[]> = {
     { name: "青銅", price: 100, color: "#cd7f32", benefits: ["500 元寶", "專屬稱號"], popular: false, link: "" },
   ],
   downloadCenter: {
-    downloads: [
-      { id: "windows", name: "Windows 客戶端", icon: "Monitor", version: "v1.0.0", size: "3.2 GB", description: "適用於 Windows 10/11 64位元系統", downloadUrl: "", color: "#0078d4" },
-      { id: "mac", name: "macOS 客戶端", icon: "Apple", version: "v1.0.0", size: "3.5 GB", description: "適用於 macOS 12.0 或更高版本", downloadUrl: "", color: "#555555" },
+    mainProgram: { name: "遊戲主程式", downloadUrl: "" },
+    updateFile: { name: "更新檔", downloadUrl: "" },
+    launcher: { name: "登入器", downloadUrl: "" },
+    registrationSteps: [
+      { step: 1, title: "下載遊戲", desc: "下載並安裝遊戲主程式" },
     ],
-    patches: [],
   } as unknown as unknown[],
   gameSettings: [
     { category: "畫面", settings: [{ name: "解析度", value: "1920x1080" }] },
@@ -145,12 +146,35 @@ export default function AdminContentPage() {
       const data = blocks[key] || defaultData[key] || { levelRanking: [], nationWarRanking: [], chibiRanking: [] };
       setEditingData(JSON.parse(JSON.stringify(data)) as unknown as unknown[]);
     } else if (key === "downloadCenter") {
-      // downloadCenter 使用對象格式：{ downloads: [], patches: [] }
-      // 只保留 Windows 和 Mac
-      const rawData = blocks[key] || defaultData[key] || { downloads: [], patches: [] };
-      const data = JSON.parse(JSON.stringify(rawData)) as { downloads: { id: string }[]; patches: unknown[] };
-      data.downloads = data.downloads.filter((d) => d.id === "windows" || d.id === "mac");
-      setEditingData(data as unknown as unknown[]);
+      // downloadCenter 使用對象格式：{ mainProgram: {}, updateFile: {}, launcher: {}, registrationSteps: [] }
+      const rawData = blocks[key] as Record<string, unknown> | undefined;
+      // 也嘗試從舊的獨立 registrationSteps 獲取資料
+      const oldRegistrationSteps = blocks["registrationSteps"] as unknown[] | undefined;
+      // 處理舊格式資料或初始化新格式
+      let data: {
+        mainProgram: { name: string; downloadUrl: string };
+        updateFile: { name: string; downloadUrl: string };
+        launcher: { name: string; downloadUrl: string };
+        registrationSteps: unknown[];
+      };
+      if (rawData?.mainProgram) {
+        // 已經是新格式
+        data = {
+          mainProgram: (rawData.mainProgram as { name: string; downloadUrl: string }) || { name: "遊戲主程式", downloadUrl: "" },
+          updateFile: (rawData.updateFile as { name: string; downloadUrl: string }) || { name: "更新檔", downloadUrl: "" },
+          launcher: (rawData.launcher as { name: string; downloadUrl: string }) || { name: "登入器", downloadUrl: "" },
+          registrationSteps: (rawData.registrationSteps as unknown[]) || oldRegistrationSteps || [{ step: 1, title: "下載遊戲", desc: "下載並安裝遊戲主程式" }],
+        };
+      } else {
+        // 舊格式或無資料，使用預設值
+        data = {
+          mainProgram: { name: "遊戲主程式", downloadUrl: "" },
+          updateFile: { name: "更新檔", downloadUrl: "" },
+          launcher: { name: "登入器", downloadUrl: "" },
+          registrationSteps: oldRegistrationSteps || [{ step: 1, title: "下載遊戲", desc: "下載並安裝遊戲主程式" }],
+        };
+      }
+      setEditingData(JSON.parse(JSON.stringify(data)) as unknown as unknown[]);
     } else if (key === "nationWar") {
       // nationWar 整合多個區塊：warSchedule, nationWar(rules/rewards), factions, factionsImage
       const warSchedule = blocks["warSchedule"] || [];
@@ -252,7 +276,7 @@ export default function AdminContentPage() {
     // 為沒有預設資料的區塊提供模板
     const emptyTemplates: Record<string, unknown> = {
       dropItems: { boss: "", location: "", category: "", drops: [] },
-      dungeons: { name: "", image: "", cooldown: "", dungeonTime: "", players: "", monsters: [] },
+      dungeons: { name: "", image: "", level: "", cooldown: "", dungeonTime: "", players: "", monsters: [] },
     };
 
     const template = defaultData[activeSection]?.[0] || emptyTemplates[activeSection] || {};
@@ -483,175 +507,295 @@ export default function AdminContentPage() {
         });
 
       case "downloadCenter": {
-        // 下載專區：管理 Windows/Mac 下載連結和補丁
+        // 下載專區：主程式、更新檔、登入器連結、註冊步驟
         const downloadCenterData = editingData as unknown as {
-          downloads: { id: string; name: string; icon: string; version: string; size: string; description: string; downloadUrl: string; color: string }[];
-          patches: { id: string; name: string; date: string; size: string; description: string; downloadUrl: string }[];
+          mainProgram?: { name: string; downloadUrl: string };
+          updateFile?: { name: string; downloadUrl: string };
+          launcher?: { name: string; downloadUrl: string };
+          registrationSteps?: { step: number; title: string; desc: string; image?: string; images?: string[]; content?: string }[];
         };
 
-        const updateDownloadField = (field: string, value: unknown) => {
-          setEditingData({ ...downloadCenterData, [field]: value } as unknown as unknown[]);
+        // 確保資料結構存在
+        const safeData = {
+          mainProgram: downloadCenterData?.mainProgram || { name: "遊戲主程式", downloadUrl: "" },
+          updateFile: downloadCenterData?.updateFile || { name: "更新檔", downloadUrl: "" },
+          launcher: downloadCenterData?.launcher || { name: "登入器", downloadUrl: "" },
+          registrationSteps: downloadCenterData?.registrationSteps || [],
         };
 
-        const updateDownloadItem = (index: number, field: string, value: unknown) => {
-          const newDownloads = [...downloadCenterData.downloads];
-          (newDownloads[index] as Record<string, unknown>)[field] = value;
-          updateDownloadField("downloads", newDownloads);
+        const updateField = (field: "mainProgram" | "updateFile" | "launcher", subField: string, value: string) => {
+          const newData = {
+            mainProgram: { ...safeData.mainProgram },
+            updateFile: { ...safeData.updateFile },
+            launcher: { ...safeData.launcher },
+            registrationSteps: [...safeData.registrationSteps],
+          };
+          (newData[field] as Record<string, string>)[subField] = value;
+          setEditingData(newData as unknown as unknown[]);
         };
 
-        const updatePatchItem = (index: number, field: string, value: unknown) => {
-          const newPatches = [...downloadCenterData.patches];
-          (newPatches[index] as Record<string, unknown>)[field] = value;
-          updateDownloadField("patches", newPatches);
+        const updateStep = (index: number, field: string, value: unknown) => {
+          const newSteps = [...safeData.registrationSteps];
+          (newSteps[index] as Record<string, unknown>)[field] = value;
+          setEditingData({
+            mainProgram: { ...safeData.mainProgram },
+            updateFile: { ...safeData.updateFile },
+            launcher: { ...safeData.launcher },
+            registrationSteps: newSteps,
+          } as unknown as unknown[]);
         };
 
-        const addPatch = () => {
-          const newPatches = [...(downloadCenterData.patches || [])];
-          newPatches.push({
-            id: `patch-${Date.now()}`,
-            name: "",
-            date: new Date().toISOString().split("T")[0],
-            size: "",
-            description: "",
-            downloadUrl: "",
-          });
-          updateDownloadField("patches", newPatches);
+        const addStep = () => {
+          const newSteps = [...safeData.registrationSteps, { step: safeData.registrationSteps.length + 1, title: "", desc: "" }];
+          setEditingData({
+            mainProgram: { ...safeData.mainProgram },
+            updateFile: { ...safeData.updateFile },
+            launcher: { ...safeData.launcher },
+            registrationSteps: newSteps,
+          } as unknown as unknown[]);
         };
 
-        const removePatch = (index: number) => {
-          const newPatches = downloadCenterData.patches.filter((_, i) => i !== index);
-          updateDownloadField("patches", newPatches);
+        const removeStep = (index: number) => {
+          const newSteps = safeData.registrationSteps.filter((_, i) => i !== index);
+          setEditingData({
+            mainProgram: { ...safeData.mainProgram },
+            updateFile: { ...safeData.updateFile },
+            launcher: { ...safeData.launcher },
+            registrationSteps: newSteps,
+          } as unknown as unknown[]);
         };
 
         return (
           <div className="space-y-6">
-            {/* 遊戲客戶端下載 */}
+            {/* 主程式下載 */}
             <div className="card p-4">
               <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2">
                 <Download className="w-5 h-5 text-blue-400" />
-                遊戲客戶端下載連結
+                主程式下載連結
               </h3>
               <p className="text-[var(--color-text-muted)] text-sm mb-4">
-                設定 Windows 和 macOS 客戶端的下載連結（僅支援桌機版本）
+                設定遊戲主程式的下載連結
               </p>
-              <div className="space-y-4">
-                {(downloadCenterData.downloads || []).map((download, index) => (
-                  <div key={download.id} className="bg-[var(--color-bg-dark)] p-4 rounded-lg space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-8 h-8 rounded flex items-center justify-center"
-                        style={{ backgroundColor: `${download.color}20` }}
-                      >
-                        <span style={{ color: download.color }}>
-                          {download.id === "windows" ? "🖥️" : "🍎"}
-                        </span>
-                      </div>
-                      <span className="text-[var(--color-text)] font-medium">{download.name}</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        type="text"
-                        value={download.version}
-                        onChange={(e) => updateDownloadItem(index, "version", e.target.value)}
-                        placeholder="版本號 (如: v2.5.3)"
-                        className="input"
-                      />
-                      <input
-                        type="text"
-                        value={download.size}
-                        onChange={(e) => updateDownloadItem(index, "size", e.target.value)}
-                        placeholder="檔案大小 (如: 3.2 GB)"
-                        className="input"
-                      />
-                    </div>
-                    <input
-                      type="text"
-                      value={download.description}
-                      onChange={(e) => updateDownloadItem(index, "description", e.target.value)}
-                      placeholder="描述 (如: 適用於 Windows 10/11)"
-                      className="input w-full"
-                    />
-                    <input
-                      type="url"
-                      value={download.downloadUrl}
-                      onChange={(e) => updateDownloadItem(index, "downloadUrl", e.target.value)}
-                      placeholder="下載連結 (如: https://drive.google.com/...)"
-                      className="input w-full"
-                    />
-                  </div>
-                ))}
+              <div className="bg-[var(--color-bg-dark)] p-4 rounded-lg space-y-3">
+                <input
+                  type="text"
+                  value={safeData.mainProgram.name}
+                  onChange={(e) => updateField("mainProgram", "name", e.target.value)}
+                  placeholder="名稱 (如: 遊戲主程式)"
+                  className="input w-full"
+                />
+                <input
+                  type="text"
+                  value={safeData.mainProgram.downloadUrl}
+                  onChange={(e) => updateField("mainProgram", "downloadUrl", e.target.value)}
+                  placeholder="下載連結 (如: https://drive.google.com/...)"
+                  className="input w-full"
+                />
               </div>
             </div>
 
-            {/* 更新補丁 */}
+            {/* 更新檔下載 */}
             <div className="card p-4">
               <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2">
                 <Download className="w-5 h-5 text-green-400" />
-                更新補丁
+                更新檔下載連結
               </h3>
               <p className="text-[var(--color-text-muted)] text-sm mb-4">
-                管理遊戲更新補丁，每個補丁可設定獨立的下載連結
+                設定遊戲更新檔的下載連結
+              </p>
+              <div className="bg-[var(--color-bg-dark)] p-4 rounded-lg space-y-3">
+                <input
+                  type="text"
+                  value={safeData.updateFile.name}
+                  onChange={(e) => updateField("updateFile", "name", e.target.value)}
+                  placeholder="名稱 (如: 更新檔)"
+                  className="input w-full"
+                />
+                <input
+                  type="text"
+                  value={safeData.updateFile.downloadUrl}
+                  onChange={(e) => updateField("updateFile", "downloadUrl", e.target.value)}
+                  placeholder="下載連結 (如: https://drive.google.com/...)"
+                  className="input w-full"
+                />
+              </div>
+            </div>
+
+            {/* 登入器下載 */}
+            <div className="card p-4">
+              <h3 className="text-lg font-semibold text-[var(--color-text)] mb-4 flex items-center gap-2">
+                <Download className="w-5 h-5 text-purple-400" />
+                登入器下載連結
+              </h3>
+              <p className="text-[var(--color-text-muted)] text-sm mb-4">
+                設定遊戲登入器的下載連結
+              </p>
+              <div className="bg-[var(--color-bg-dark)] p-4 rounded-lg space-y-3">
+                <input
+                  type="text"
+                  value={safeData.launcher.name}
+                  onChange={(e) => updateField("launcher", "name", e.target.value)}
+                  placeholder="名稱 (如: 登入器)"
+                  className="input w-full"
+                />
+                <input
+                  type="text"
+                  value={safeData.launcher.downloadUrl}
+                  onChange={(e) => updateField("launcher", "downloadUrl", e.target.value)}
+                  placeholder="下載連結 (如: https://drive.google.com/...)"
+                  className="input w-full"
+                />
+              </div>
+            </div>
+
+            {/* 註冊步驟 */}
+            <div className="card p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-[var(--color-text)] flex items-center gap-2">
+                  <UserPlus className="w-5 h-5 text-cyan-400" />
+                  註冊步驟
+                </h3>
+                <button onClick={addStep} className="btn btn-primary text-sm">
+                  <Plus className="w-4 h-4 mr-1" />
+                  新增步驟
+                </button>
+              </div>
+              <p className="text-[var(--color-text-muted)] text-sm mb-4">
+                設定玩家註冊流程的步驟說明
               </p>
               <div className="space-y-4">
-                {(downloadCenterData.patches || []).map((patch, index) => (
-                  <div key={patch.id} className="bg-[var(--color-bg-dark)] p-4 rounded-lg space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[var(--color-text-muted)] text-sm">補丁 #{index + 1}</span>
-                      <button
-                        onClick={() => removePatch(index)}
-                        className="text-red-400 hover:text-red-300 p-1"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                {safeData.registrationSteps.map((stepItem, index) => {
+                  const images = stepItem.images || (stepItem.image ? [stepItem.image] : []);
+
+                  const handleStepImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+                    const files = e.target.files;
+                    if (!files || files.length === 0) return;
+
+                    for (const file of Array.from(files)) {
+                      const formData = new FormData();
+                      formData.append("file", file);
+
+                      try {
+                        const res = await fetch("/api/upload", {
+                          method: "POST",
+                          body: formData,
+                        });
+                        const result = await res.json();
+                        if (result.url) {
+                          const currentImages = [...images, result.url];
+                          updateStep(index, "images", currentImages);
+                          updateStep(index, "image", undefined);
+                        } else {
+                          setError("圖片上傳失敗");
+                        }
+                      } catch {
+                        setError("圖片上傳失敗");
+                      }
+                    }
+                    e.target.value = "";
+                  };
+
+                  const removeStepImage = (imgIndex: number) => {
+                    const newImages = images.filter((_, i) => i !== imgIndex);
+                    updateStep(index, "images", newImages);
+                  };
+
+                  return (
+                    <div key={index} className="bg-[var(--color-bg-dark)] p-4 rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <span className="text-cyan-400 font-medium">步驟 #{index + 1}</span>
+                        <button onClick={() => removeStep(index)} className="text-red-400 hover:text-red-300 p-1">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-4 gap-3">
+                        <input
+                          type="number"
+                          value={stepItem.step}
+                          onChange={(e) => updateStep(index, "step", parseInt(e.target.value) || 1)}
+                          placeholder="步驟"
+                          className="input"
+                          min={1}
+                        />
+                        <input
+                          type="text"
+                          value={stepItem.title}
+                          onChange={(e) => updateStep(index, "title", e.target.value)}
+                          placeholder="標題 (如: 下載遊戲)"
+                          className="input col-span-3"
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        value={stepItem.desc}
+                        onChange={(e) => updateStep(index, "desc", e.target.value)}
+                        placeholder="描述 (如: 下載並安裝遊戲主程式)"
+                        className="input w-full"
+                      />
+                      <div>
+                        <label className="text-[var(--color-text)] text-sm mb-2 block">
+                          步驟圖片 ({images.length} 張)
+                        </label>
+                        <div className="flex gap-2 mb-3">
+                          <label className="btn btn-secondary cursor-pointer text-sm">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              onChange={handleStepImageUpload}
+                              className="hidden"
+                            />
+                            <Plus className="w-4 h-4 mr-1" />
+                            新增圖片
+                          </label>
+                          {images.length > 0 && (
+                            <button
+                              onClick={() => updateStep(index, "images", [])}
+                              className="btn btn-secondary text-red-400 text-sm"
+                            >
+                              清除全部
+                            </button>
+                          )}
+                        </div>
+                        {images.length > 0 && (
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                            {images.map((img, imgIndex) => (
+                              <div key={imgIndex} className="relative group rounded-lg overflow-hidden border border-[var(--color-border)]">
+                                <img src={img} alt={`圖片 ${imgIndex + 1}`} className="w-full h-32 object-cover" />
+                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                  <button
+                                    onClick={() => removeStepImage(imgIndex)}
+                                    className="p-1.5 rounded bg-red-500/80 hover:bg-red-500"
+                                    title="刪除"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-white" />
+                                  </button>
+                                </div>
+                                <div className="absolute bottom-1 left-1 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded">
+                                  {imgIndex + 1}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <label className="text-[var(--color-text)] text-sm mb-2 block">詳細內容 (支援 HTML)</label>
+                        <textarea
+                          value={stepItem.content || ""}
+                          onChange={(e) => updateStep(index, "content", e.target.value)}
+                          placeholder="<p>詳細的步驟說明...</p>"
+                          className="input w-full min-h-[100px] font-mono text-sm"
+                        />
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        type="text"
-                        value={patch.name}
-                        onChange={(e) => updatePatchItem(index, "name", e.target.value)}
-                        placeholder="補丁名稱 (如: 更新補丁 v2.5.3)"
-                        className="input"
-                      />
-                      <input
-                        type="text"
-                        value={patch.date}
-                        onChange={(e) => updatePatchItem(index, "date", e.target.value)}
-                        placeholder="發布日期 (如: 2024-12-01)"
-                        className="input"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <input
-                        type="text"
-                        value={patch.size}
-                        onChange={(e) => updatePatchItem(index, "size", e.target.value)}
-                        placeholder="檔案大小 (如: 256 MB)"
-                        className="input"
-                      />
-                      <input
-                        type="text"
-                        value={patch.description}
-                        onChange={(e) => updatePatchItem(index, "description", e.target.value)}
-                        placeholder="描述"
-                        className="input"
-                      />
-                    </div>
-                    <input
-                      type="url"
-                      value={patch.downloadUrl}
-                      onChange={(e) => updatePatchItem(index, "downloadUrl", e.target.value)}
-                      placeholder="補丁下載連結 (如: https://drive.google.com/...)"
-                      className="input w-full"
-                    />
+                  );
+                })}
+                {safeData.registrationSteps.length === 0 && (
+                  <div className="text-center py-8 text-[var(--color-text-muted)]">
+                    尚無註冊步驟，點擊「新增步驟」開始添加
                   </div>
-                ))}
-                <button
-                  onClick={addPatch}
-                  className="text-green-400 text-sm hover:underline flex items-center gap-1"
-                >
-                  <Plus className="w-4 h-4" />
-                  新增補丁
-                </button>
+                )}
               </div>
             </div>
           </div>
@@ -1094,7 +1238,7 @@ export default function AdminContentPage() {
 
       case "dungeons":
         return editingData.map((item: unknown, index: number) => {
-          const data = item as { name: string; image?: string; cooldown?: string; dungeonTime?: string; players: string; monsters?: { name: string; drops: string[] }[] };
+          const data = item as { name: string; image?: string; level?: string; cooldown?: string; dungeonTime?: string; players: string; monsters?: { name: string; drops: string[] }[] };
 
           const handleDungeonImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
             const file = e.target.files?.[0];
@@ -1160,14 +1304,29 @@ export default function AdminContentPage() {
                 )}
               </div>
 
-              {/* 副本名稱 */}
-              <input
-                type="text"
-                value={data.name}
-                onChange={(e) => updateItem(index, "name", e.target.value)}
-                placeholder="副本名稱"
-                className="input w-full"
-              />
+              {/* 副本名稱與等級 */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[var(--color-text-muted)] text-xs mb-1 block">副本名稱</label>
+                  <input
+                    type="text"
+                    value={data.name}
+                    onChange={(e) => updateItem(index, "name", e.target.value)}
+                    placeholder="副本名稱"
+                    className="input w-full"
+                  />
+                </div>
+                <div>
+                  <label className="text-[var(--color-text-muted)] text-xs mb-1 block">等級</label>
+                  <input
+                    type="text"
+                    value={data.level || ""}
+                    onChange={(e) => updateItem(index, "level", e.target.value)}
+                    placeholder="如: Lv.50"
+                    className="input w-full"
+                  />
+                </div>
+              </div>
 
               {/* 間隔時間、副本時間、人數限制 */}
               <div className="grid grid-cols-3 gap-3">

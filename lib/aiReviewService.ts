@@ -379,13 +379,15 @@ async function generateReviewContent(dbContent: Awaited<ReturnType<typeof getAll
   // 從資料庫內容區塊提取動態遊戲資訊
   const dynamicGameInfo = extractGameInfo(dbContent.blocks);
 
-  // 隨機選擇一個評論句型
+  // 隨機選擇一個評論句型（正式服玩家視角）
   const SENTENCE_STARTERS = [
-    "最近在這服打王，最有感的是",
-    "我玩過不少私服，這服給我的感覺是",
-    "如果你喜歡復古群英，這服",
-    "回來玩群英，發現這服",
-    "玩了一陣子，說說感受",
+    "玩了一段時間，整體感覺是",
+    "開服到現在玩下來，最有感的是",
+    "我玩過不少私服，這服",
+    "回鍋群英選了這服，",
+    "說說這陣子的體驗，",
+    "玩了幾週，簡單分享一下，",
+    "老玩家回來玩，發現這服",
     ""
   ];
   const sentenceStarter = SENTENCE_STARTERS[Math.floor(Math.random() * SENTENCE_STARTERS.length)];
@@ -421,8 +423,9 @@ async function generateReviewContent(dbContent: Awaited<ReturnType<typeof getAll
 
 你的身份設定：
 你是一名《三國群英傳 Online》的老玩家，
-曾經玩過官方版本，也玩過其他私服，
-現在正在「破浪三國」這個復古私服遊玩。
+曾經玩過官方版本，也玩過其他私服。
+「破浪三國」這個復古私服已經正式開服，你已經實際遊玩了一段時間，
+現在正在分享你的真實遊戲體驗與感受。
 
 【你的玩家類型】
 類型：${persona.type}
@@ -435,9 +438,10 @@ ${dynamicGameInfo}
 ${announcementInfo ? `【最新公告】\n${announcementInfo}` : ""}
 
 你的評論角度是：
-- 玩家視角
-- 非官方宣傳
+- 已經實際玩過一段時間的玩家視角
+- 非官方宣傳，是真實玩家的體驗分享
 - 像在社群或官網留言區分享真實感受
+- 可以提到優點，也可以提到小缺點或建議（讓評論更真實）
 - 語氣自然、不過度誇張、不像廣告
 
 評論內容請優先圍繞以下主題（任選1~2點）：
@@ -462,17 +466,20 @@ ${announcementInfo ? `【最新公告】\n${announcementInfo}` : ""}
 
 ${sentenceStarter ? `【建議開頭句型】\n「${sentenceStarter}……」` : ""}
 
-示範評論風格：
-- 「這服打王是真的要跑地圖，不是站著等刷新那種，掉寶看到的時候還是會緊張一下，有找回以前玩群英的感覺。」
-- 「很久沒玩這種沒有一堆商城提示的三國了，練功就是練功，裝備慢慢打，反而比較耐玩。」
-- 「不太吃課金，很多裝備都是靠時間打出來的，對老玩家來說算友善。」
-- 「練功點常遇到人，偶爾還會聊天或一起清怪，比一個人掛機有溫度多了。」
-- 「前期練等不會太卡，但也不會快到沒感覺，算是有抓到復古服該有的節奏。」
+示範評論風格（正面為主，偶爾帶小建議會更真實）：
+- 「玩了快兩週，打王掉寶的感覺找回來了，看到紫裝掉的時候還是會緊張一下。」
+- 「這服不像其他私服一堆商城按鈕，玩起來清爽很多，裝備慢慢打反而有成就感。」
+- 「國戰打起來蠻熱鬧的，雖然有時候會卡一下，但整體算順。」
+- 「練功點常遇到老玩家，偶爾會聊以前群英的事，這種氛圍現在很少見了。」
+- 「前期練等節奏OK，中後期會有點肝，但復古服本來就這樣。」
+- 「開服到現在都蠻穩的，GM有在處理問題，這點給好評。」
+- 「整體還不錯，就是副本冷卻時間有點長，希望之後可以調整。」
+- 「老玩家回鍋很有感覺，不用課金也能玩得開心，只是人再多一點會更好。」
 
-JSON 格式回覆：
+JSON 格式回覆（rating 可以是 3-5 分，真實評價不用都給滿分）：
 {
   "content": "評論內容",
-  "rating": 5,
+  "rating": 4,
   "isRecommended": true
 }`
       },
@@ -490,10 +497,12 @@ JSON 格式回覆：
 
   try {
     const parsed = JSON.parse(responseText);
+    // 真實評價：允許 3-5 分，但以 4-5 分為主
+    const rating = Math.min(5, Math.max(3, parsed.rating || 5));
     return {
       content: parsed.content || "復古群英玩起來就是舒服，打王有感覺，練功有節奏。",
-      rating: Math.min(5, Math.max(4, parsed.rating || 5)),
-      isRecommended: true,
+      rating,
+      isRecommended: rating >= 4,
       persona,
     };
   } catch {
